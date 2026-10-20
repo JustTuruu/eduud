@@ -1,0 +1,43 @@
+{
+  "name": "eduud-backend",
+  "version": "0.1.0",
+  "description": "E-Duud дуудлага худалдааны API",
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node -T src/main.ts",
+    "deploy:start": "prisma migrate deploy && node dist/main.js",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "ts-node -T prisma/seed.ts",
+    "test": "vitest run"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1096.0",
+    "@aws-sdk/s3-request-presigner": "^3.1096.0",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.1.28",
+    "@nestjs/platform-socket.io": "^11.1.28",
+    "@nestjs/websockets": "^11.1.28",
+    "@prisma/client": "^6.19.3",
+    "argon2": "^0.45.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "pg-boss": "^12.26.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.28",
+    "@types/node": "^26.1.2",
+    "prisma": "^6.19.3",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9",
+    "vitest": "^4.1.10"
+  }
+}

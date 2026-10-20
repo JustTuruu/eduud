@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+
+import '../core/theme/app_theme.dart';
+
+/// Бэлэн аватар. Сервер лүү `preset:<id>` гэж хадгалагдана — зураг байршуулах
+/// хэрэггүй тул офлайн ч зөв харагдана.
+class AvatarPreset {
+  const AvatarPreset(this.id, this.label, this.colors);
+
+  final String id;
+  final String label;
+  final List<Color> colors;
+
+  LinearGradient get gradient => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: colors,
+      );
+
+  String get value => 'preset:$id';
+}
+
+const avatarPresets = <AvatarPreset>[
+  AvatarPreset('sapphire', 'Сапфир', [Color(0xFF5B85FF), Color(0xFF3A5FD9)]),
+  AvatarPreset('cyan', 'Цэнхэр', [Color(0xFF22D3EE), Color(0xFF0E7490)]),
+  AvatarPreset('teal', 'Номин', [Color(0xFF2DD4BF), Color(0xFF0F766E)]),
+  AvatarPreset('emerald', 'Ногоон', [Color(0xFF34D399), Color(0xFF047857)]),
+  AvatarPreset('lime', 'Шаргал ногоон', [Color(0xFFA3E635), Color(0xFF4D7C0F)]),
+  AvatarPreset('amber', 'Хув', [Color(0xFFFBBF24), Color(0xFFB45309)]),
+  AvatarPreset('orange', 'Улбар шар', [Color(0xFFFB923C), Color(0xFFC2410C)]),
+  AvatarPreset('rose', 'Час улаан', [Color(0xFFFB7185), Color(0xFFBE123C)]),
+  AvatarPreset('pink', 'Ягаан', [Color(0xFFF472B6), Color(0xFF9D174D)]),
+  AvatarPreset('violet', 'Нил ягаан', [Color(0xFFA78BFA), Color(0xFF6D28D9)]),
+  AvatarPreset('indigo', 'Индиго', [Color(0xFF818CF8), Color(0xFF4338CA)]),
+  AvatarPreset('slate', 'Саарал', [Color(0xFF94A3B8), Color(0xFF475569)]),
+];
+
+AvatarPreset? presetFor(String? avatarUrl) {
+  if (avatarUrl == null || !avatarUrl.startsWith('preset:')) return null;
+  final id = avatarUrl.substring('preset:'.length);
+  for (final p in avatarPresets) {
+    if (p.id == id) return p;
+  }
+  return null;
+}
+
+String avatarInitial(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+  return trimmed.characters.first.toUpperCase();
+}
+
+/// Аватар. `preset:`, `http(s)://` болон утгагүй — гурван тохиолдлыг зохицуулна.
+class AppAvatar extends StatelessWidget {
+  const AppAvatar({
+    super.key,
+    required this.name,
+    this.avatarUrl,
+    this.size = 44,
+  });
+
+  final String name;
+  final String? avatarUrl;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final preset = presetFor(avatarUrl);
+    final isNetwork = avatarUrl != null && avatarUrl!.startsWith('http');
+
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: preset?.gradient ??
+            (isNetwork ? null : AppColors.balGradient),
+        color: isNetwork ? AppColors.surfaceHi : null,
+      ),
+      child: isNetwork
+          ? Image.network(
+              avatarUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _Initial(name: name, size: size),
+            )
+          : _Initial(name: name, size: size),
+    );
+  }
+}
+
+class _Initial extends StatelessWidget {
+  const _Initial({required this.name, required this.size});
+
+  final String name;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        avatarInitial(name),
+        style: TextStyle(
+          fontSize: size * 0.42,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
