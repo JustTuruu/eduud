@@ -6,13 +6,13 @@ naad.win загварын penny-auction платформ: санал (bid) бү�
 
 ```
 duud/
-  backend/   — NestJS API (auth, wallet, auction engine, admin, Socket.IO)
+  backend-spring/ — Spring Boot + Kafka API (auth, wallet, auction engine, admin, Socket.IO)
   app/       — Flutter апп (хэрэглэгч + админ роль)   ← дараагийн үе шат
 ```
 
 ## Архитектур
 
-- **API**: NestJS + Prisma + Socket.IO + pg-boss — Railway/Render дээр deploy
+- **API**: Java 17 / Spring Boot 3.5 + Kafka (саналын queue, partition = auctionId) + Socket.IO (netty-socketio, порт 3001)
 - **DB**: Supabase managed Postgres (зөвхөн DB болгож ашиглана)
 - **Файл**: Cloudflare R2 (presigned upload)
 - **Төлбөр**: wire.mn (цэнэглэлт + ялагчийн төлбөр, webhook)
@@ -20,13 +20,14 @@ duud/
 
 ## Backend ажиллуулах
 
+Дэлгэрэнгүйг [backend-spring/README.md](backend-spring/README.md)-ээс үзнэ үү.
+
 ```bash
-cd backend
-npm install
-copy .env.example .env    # утгуудаа бөглөнө
-npm run db:migrate        # Supabase руу migration
-npm run db:seed           # багц, админ, контент seed
-npm run start:dev
+cd backend-spring
+docker compose up -d postgres kafka
+mvn package -DskipTests
+java -jar target/eduud-backend-spring-0.1.0.jar --seed   # багц, админ, контент
+java -jar target/eduud-backend-spring-0.1.0.jar          # API :3000, Socket.IO :3001
 ```
 
 Dev горимд `OTP_PROVIDER=mock` (код консолд хэвлэгдэнэ), `WIRE_MODE=test`
@@ -37,7 +38,7 @@ Dev горимд `OTP_PROVIDER=mock` (код консолд хэвлэгдэнэ
 | Үйлчилгээ | Юунд | Хаана |
 |---|---|---|
 | Supabase | Postgres DB | supabase.com — project үүсгээд Session/Transaction pooler URL-уудыг `.env`-д |
-| Railway / Render | API hosting | GitHub repo холбоод deploy (`build`: `npm run build`, `start`: `npm run deploy:start`) |
+| Railway / Render | API hosting | GitHub repo холбоод deploy (`mvn package`, `java -jar target/eduud-backend-spring-0.1.0.jar`; Kafka шаардлагатай) |
 | Cloudflare R2 | Зураг хадгалалт | R2 bucket + API token → `.env` |
 | wire.mn | Төлбөр | Merchant бүртгэл (KYC) → API key, webhook URL: `https://<api>/payments/wire/webhook` |
 | verify.mn | SMS OTP | Данс → API key (`OTP_PROVIDER=verifymn`) |
@@ -46,7 +47,7 @@ Dev горимд `OTP_PROVIDER=mock` (код консолд хэвлэгдэнэ
 ### Тест
 
 ```bash
-npm test          # unit: bid логик, soft/hard close, webhook idempotency
+cd backend-spring && mvn test   # unit: bid логик, soft/hard close
 ```
 
 ### Гол API-ууд
@@ -54,7 +55,7 @@ npm test          # unit: bid логик, soft/hard close, webhook idempotency
 - `POST /auth/otp/request|verify`, `/auth/register|login|refresh|logout`, `/auth/password/reset`
 - `GET/PATCH /me`, `POST /me/password`, `POST /media/presign`
 - `GET /wallet|/wallet/packages|/wallet/transactions`, `POST /wallet/topup`, `POST /wallet/topup/:id/check`
-- `GET /auctions?status=live|scheduled|ended`, `GET /auctions/:id`, `POST /auctions/:id/bid`
+- `GET /auctions?status=live|scheduled|ended`, `GET /auctions/:id`, `POST /auctions/:id/bid` (202 PENDING — Kafka-аар боловсрогдоно)
 - `GET /orders`, `POST /orders/:id/pay`
 - `GET /content/:key` (terms/privacy/faq), `POST /devices`
 - `/admin/*` — auction CRUD/publish/cancel, users/ban, adjust-tokens, payments, orders, packages, content
@@ -63,10 +64,11 @@ npm test          # unit: bid логик, soft/hard close, webhook idempotency
 
 `join_auction`/`leave_auction` (client) → `bid_placed`, `auction_extended`,
 `auction_started`, `auction_ended`, `auction_cancelled` (room), `wallet_updated`,
-`outbid`, `auction_won`, `order_paid` (хувийн, JWT handshake-тэй үед).
+`outbid`, `auction_won`, `order_paid`, `bid_rejected` (хувийн, JWT handshake-тэй үед).
 
 ### Анхаарах TODO
 
-- `wire.service.ts` / `otp.service.ts` — endpoint, payload-ыг албан ёсны API
+- `WireService.java` / `OtpService.java` — endpoint, payload-ыг албан ёсны API
   бичиг баримттай тулгах (одоо test/mock горимд бүрэн ажиллана)
 - FCM push, Flutter апп — дараагийн үе шат
+# eduud
