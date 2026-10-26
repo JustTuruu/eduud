@@ -1,0 +1,97 @@
+# Бүх утгыг орчны хувьсагчаар солино. NestJS-ийн .env-тэй ижил нэртэй
+# хувьсагчдыг (JWT_*, OTP_*, WIRE_*, R2_*) шууд ашиглаж болно.
+server:
+  port: ${PORT:3000}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:200}
+
+spring:
+  application:
+    name: eduud-backend-spring
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:55432/eduud}
+    username: ${DB_USER:eduud}
+    password: ${DB_PASSWORD:eduud}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:2000}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    # Prisma-гаар аль хэдийн migrate хийсэн DB дээр FLYWAY_BASELINE_VERSION=2 өгнө
+    baseline-on-migrate: true
+    baseline-version: ${FLYWAY_BASELINE_VERSION:0}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: true
+    default-property-inclusion: always
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        linger.ms: ${KAFKA_LINGER_MS:5}
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      group-id: ${BID_CONSUMER_GROUP:bid-processor}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: ${BID_MAX_POLL_RECORDS:500}
+      properties:
+        # Дахин асаахад хуучин гишүүдийг 45с биш 10с-д чөлөөлнө
+        session.timeout.ms: ${KAFKA_SESSION_TIMEOUT_MS:10000}
+        heartbeat.interval.ms: 3000
+    listener:
+      ack-mode: batch
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: eduud-backend-spring
+
+app:
+  jwt:
+    access-secret: ${JWT_ACCESS_SECRET:change-me-random-64-chars-change-me-random-64-chars-xxxxxx}
+    refresh-secret: ${JWT_REFRESH_SECRET:change-me-another-random-64-chars-change-me-another-xx}
+    access-ttl-sec: ${JWT_ACCESS_TTL_SEC:900}
+    refresh-ttl-sec: ${JWT_REFRESH_TTL_SEC:2592000}
+  otp:
+    provider: ${OTP_PROVIDER:mock}
+    verifymn-api-url: ${VERIFYMN_API_URL:https://api.verify.mn}
+    verifymn-api-key: ${VERIFYMN_API_KEY:}
+  wire:
+    mode: ${WIRE_MODE:test}
+    api-url: ${WIRE_API_URL:https://api.wire.mn}
+    api-key: ${WIRE_API_KEY:}
+    webhook-secret: ${WIRE_WEBHOOK_SECRET:}
+  r2:
+    account-id: ${R2_ACCOUNT_ID:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    bucket: ${R2_BUCKET:duud-media}
+    public-url: ${R2_PUBLIC_URL:https://media.example.mn}
+  socket:
+    port: ${SOCKET_PORT:3001}
+  orders:
+    pay-deadline-hours: ${ORDER_PAY_DEADLINE_HOURS:24}
+  bid:
+    # kafka: API -> Kafka -> consumer (асинхрон, 202)
+    # direct: NestJS-тэй адил шууд DB транзакц (харьцуулах суурь хувилбар)
+    mode: ${BID_MODE:kafka}
+    topic: ${BID_TOPIC:auction.bids}
+    topic-partitions: ${BID_TOPIC_PARTITIONS:12}
+    topic-replication: ${BID_TOPIC_REPLICATION:1}
+    consumer-concurrency: ${BID_CONSUMER_CONCURRENCY:12}
+    produce-timeout-ms: ${BID_PRODUCE_TIMEOUT_MS:5000}
+  scheduler:
+    tick-ms: ${SCHEDULER_TICK_MS:250}
+    # Kafka горимд: хаагдахаас өмнө partition-ийн lag 0 болохыг дээд тал нь хэр удаан хүлээх
+    max-finalize-wait-ms: ${MAX_FINALIZE_WAIT_MS:30000}

@@ -8,7 +8,7 @@ import 'api_client.dart';
 /// (wallet_updated, outbid, auction_won) мөн ирнэ.
 final socketProvider = Provider<io.Socket>((ref) {
   final socket = io.io(
-    AppConfig.apiBaseUrl,
+    AppConfig.socketUrl,
     io.OptionBuilder()
         .setTransports(['websocket'])
         .disableAutoConnect()
