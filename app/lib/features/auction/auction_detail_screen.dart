@@ -2,12 +2,15 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/api/socket_client.dart';
 import '../../core/models.dart';
+import '../../core/router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 
@@ -65,13 +68,23 @@ class AuctionDetailController
     socket.on('bid_placed', onBid);
     socket.on('auction_extended', onExtended);
     socket.on('auction_ended', onEnded);
-    socket.emit('join_auction', {'auctionId': auctionId});
+    // Нэвтрээгүй зочин (landing-оос орж ирсэн) ч realtime үнэ/хугацааг
+    // харна: token-гүй холболт нээлттэй room-д орж чадна. Холбогдсоны
+    // дараа join илгээнэ — холбогдохоос өмнө emit хийвэл алдагдана.
+    void onConnect(dynamic _) => socket.emit('join_auction', {'auctionId': auctionId});
+    socket.on('connect', onConnect);
+    if (socket.connected) {
+      socket.emit('join_auction', {'auctionId': auctionId});
+    } else {
+      socket.connect();
+    }
 
     ref.onDispose(() {
       socket.emit('leave_auction', {'auctionId': auctionId});
       socket.off('bid_placed', onBid);
       socket.off('auction_extended', onExtended);
       socket.off('auction_ended', onEnded);
+      socket.off('connect', onConnect);
     });
 
     final res = await ref.read(dioProvider).get('/auctions/$auctionId');
@@ -112,6 +125,12 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _bidding = false;
 
+  /// Зочин "Санал өгөх" дарвал нэвтрэх дэлгэц рүү — нэвтэрсний дараа яг энэ
+  /// auction руугаа буцна.
+  void _requireLogin() {
+    context.push(loginLocation(next: '/auctions/${widget.auctionId}'));
+  }
+
   Future<void> _bid() async {
     setState(() => _bidding = true);
     try {
@@ -149,7 +168,9 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
             final ended = a.status == 'ended' || a.status == 'settled';
             final iWon = ended && me != null && a.lastBidder?.id == me.id;
 
-            return CustomScrollView(
+            return PageFrame(
+              maxWidth: 760,
+              child: CustomScrollView(
               slivers: [
                 SliverAppBar(
                   expandedHeight: 260,
@@ -158,7 +179,10 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                   leading: Padding(
                     padding: const EdgeInsets.all(8),
                     child: AnimatedPressable(
-                      onPressed: () => Navigator.of(context).maybePop(),
+                      // Web дээр холбоосоор шууд орж ирсэн бол буцах
+                      // түүх байхгүй — нүүр/landing руу очно.
+                      onPressed: () =>
+                          context.canPop() ? context.pop() : context.go('/'),
                       child: const GlassChip(
                         padding: EdgeInsets.all(9),
                         child: Icon(LucideIcons.chevronLeft,
@@ -293,6 +317,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                   ),
                 ),
               ],
+              ),
             );
           },
         ),
@@ -309,19 +334,30 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Builder(builder: (context) {
-                  final a = detailAsync.valueOrNull!;
-                  final mine = me != null && a.lastBidder?.id == me.id;
-                  return PrimaryButton(
-                    label: mine ? 'Та тэргүүлж байна' : 'Санал өгөх',
-                    sublabel: mine
-                        ? 'Өөр хүн санал өгөхийг хүлээнэ үү'
-                        : '1 token · үнэ +${formatMnt(a.increment)}',
-                    icon: mine ? LucideIcons.crown : LucideIcons.gavel,
-                    loading: _bidding,
-                    onPressed: mine ? null : _bid,
-                  );
-                }),
+                child: PageFrame(
+                  maxWidth: 760,
+                  child: Builder(builder: (context) {
+                    final a = detailAsync.valueOrNull!;
+                    if (me == null) {
+                      return PrimaryButton(
+                        label: 'Санал өгөхийн тулд нэвтрэх',
+                        sublabel: '1 token · үнэ +${formatMnt(a.increment)}',
+                        icon: LucideIcons.logIn,
+                        onPressed: _requireLogin,
+                      );
+                    }
+                    final mine = a.lastBidder?.id == me.id;
+                    return PrimaryButton(
+                      label: mine ? 'Та тэргүүлж байна' : 'Санал өгөх',
+                      sublabel: mine
+                          ? 'Өөр хүн санал өгөхийг хүлээнэ үү'
+                          : '1 token · үнэ +${formatMnt(a.increment)}',
+                      icon: mine ? LucideIcons.crown : LucideIcons.gavel,
+                      loading: _bidding,
+                      onPressed: mine ? null : _bid,
+                    );
+                  }),
+                ),
               ),
                 ),
               ),

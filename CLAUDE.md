@@ -33,10 +33,14 @@ Dev горим: `OTP_PROVIDER=mock` (OTP код консолд хэвлэгдэ�
 
 ```bash
 flutter run --dart-define=API_URL=http://10.0.2.2:3000   # emulator; бодит төхөөрөмжид LAN IP
+flutter run -d chrome                                     # web — landing page + бүх дэлгэц
+flutter build web --release                               # build/web → static hosting (SPA fallback хэрэгтэй)
 flutter test
 ```
 
-`API_URL` өгөхгүй бол default нь `http://10.0.2.2:3000` ([config.dart](app/lib/core/config.dart)).
+`API_URL` өгөхгүй бол default нь Android-д `http://10.0.2.2:3000`, web-д `http://localhost:3000` ([config.dart](app/lib/core/config.dart)).
+
+Web = апп нэг код. Нэвтрээгүй үед `/` нь landing ([landing_screen.dart](app/lib/features/landing/landing_screen.dart)), `/auctions/:id` нээлттэй; нэвтрэлт шаардах замууд `?next=`-тэй login руу redirect хийгдэнэ. Responsive дүрэм [responsive.dart](app/lib/shared/responsive.dart): ≥900px дээр дээд нав, grid. Token web дээр localStorage ([core/storage/](app/lib/core/storage/)).
 
 ## Архитектур
 

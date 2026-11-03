@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 
 class _Faq {
@@ -92,7 +93,9 @@ class HelpScreen extends StatelessWidget {
       body: AppBackground(
         child: SafeArea(
           top: false,
-          child: ListView(
+          child: PageFrame(
+            maxWidth: 720,
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
             children: [
               Text(
@@ -151,6 +154,7 @@ class HelpScreen extends StatelessWidget {
                 onTap: () => context.push('/content/privacy'),
               ),
             ],
+          ),
           ),
         ),
       ),

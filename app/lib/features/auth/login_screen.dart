@@ -13,7 +13,10 @@ import '../../shared/widgets.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.next});
+
+  /// Нэвтэрсний дараа очих зам (жиш. санал өгөх гэж байсан auction).
+  final String? next;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -86,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref
           .read(authProvider.notifier)
           .login(_phone.text.trim(), _password.text);
-      if (mounted) context.go('/');
+      if (mounted) context.go(_target);
     } catch (e) {
       if (!mounted) return;
       final status = e is DioException ? e.response?.statusCode : null;
@@ -103,6 +106,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       });
     }
   }
+
+  String get _target =>
+      (widget.next != null && widget.next!.startsWith('/')) ? widget.next! : '/';
+
+  /// Бүртгүүлэх/мартсан руу шилжихдээ `next`-ийг хадгална.
+  String _withNext(String path) => widget.next == null
+      ? path
+      : Uri(path: path, queryParameters: {'next': widget.next}).toString();
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +221,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               TextButton(
                                 onPressed: _loading
                                     ? null
-                                    : () => context.push('/auth/register'),
+                                    : () => context.push(
+                                        _withNext('/auth/register')),
                                 child: const Text(
                                   'Бүртгүүлэх',
                                   style: TextStyle(

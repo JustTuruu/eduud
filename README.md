@@ -7,7 +7,7 @@ naad.win загварын penny-auction платформ: санал (bid) бү�
 ```
 duud/
   backend-spring/ — Spring Boot + Kafka API (auth, wallet, auction engine, admin, Socket.IO)
-  app/       — Flutter апп (хэрэглэгч + админ роль)   ← дараагийн үе шат
+  app/       — Flutter апп + web (нэг код: iOS/Android апп, landing page бүхий web сайт)
 ```
 
 ## Архитектур
@@ -17,6 +17,18 @@ duud/
 - **Файл**: Cloudflare R2 (presigned upload)
 - **Төлбөр**: wire.mn (цэнэглэлт + ялагчийн төлбөр, webhook)
 - **OTP**: verify.mn (бүртгэл, нууц үг сэргээх)
+
+## Web (landing page)
+
+Flutter апп web дээр мөн ажиллана — `/` нь нэвтрээгүй хэрэглэгчид landing page,
+дуудлага худалдаануудыг шууд үзэж, нэвтрээд санал өгнө. Апп, web **яг ижил** үйлдэлтэй.
+Дэлгэрэнгүйг [app/README.md](app/README.md) → «Web» хэсгээс.
+
+```bash
+cd app
+flutter run -d chrome                     # dev
+flutter build web --release --dart-define=API_URL=https://<api> --dart-define=SOCKET_URL=https://<socket>
+```
 
 ## Backend ажиллуулах
 

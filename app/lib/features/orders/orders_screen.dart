@@ -6,6 +6,7 @@ import '../../core/api/api_client.dart';
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/invoice_sheet.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 
 final ordersProvider = FutureProvider<List<OrderItem>>((ref) async {
@@ -31,7 +32,9 @@ class OrdersScreen extends ConsumerWidget {
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
-          child: Column(
+          child: PageFrame(
+            maxWidth: 720,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -77,6 +80,7 @@ class OrdersScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

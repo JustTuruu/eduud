@@ -6,6 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/api/api_client.dart';
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/app_nav_bar.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 
@@ -34,40 +36,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final display = Theme.of(context).textTheme.displayMedium;
 
+    // Өргөн дэлгэц дээр wordmark/үлдэгдэл дээд навигацид байдаг тул давхардуулахгүй.
+    final wide = Breakpoints.isWide(context);
+
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
-          child: Column(
+          child: PageFrame(
+            maxWidth: 1120,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Wordmark + balance
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text.rich(TextSpan(children: [
-                      TextSpan(text: 'E-', style: display?.copyWith(fontSize: 19)),
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.baseline,
-                        baseline: TextBaseline.alphabetic,
-                        child: ShaderMask(
-                          shaderCallback: (b) =>
-                              AppColors.opalGradient.createShader(b),
-                          child: Text('DUUD',
-                              style: display?.copyWith(
-                                  fontSize: 19, color: Colors.white)),
+              if (!wide)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Wordmark(size: 19, display: display),
+                      if (user != null)
+                        TokenBalanceChip(
+                          balance: user.balance,
+                          onTap: () => context.go('/wallet'),
                         ),
-                      ),
-                    ])),
-                    if (user != null)
-                      TokenBalanceChip(
-                        balance: user.balance,
-                        onTap: () => context.go('/wallet'),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               if (user != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
@@ -92,10 +87,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _SegmentedTabs(
-                  labels: _labels,
-                  index: _tab,
-                  onChanged: (i) => setState(() => _tab = i),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: _SegmentedTabs(
+                    labels: _labels,
+                    index: _tab,
+                    onChanged: (i) => setState(() => _tab = i),
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
@@ -111,6 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -234,16 +233,57 @@ class _AuctionList extends ConsumerWidget {
                       : null,
                 ),
               ])
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                itemCount: auctions.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, i) => _StaggerIn(
-                  index: i,
-                  child: _AuctionCard(auction: auctions[i]),
-                ),
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 100),
+                children: [
+                  AuctionGrid(
+                    auctions: auctions,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ],
               ),
       ),
+    );
+  }
+}
+
+/// Auction картуудыг дэлгэцийн өргөнөөс хамааран 1/2/3 баганаар
+/// байрлуулна. Scroll хийдэггүй — эцэг ListView/CustomScrollView дотор
+/// хэрэглэнэ. Нүүр болон landing хоёулаа үүнийг ашигладаг тул карт,
+/// анимаци, товшилт бүгд ижил.
+class AuctionGrid extends StatelessWidget {
+  const AuctionGrid({
+    super.key,
+    required this.auctions,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final List<AuctionSummary> auctions;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: LayoutBuilder(builder: (context, c) {
+        final cols = Breakpoints.gridColumns(c.maxWidth);
+        const gap = 16.0;
+        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (var i = 0; i < auctions.length; i++)
+              SizedBox(
+                width: w,
+                child: _StaggerIn(
+                  index: i,
+                  child: AuctionCard(auction: auctions[i]),
+                ),
+              ),
+          ],
+        );
+      }),
     );
   }
 }
@@ -271,8 +311,8 @@ class _StaggerIn extends StatelessWidget {
   }
 }
 
-class _AuctionCard extends StatelessWidget {
-  const _AuctionCard({required this.auction});
+class AuctionCard extends StatelessWidget {
+  const AuctionCard({super.key, required this.auction});
 
   final AuctionSummary auction;
 

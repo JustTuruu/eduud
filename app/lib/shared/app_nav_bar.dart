@@ -259,3 +259,139 @@ class _AnimatedShellBodyState extends State<AnimatedShellBody>
     );
   }
 }
+
+/// Өргөн дэлгэц (web/desktop) дээрх дээд навигац — доод навигацтай яг ижил
+/// 4 чиглэл, нэмээд wordmark болон token үлдэгдэл. Хоёр нав нэг
+/// [NavDestination] жагсаалтыг хуваалцдаг тул үйлдэл нь салахгүй.
+class AppTopNav extends StatelessWidget {
+  const AppTopNav({
+    super.key,
+    required this.destinations,
+    required this.currentIndex,
+    required this.onSelected,
+    this.trailing,
+  });
+
+  final List<NavDestination> destinations;
+  final int currentIndex;
+  final ValueChanged<int> onSelected;
+
+  /// Баруун талд — жиш. token үлдэгдлийн chip.
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final display = Theme.of(context).textTheme.displayMedium;
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.72),
+            border: const Border(bottom: BorderSide(color: AppColors.border)),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    children: [
+                      Wordmark(size: 20, display: display),
+                      const SizedBox(width: 36),
+                      ...List.generate(destinations.length, (i) {
+                        final d = destinations[i];
+                        final selected = i == currentIndex;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: AnimatedPressable(
+                            onPressed: () => onSelected(i),
+                            scale: 0.96,
+                            child: AnimatedContainer(
+                              duration: AppMotion.base,
+                              curve: AppMotion.enter,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: selected ? AppColors.ctaGradient : null,
+                                color: selected ? null : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                                boxShadow: selected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.sapphire
+                                              .withValues(alpha: 0.35),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(children: [
+                                Icon(d.icon,
+                                    size: 17,
+                                    color:
+                                        selected ? Colors.white : AppColors.muted),
+                                const SizedBox(width: 8),
+                                Text(
+                                  d.label,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: selected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color:
+                                        selected ? Colors.white : AppColors.muted,
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          ),
+                        );
+                      }),
+                      const Spacer(),
+                      if (trailing != null) trailing!,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// E-DUUD wordmark — нүүр, нэвтрэх, landing, дээд нав бүгд нэг хэлбэртэй.
+class Wordmark extends StatelessWidget {
+  const Wordmark({super.key, this.size = 19, this.display, this.onTap});
+
+  final double size;
+  final TextStyle? display;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = (display ?? Theme.of(context).textTheme.displayMedium)
+        ?.copyWith(fontSize: size);
+    final mark = Text.rich(TextSpan(children: [
+      TextSpan(text: 'E-', style: style),
+      WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: ShaderMask(
+          shaderCallback: (b) => AppColors.opalGradient.createShader(b),
+          child: Text('DUUD', style: style?.copyWith(color: Colors.white)),
+        ),
+      ),
+    ]));
+    if (onTap == null) return mark;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onTap: onTap, child: mark),
+    );
+  }
+}

@@ -10,6 +10,7 @@ import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 
 final myFeedbackProvider = FutureProvider<List<FeedbackItem>>((ref) async {
@@ -148,7 +149,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       body: AppBackground(
         child: SafeArea(
           top: false,
-          child: ListView(
+          child: PageFrame(
+            maxWidth: 720,
+            child: ListView(
             padding: EdgeInsets.fromLTRB(20, 8, 20, 32 + viewInsets),
             children: [
               Text(
@@ -255,6 +258,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                       ),
               ),
             ],
+          ),
           ),
         ),
       ),

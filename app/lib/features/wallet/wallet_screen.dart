@@ -6,6 +6,7 @@ import '../../core/api/api_client.dart';
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/invoice_sheet.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 
@@ -35,7 +36,9 @@ class WalletScreen extends ConsumerWidget {
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
-          child: RefreshIndicator(
+          child: PageFrame(
+            maxWidth: 720,
+            child: RefreshIndicator(
             color: AppColors.sapphire,
             backgroundColor: AppColors.surfaceHi,
             onRefresh: () async {
@@ -165,6 +168,7 @@ class WalletScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

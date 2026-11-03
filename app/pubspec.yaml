@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Web: URL-д # байхгүй path strategy (usePathUrlStrategy)
+  flutter_web_plugins:
+    sdk: flutter
+  # Web: token-ийг localStorage-д хадгалах (secure storage web дээр https шаарддаг)
+  web: ^1.1.0
   flutter_riverpod: ^2.6.1
   dio: ^5.7.0
   go_router: ^14.6.2

@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/avatars.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
+import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 
@@ -24,7 +25,9 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
-          child: ListView(
+          child: PageFrame(
+            maxWidth: 720,
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 24, 18, 110),
             children: [
               _Header(user: user),
@@ -90,6 +93,7 @@ class ProfileScreen extends ConsumerWidget {
                     style: text.bodySmall?.copyWith(fontSize: 11.5)),
               ),
             ],
+          ),
           ),
         ),
       ),

@@ -6,7 +6,7 @@
     "background_color": "#060A13",
     "theme_color": "#060A13",
     "description": "E-Duud — бага үнийн дуудлага худалдаа",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

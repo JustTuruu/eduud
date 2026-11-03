@@ -826,12 +826,17 @@ class _PrimaryButtonState extends State<PrimaryButton>
                           ),
                           const SizedBox(width: 10),
                         ],
-                        Column(
+                        // Flexible: нарийн товч (web grid, landing CTA) дээр
+                        // урт шошго overflow хийхгүй, ellipsis болно.
+                        Flexible(
+                          child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               widget.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
@@ -849,6 +854,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
                                 ),
                               ),
                           ],
+                        ),
                         ),
                       ],
                     ),

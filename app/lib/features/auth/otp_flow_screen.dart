@@ -16,9 +16,12 @@ import 'auth_controller.dart';
 /// Бүртгүүлэх (purpose=register) ба нууц үг сэргээх (purpose=reset) нэг урсгал:
 /// 1. дугаар → OTP илгээх, 2. код шалгах → ticket, 3. нэр/нууц үг.
 class OtpFlowScreen extends ConsumerStatefulWidget {
-  const OtpFlowScreen({super.key, required this.purpose});
+  const OtpFlowScreen({super.key, required this.purpose, this.next});
 
   final String purpose; // register | reset
+
+  /// Бүртгэл амжилттай бол очих зам (landing/auction-оос ирсэн бол).
+  final String? next;
 
   @override
   ConsumerState<OtpFlowScreen> createState() => _OtpFlowScreenState();
@@ -198,7 +201,9 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         await ref
             .read(authProvider.notifier)
             .register(_ticket!, _name.text.trim(), _password.text);
-        if (mounted) context.go('/');
+        if (!mounted) return;
+        final next = widget.next;
+        context.go(next != null && next.startsWith('/') ? next : '/');
       } else {
         await ref
             .read(authProvider.notifier)
@@ -226,8 +231,11 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
           _codeError = null;
         }
       });
-    } else {
+    } else if (context.canPop()) {
       context.pop();
+    } else {
+      // Web дээр URL-аар шууд орж ирсэн — буцах түүх байхгүй.
+      context.go('/');
     }
   }
 
