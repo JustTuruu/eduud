@@ -1,0 +1,9 @@
+common/auth/AuthAnnotations.java 9 MissingStaticMethodInNonInstantiatableClass 3 - Class cannot be instantiated and does not provide any static methods or fields
+payments/PaymentsController.java 42 UseLocaleWithCaseConversions 3 - When doing a String.toLowerCase()/toUpperCase() call, use a Locale
+payments/PaymentsController.java 43 LiteralsFirstInComparisons 3 - Position literals first in String comparisons
+payments/PaymentsController.java 43 LiteralsFirstInComparisons 3 - Position literals first in String comparisons
+payments/PaymentsService.java 102 UnnecessaryFullyQualifiedName 4 - Unnecessary qualifier 'java.util': 'Map' is already in scope because it is imported in this file
+realtime/RealtimeGateway.java 53 AvoidUsingHardCodedIP 3 - Do not hard code the IP address ${variableName}
+seed/SeedRunner.java 55 DoNotTerminateVM 3 - System.exit() should not be used in J2EE/JEE apps
+seed/SeedRunner.java 152 SystemPrintln 2 - Usage of System.out/err
+seed/SeedRunner.java 153 SystemPrintln 2 - Usage of System.out/err

@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!-- E-Duud PMD дүрмийн багц: ашиглагдаагүй код, алдаанд өртөмтгий хэв маяг, аюулгүй байдал.
+     Стилийн (форматын) дүрмийг зориудаар оруулаагүй. -->
+<ruleset name="eduud" xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>E-Duud backend — static analysis</description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="JUnitTestContainsTooManyAsserts"/>
+    <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+    <exclude name="JUnitTestsShouldIncludeAssert"/>
+    <exclude name="GuardLogStatement"/>
+    <exclude name="LooseCoupling"/>
+    <exclude name="UseVarargs"/>
+    <exclude name="ForLoopCanBeForeach"/>
+    <exclude name="PreserveStackTrace"/>
+    <exclude name="AvoidReassigningParameters"/>
+    <exclude name="AvoidReassigningLoopVariables"/>
+    <exclude name="OneDeclarationPerLine"/>
+    <exclude name="UnitTestShouldIncludeAssert"/>
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+    <exclude name="UnitTestAssertionsShouldIncludeMessage"/>
+  </rule>
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <exclude name="BeanMembersShouldSerialize"/>
+    <exclude name="NullAssignment"/>
+    <exclude name="MissingSerialVersionUID"/>
+    <exclude name="DataflowAnomalyAnalysis"/>
+    <exclude name="AvoidDuplicateLiterals"/>
+    <exclude name="ReturnEmptyCollectionRatherThanNull"/>
+    <exclude name="AssignmentInOperand"/>
+    <exclude name="CloseResource"/>
+    <exclude name="ImplicitSwitchFallThrough"/>
+    <exclude name="TestClassWithoutTestCases"/>
+    <exclude name="UseProperClassLoader"/>
+  </rule>
+  <rule ref="category/java/security.xml"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/UselessOverridingMethod"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryReturn"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName"/>
+  <rule ref="category/java/codestyle.xml/UselessParentheses"/>
+  <rule ref="category/java/multithreading.xml/AvoidThreadGroup"/>
+  <rule ref="category/java/performance.xml/UselessStringValueOf"/>
+  <rule ref="category/java/performance.xml/StringInstantiation"/>
+</ruleset>

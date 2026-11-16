@@ -6,6 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /** NestJS-ийн @Public / @Roles / @CurrentUser decorator-уудын Java хувилбар. */
+// PMD: зөвхөн nested annotation-уудыг агуулах класс тул static гишүүнгүй байх нь зөв
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
 public final class AuthAnnotations {
   private AuthAnnotations() {}
 

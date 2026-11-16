@@ -99,7 +99,7 @@ public class PaymentsService {
       if (result.newBalance() != null) {
         realtime.emitToUser(result.userId(), "wallet_updated", Map.of("balance", result.newBalance()));
       } else {
-        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("orderId", result.orderId());
         realtime.emitToUser(result.userId(), "order_paid", m);
       }

@@ -1,0 +1,16 @@
+Starting filesystem walk for root: /
+Scanned /Users/justturuu/Documents/diploma/duud/backend-spring/pom.xml file and found 17 packages
+Scanned /Users/justturuu/Documents/diploma/duud/app/pubspec.lock file and found 75 packages
+End status: 0 dirs visited, 2 inodes visited, 2 Extract calls, 2.977708ms elapsed, 2.977ms wall time
+Filtered 11 local/unscannable package/s from the scan.
+Warning: enricher transitivedependency/pomxml may be risky when run on untrusted artifacts. Please ensure you trust the source code and artifacts.
+
+Total 1 package affected by 2 known vulnerabilities (2 Critical, 0 High, 0 Medium, 0 Low, 0 Unknown) from 1 ecosystem.
+2 vulnerabilities can be fixed.
+
++-------------------------------------+------+-----------+-----------------------------------+---------+---------------+------------------------+
+| OSV URL                             | CVSS | ECOSYSTEM | PACKAGE                           | VERSION | FIXED VERSION | SOURCE                 |
++-------------------------------------+------+-----------+-----------------------------------+---------+---------------+------------------------+
+| https://osv.dev/GHSA-j9f9-w8pj-32f8 | 9.8  | Maven     | org.springframework:spring-webmvc | 6.2.19  | 7.0.9         | backend-spring/pom.xml |
+| https://osv.dev/GHSA-pc63-qcmh-9cmg | 9.8  | Maven     | org.springframework:spring-webmvc | 6.2.19  | 7.0.9         | backend-spring/pom.xml |
++-------------------------------------+------+-----------+-----------------------------------+---------+---------------+------------------------+

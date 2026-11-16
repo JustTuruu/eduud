@@ -1,0 +1,12 @@
+# OSV-Scanner: үлдсэн, ашиглах боломжгүй (not exploitable) эмзэг байдлын тайлбар
+# spring-webmvc 6.2.19 — 6.2.x салбарын хамгийн сүүлийн хувилбар; засвар зөвхөн 7.0.9 (Spring Boot 4) дээр.
+
+[[IgnoredVulns]]
+id = "GHSA-j9f9-w8pj-32f8"
+ignoreUntil = 2027-03-01
+reason = "SSE fragment rendering (ModelAndView + SSE) — төсөл SSE/fragment view ашигладаггүй. Засвар зөвхөн Spring 7 (Boot 4)-д; Boot 4 руу шилжихэд дахин үнэлнэ."
+
+[[IgnoredVulns]]
+id = "GHSA-pc63-qcmh-9cmg"
+ignoreUntil = 2027-03-01
+reason = "XsltView — төсөл REST JSON API бөгөөд view resolver/XSLT ашигладаггүй. Засвар зөвхөн Spring 7 (Boot 4)-д."

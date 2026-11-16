@@ -20,6 +20,9 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
+      # Static analysis (PMD) — зөрчил байвал build унана
+      - name: Lint (PMD)
+        run: mvn -B pmd:check
       # Unit test нь Postgres/Kafka шаардахгүй
       - name: Test
         run: mvn -B test
@@ -43,4 +46,20 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Lint (flutter analyze)
+        run: flutter analyze
       - run: flutter test
+
+  dependency-scan:
+    name: Dependency scan (OSV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Үлдсэн, ашиглагдах боломжгүй CVE-г osv-scanner.toml-д тайлбартай хамт ignore хийсэн.
+      # Шинэ HIGH/CRITICAL гарвал job унана.
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.7.1
+        with:
+          scan-args: |-
+            --lockfile=backend-spring/pom.xml
+            --lockfile=app/pubspec.lock
+            --config=osv-scanner.toml

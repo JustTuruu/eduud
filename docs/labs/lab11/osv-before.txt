@@ -1,0 +1,63 @@
+Starting filesystem walk for root: /
+Scanned /Users/justturuu/Documents/diploma/duud/backend-spring/pom.xml file and found 17 packages
+Scanned /Users/justturuu/Documents/diploma/duud/app/pubspec.lock file and found 75 packages
+End status: 0 dirs visited, 2 inodes visited, 2 Extract calls, 1.786375ms elapsed, 1.786ms wall time
+Filtered 11 local/unscannable package/s from the scan.
+Warning: enricher transitivedependency/pomxml may be risky when run on untrusted artifacts. Please ensure you trust the source code and artifacts.
+
+Total 13 packages affected by 49 known vulnerabilities (10 Critical, 17 High, 21 Medium, 1 Low, 0 Unknown) from 1 ecosystem.
+49 vulnerabilities can be fixed.
+
++-------------------------------------+------+-----------+---------------------------------------------+---------------+---------------+------------------------+
+| OSV URL                             | CVSS | ECOSYSTEM | PACKAGE                                     | VERSION       | FIXED VERSION | SOURCE                 |
++-------------------------------------+------+-----------+---------------------------------------------+---------------+---------------+------------------------+
+| https://osv.dev/GHSA-574f-3g2m-x479 | 9.3  | Maven     | org.bouncycastle:bcprov-jdk18on             | 1.80          | 1.80.2        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-9pwp-9qqc-pr26 | 9.3  | Maven     | org.bouncycastle:bcprov-jdk18on             | 1.80          | 1.85          | backend-spring/pom.xml |
+| https://osv.dev/GHSA-c3fc-8qff-9hwx | 6.5  | Maven     | org.bouncycastle:bcprov-jdk18on             | 1.80          | 1.80.2        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-p93r-85wp-75v3 | 8.9  | Maven     | org.bouncycastle:bcprov-jdk18on             | 1.80          | 1.80.2        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-qp49-qgx5-5m26 | 8.7  | Maven     | org.bouncycastle:bcprov-jdk18on             | 1.80          | 1.85          | backend-spring/pom.xml |
+| https://osv.dev/GHSA-343h-94h5-c4wr | 3.7  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.4        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-4v53-57pg-c464 | 5.3  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.2        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-6cx8-rjf8-pr8g | 5.3  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.2        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-gm45-99xc-r7wv | 5.3  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.4        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-mcr4-qmvw-px4g | 7.3  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.4        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-xx22-p4ch-683r | 6.5  | Maven     | at.yawk.lz4:lz4-java                        | 1.10.1        | 1.11.1        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-7hhh-6rmp-j9qf | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-core     | 2.21.4        | 2.21.7        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-p6pp-m3f8-5c89 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-core     | 2.21.4        | 2.21.7        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-5gvw-p9qm-jgwh | 6.5  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.5        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-5jmj-h7xm-6q6v | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.5        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-cxp5-3px4-pw24 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.7        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-gx83-3vf8-gh7j | 5.6  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.6        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-mhm7-754m-9p8w | 6.5  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.5        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-q4xh-88c3-wmh7 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.6        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-vvgp-rfg2-7rr6 | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.5        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-wjgm-6hv5-3cvf | 5.3  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.6        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-wv8q-qhhj-9h54 | 7.5  | Maven     | com.fasterxml.jackson.core:jackson-databind | 2.21.4        | 2.21.7        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-558v-64gr-wgg4 | 8.7  | Maven     | io.netty:netty-codec                        | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-4mp9-239f-g9hg | 6.3  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-6cqp-g7gg-8hr5 | 6.5  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-6jqx-86gh-f27w | 7.5  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-8c42-7qj2-3j46 | 6.5  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.137.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-gcjf-9mgh-3p7g | 5.7  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-jppx-w49h-x2qq | 8.7  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-mvh2-crg5-v77c | 7.5  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-q4f6-jm68-57ww | 6.9  | Maven     | io.netty:netty-codec-http                   | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-93wv-jw9v-4972 | 7.5  | Maven     | io.netty:netty-codec-http2                  | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-c69g-56f8-xwqj | 6.9  | Maven     | io.netty:netty-codec-http2                  | 4.1.135.Final | 4.1.136.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-c4c3-7fpv-j4q5 | 9.1  | Maven     | io.netty:netty-handler                      | 4.1.135.Final | 4.1.137.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-fccg-mwvh-qqg4 | 6.9  | Maven     | io.netty:netty-handler                      | 4.1.135.Final | 4.1.137.Final | backend-spring/pom.xml |
+| https://osv.dev/GHSA-qv9r-c865-cp47 | 6.3  | Maven     | org.apache.logging.log4j:log4j-api          | 2.24.3        | 2.25.5        | backend-spring/pom.xml |
+| https://osv.dev/GHSA-5v3h-fjv2-54fg | 6.5  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.56       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-9xv2-5v5q-p794 | 9.8  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.58       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-f525-44xv-f2qj | 9.8  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.59       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-gcx9-497g-6cp6 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.58       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-h3x4-894j-xpx5 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.58       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-h792-v28v-ppgr | 7.3  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.56       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-mqg3-r7h5-24x4 | 9.1  | Maven     | org.apache.tomcat.embed:tomcat-embed-core   | 10.1.55       | 10.1.56       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-j92g-9f8w-j867 | 8.2  | Maven     | org.postgresql:postgresql                   | 42.7.11       | 42.7.12       | backend-spring/pom.xml |
+| https://osv.dev/GHSA-j9f9-w8pj-32f8 | 9.8  | Maven     | org.springframework:spring-webmvc           | 6.2.19        | 7.0.9         | backend-spring/pom.xml |
+| https://osv.dev/GHSA-pc63-qcmh-9cmg | 9.8  | Maven     | org.springframework:spring-webmvc           | 6.2.19        | 7.0.9         | backend-spring/pom.xml |
+| https://osv.dev/GHSA-gwq9-9ffj-mvrv | 7.5  | Maven     | org.xerial.snappy:snappy-java               | 1.1.10.5      | 1.1.10.9      | backend-spring/pom.xml |
+| https://osv.dev/GHSA-q233-g92q-qxp6 | 7.5  | Maven     | org.xerial.snappy:snappy-java               | 1.1.10.5      | 1.1.10.9      | backend-spring/pom.xml |
+| https://osv.dev/GHSA-xqrx-qh46-34m7 | 5.9  | Maven     | org.xerial.snappy:snappy-java               | 1.1.10.5      | 1.1.10.9      | backend-spring/pom.xml |
++-------------------------------------+------+-----------+---------------------------------------------+---------------+---------------+------------------------+

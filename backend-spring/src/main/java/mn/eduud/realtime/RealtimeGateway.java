@@ -50,7 +50,8 @@ public class RealtimeGateway {
   void start() {
     if (!enabled) return;
     Configuration config = new Configuration();
-    config.setHostname("0.0.0.0");
+    // Container дотор бүх интерфейс дээр сонсох шаардлагатай тул зориудаар 0.0.0.0
+    config.setHostname("0.0.0.0"); // NOPMD - AvoidUsingHardCodedIP
     config.setPort(port);
     config.setOrigin("*");
     config.setTransports(Transport.WEBSOCKET, Transport.POLLING);

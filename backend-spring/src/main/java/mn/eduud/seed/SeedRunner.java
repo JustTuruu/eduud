@@ -52,7 +52,8 @@ public class SeedRunner implements ApplicationRunner {
     if (loadtest) {
       seedLoadTest(intOpt(args, "users", 50), intOpt(args, "tokens", 20), intOpt(args, "auctions", 1));
     }
-    System.exit(SpringApplication.exit(ctx, () -> 0));
+    // Seed нь нэг удаагийн CLI ажил тул дуусмагц процессыг зогсооно
+    System.exit(SpringApplication.exit(ctx, () -> 0)); // NOPMD - DoNotTerminateVM
   }
 
   private static int intOpt(ApplicationArguments args, String name, int def) {
@@ -149,8 +150,9 @@ public class SeedRunner implements ApplicationRunner {
       ids.add(id);
     }
     log.info("Load test: {} хэрэглэгч ({} token), нууц үг {}", users, tokens, LOADTEST_PASSWORD);
-    System.out.println("LOADTEST_AUCTION_IDS=" + String.join(",", ids));
-    System.out.println("LOADTEST_INFO=" + Map.of("users", users, "phonePrefix", "90", "firstPhone", "90100000"));
+    // k6 скрипт stdout-оос уншдаг тул logger биш System.out хэрэглэнэ
+    System.out.println("LOADTEST_AUCTION_IDS=" + String.join(",", ids)); // NOPMD - SystemPrintln
+    System.out.println("LOADTEST_INFO=" + Map.of("users", users, "phonePrefix", "90", "firstPhone", "90100000")); // NOPMD - SystemPrintln
   }
 
   private static String env(String key, String def) {

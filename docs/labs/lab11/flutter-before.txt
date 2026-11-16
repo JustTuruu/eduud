@@ -1,0 +1,2 @@
+   info • Missing an 'await' for the 'Future' computed by this expression. Try adding an 'await' or wrapping the expression with 'unawaited' • lib/features/auction/auction_detail_screen.dart:104:37 • unawaited_futures
+   info • Local variables should be final. Try making the variable final • lib/features/auction/auction_detail_screen.dart:378:5 • prefer_final_locals

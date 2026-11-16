@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -101,7 +102,7 @@ class AuctionDetailController
   Future<void> placeBid() async {
     await ref.read(dioProvider).post('/auctions/$arg/bid');
     // Шинэ үнэ/хугацаа socket event-ээр ирнэ; balance-ыг профайлаас сэргээнэ
-    ref.read(authProvider.notifier).refreshProfile();
+    unawaited(ref.read(authProvider.notifier).refreshProfile());
   }
 
   Future<void> reload() async {
@@ -375,7 +376,7 @@ class _BidTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget tile = Container(
+    final Widget tile = Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
       decoration: BoxDecoration(
         color: AppColors.surface,

@@ -39,8 +39,8 @@ public class PaymentsController {
         body.hasNonNull("invoice_id")
             ? body.get("invoice_id").asText()
             : body.hasNonNull("invoiceId") ? body.get("invoiceId").asText() : body.path("id").asText(null);
-    String status = body.path("status").asText("").toUpperCase();
-    if (invoiceId != null && (status.equals("PAID") || status.equals("SUCCESS"))) {
+    String status = body.path("status").asText("").toUpperCase(java.util.Locale.ROOT);
+    if (invoiceId != null && ("PAID".equals(status) || "SUCCESS".equals(status))) {
       payments.settleByInvoiceId(invoiceId, body);
     }
     return Map.of("ok", true);
