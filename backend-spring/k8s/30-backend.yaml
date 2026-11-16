@@ -1,0 +1,114 @@
+# E-Duud Spring backend: REST API :3000, Socket.IO :3001.
+# Image нь minikube-ийн docker дотор build хийгдэнэ (imagePullPolicy: Never).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: eduud
+data:
+  DB_URL: jdbc:postgresql://postgres:5432/eduud
+  KAFKA_BOOTSTRAP: kafka:9092
+  BID_MODE: kafka
+  BID_TOPIC_PARTITIONS: "12"
+  BID_CONSUMER_CONCURRENCY: "12"
+  OTP_PROVIDER: mock
+  WIRE_MODE: test
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: eduud
+type: Opaque
+stringData:
+  DB_USER: eduud
+  DB_PASSWORD: eduud
+  # Dev утга — бодит орчинд заавал солих (≥ 32 тэмдэгт)
+  JWT_ACCESS_SECRET: minikube-dev-access-secret-change-me-0123456789abcdef
+  JWT_REFRESH_SECRET: minikube-dev-refresh-secret-change-me-0123456789abcdef
+  R2_ACCOUNT_ID: ""
+  R2_ACCESS_KEY_ID: ""
+  R2_SECRET_ACCESS_KEY: ""
+  WIRE_API_KEY: ""
+  WIRE_WEBHOOK_SECRET: ""
+  VERIFYMN_API_KEY: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: eduud
+spec:
+  type: NodePort
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      nodePort: 30000
+    - name: socket
+      port: 3001
+      targetPort: 3001
+      nodePort: 30001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: eduud
+spec:
+  # Анхаар: 1-ээс олон replica болгохоос өмнө Socket.IO room-ууд pod хооронд
+  # хуваалцагдахгүй (netty-socketio in-memory) гэдгийг анхаарна.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: /actuator/prometheus
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        # Postgres, Kafka бэлэн болтол хүлээнэ — эс бөгөөс эхний асаалт CrashLoop болно
+        - name: wait-deps
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres 5432; do echo "postgres хүлээж байна"; sleep 2; done
+              until nc -z kafka 9092; do echo "kafka хүлээж байна"; sleep 2; done
+      containers:
+        - name: backend
+          image: eduud-backend:local
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: socket
+              containerPort: 3001
+          startupProbe:
+            httpGet: { path: /actuator/health, port: http }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: http }
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 1Gi }

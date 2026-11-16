@@ -62,6 +62,25 @@ Direct горим: `BID_MODE=direct java -jar target/eduud-backend-spring-0.1.0.
 > Анхаар: апп ажиллаж байх үед `mvn package` хийж jar-ыг солих хэрэггүй — эхлээд
 > зогсооно.
 
+### Minikube (Kubernetes)
+
+`k8s/` дотор Postgres, Kafka (KRaft), backend, seed Job-ийн manifest бий.
+
+```bash
+brew install minikube
+./k8s/minikube.sh          # minikube асааж, image build хийж, deploy + seed
+./k8s/minikube.sh build    # код өөрчилсний дараа: image дахин build + backend restart
+./k8s/minikube.sh down     # eduud namespace-ийг устгана (DB өгөгдөл мөн устна)
+
+kubectl -n eduud get pods
+kubectl -n eduud logs -f deploy/backend
+kubectl -n eduud port-forward svc/backend 3000:3000 3001:3001   # → localhost:3000 / :3001
+```
+
+macOS (docker driver) дээр `minikube ip`-ийн NodePort (30000/30001) руу шууд хандах
+боломжгүй тул `port-forward` ашиглана. Backend нь 1 replica — Socket.IO room нь pod-ын
+санах ойд байдаг тул олон replica болгоход нэмэлт ажил хэрэгтэй.
+
 ### Flutter
 
 Socket.IO нь тусдаа портон (3001) дээр ажилладаг (netty-socketio):

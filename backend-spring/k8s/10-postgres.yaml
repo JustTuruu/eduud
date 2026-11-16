@@ -1,0 +1,73 @@
+# PostgreSQL 16 — нэг replica-тай StatefulSet, өгөгдөл PVC-д хадгалагдана
+# (minikube-ийн default StorageClass `standard` автоматаар volume үүсгэнэ).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  namespace: eduud
+type: Opaque
+stringData:
+  POSTGRES_DB: eduud
+  POSTGRES_USER: eduud
+  POSTGRES_PASSWORD: eduud
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: eduud
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: pg
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: eduud
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          args: ["-c", "max_connections=200"]
+          envFrom:
+            - secretRef:
+                name: postgres
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: pg
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "eduud"]
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
