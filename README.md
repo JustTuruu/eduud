@@ -47,14 +47,14 @@ Dev горимд `OTP_PROVIDER=mock` (код консолд хэвлэгдэнэ
 
 ### Гадны бүртгэлүүд (эзэмшигч хийх)
 
-| Үйлчилгээ | Юунд | Хаана |
-|---|---|---|
-| Supabase | Postgres DB | supabase.com — project үүсгээд Session/Transaction pooler URL-уудыг `.env`-д |
-| Railway / Render | API hosting | GitHub repo холбоод deploy (`mvn package`, `java -jar target/eduud-backend-spring-0.1.0.jar`; Kafka шаардлагатай) |
-| Cloudflare R2 | Зураг хадгалалт | R2 bucket + API token → `.env` |
-| wire.mn | Төлбөр | Merchant бүртгэл (KYC) → API key, webhook URL: `https://<api>/payments/wire/webhook` |
-| verify.mn | SMS OTP | Данс → API key (`OTP_PROVIDER=verifymn`) |
-| Firebase | Push (FCM) | Дараагийн үе шатанд |
+| Үйлчилгээ        | Юунд            | Хаана                                                                                                             |
+| ---------------- | --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Supabase         | Postgres DB     | supabase.com — project үүсгээд Session/Transaction pooler URL-уудыг `.env`-д                                      |
+| Railway / Render | API hosting     | GitHub repo холбоод deploy (`mvn package`, `java -jar target/eduud-backend-spring-0.1.0.jar`; Kafka шаардлагатай) |
+| Cloudflare R2    | Зураг хадгалалт | R2 bucket + API token → `.env`                                                                                    |
+| wire.mn          | Төлбөр          | Merchant бүртгэл (KYC) → API key, webhook URL: `https://<api>/payments/wire/webhook`                              |
+| verify.mn        | SMS OTP         | Данс → API key (`OTP_PROVIDER=verifymn`)                                                                          |
+| Firebase         | Push (FCM)      | Дараагийн үе шатанд                                                                                               |
 
 ### Тест
 
@@ -83,4 +83,5 @@ cd backend-spring && mvn test   # unit: bid логик, soft/hard close
 - `WireService.java` / `OtpService.java` — endpoint, payload-ыг албан ёсны API
   бичиг баримттай тулгах (одоо test/mock горимд бүрэн ажиллана)
 - FCM push, Flutter апп — дараагийн үе шат
+
 # eduud
