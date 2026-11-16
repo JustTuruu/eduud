@@ -19,7 +19,7 @@
   <properties>
     <java.version>17</java.version>
     <netty-socketio.version>2.0.14</netty-socketio.version>
-    <jjwt.version>0.12.6</jjwt.version>
+    <jjwt.version>0.13.0</jjwt.version>
     <aws-sdk.version>2.29.52</aws-sdk.version>
     <!-- Lab 11: Spring Boot BOM-ийн хувилбарыг OSV scan-ийн Critical/High CVE-ийн улмаас дээшлүүлсэн -->
     <jackson-bom.version>2.21.7</jackson-bom.version>
