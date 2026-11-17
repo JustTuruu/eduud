@@ -109,7 +109,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
                                   height: 190,
                                   child: Center(
                                     child: CircularProgressIndicator(
-                                        color: AppColors.sapphire,
+                                        color: AppColors.coral,
                                         strokeWidth: 2.4),
                                   ),
                                 ),

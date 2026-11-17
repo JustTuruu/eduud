@@ -127,7 +127,7 @@ class AppField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasError = error != null || invalid;
-    final accent = hasError ? AppColors.danger : AppColors.sapphire;
+    final accent = hasError ? AppColors.danger : AppColors.coral;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +139,7 @@ class AppField extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
+              
               color: hasError ? AppColors.dangerSoft : AppColors.muted,
             ),
           ),
@@ -532,7 +532,7 @@ class _OtpInputState extends State<OtpInput> {
               final borderColor = widget.hasError
                   ? AppColors.danger
                   : isNext
-                      ? AppColors.sapphire
+                      ? AppColors.coral
                       : filled
                           ? AppColors.borderHi
                           : AppColors.border;
@@ -554,7 +554,7 @@ class _OtpInputState extends State<OtpInput> {
                       boxShadow: isNext
                           ? [
                               BoxShadow(
-                                  color: AppColors.sapphire.withValues(alpha: 0.25),
+                                  color: AppColors.coral.withValues(alpha: 0.25),
                                   blurRadius: 16),
                             ]
                           : null,
@@ -674,7 +674,7 @@ class AppChoiceChips<T> extends StatelessWidget {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                            color: AppColors.sapphire.withValues(alpha: 0.32),
+                            color: AppColors.coral.withValues(alpha: 0.32),
                             blurRadius: 16,
                             offset: const Offset(0, 5)),
                       ]
@@ -686,7 +686,7 @@ class AppChoiceChips<T> extends StatelessWidget {
                   if (o.icon != null) ...[
                     Icon(o.icon,
                         size: 15,
-                        color: isSelected ? Colors.white : AppColors.sapphireSoft),
+                        color: isSelected ? AppColors.ctaInk : AppColors.ink),
                     const SizedBox(width: 7),
                   ],
                   Text(
@@ -694,7 +694,7 @@ class AppChoiceChips<T> extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? Colors.white : AppColors.inkSoft,
+                      color: isSelected ? AppColors.ctaInk : AppColors.inkSoft,
                     ),
                   ),
                 ],

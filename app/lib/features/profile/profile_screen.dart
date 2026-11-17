@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/api/api_client.dart';
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/app_nav_bar.dart';
 import '../../shared/avatars.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
@@ -28,72 +29,88 @@ class ProfileScreen extends ConsumerWidget {
           child: PageFrame(
             maxWidth: 720,
             child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 24, 18, 110),
-            children: [
-              _Header(user: user),
-              const SizedBox(height: 26),
-
-              const SectionLabel('Бүртгэл'),
-              const SizedBox(height: 12),
-              _MenuTile(
-                icon: LucideIcons.userPen,
-                label: 'Нэр солих',
-                value: user.name,
-                onTap: () => _editName(context, ref, user.name),
-              ),
-              _MenuTile(
-                icon: LucideIcons.palette,
-                label: 'Аватар солих',
-                onTap: () => _editAvatar(context, ref, user),
-              ),
-              _MenuTile(
-                icon: LucideIcons.keyRound,
-                label: 'Нууц үг солих',
-                onTap: () => _changePassword(context, ref),
-              ),
-
-              const SizedBox(height: 22),
-              const SectionLabel('Дэмжлэг'),
-              const SizedBox(height: 12),
-              _MenuTile(
-                icon: LucideIcons.lifeBuoy,
-                label: 'Тусламж',
-                onTap: () => context.push('/help'),
-              ),
-              _MenuTile(
-                icon: LucideIcons.messageSquare,
-                label: 'Санал хүсэлт',
-                onTap: () => context.push('/feedback'),
-              ),
-
-              const SizedBox(height: 22),
-              const SectionLabel('Мэдээлэл'),
-              const SizedBox(height: 12),
-              _MenuTile(
-                icon: LucideIcons.fileText,
-                label: 'Үйлчилгээний нөхцөл',
-                onTap: () => context.push('/content/terms'),
-              ),
-              _MenuTile(
-                icon: LucideIcons.shieldCheck,
-                label: 'Нууцлалын бодлого',
-                onTap: () => context.push('/content/privacy'),
-              ),
-
-              const SizedBox(height: 30),
-              _MenuTile(
-                icon: LucideIcons.logOut,
-                label: 'Гарах',
-                color: AppColors.danger,
-                onTap: () => _logout(context, ref),
-              ),
-              const SizedBox(height: 18),
-              Center(
-                child: Text('E-Duud 0.1.0',
-                    style: text.bodySmall?.copyWith(fontSize: 11.5)),
-              ),
-            ],
-          ),
+              padding: EdgeInsets.fromLTRB(
+                  18,
+                  24,
+                  18,
+                  Breakpoints.isWide(context)
+                      ? 40
+                      : NavMetrics.bottomInset(context)),
+              children: [
+                _Header(user: user),
+                const SizedBox(height: 26),
+                // Данс ба Ялалт — хамгийн их хэрэглэгддэг тул дээр нь.
+                _FeatureRow(
+                  icon: LucideIcons.wallet,
+                  label: 'Данс',
+                  sub: '${user.balance} token',
+                  onTap: () => context.push('/wallet'),
+                ),
+                _FeatureRow(
+                  icon: LucideIcons.trophy,
+                  label: 'Ялалт',
+                  sub: 'Ялсан бараа, төлбөр',
+                  onTap: () => context.push('/orders'),
+                ),
+                const SizedBox(height: 22),
+                const SectionLabel('Бүртгэл'),
+                const SizedBox(height: 12),
+                _MenuTile(
+                  icon: LucideIcons.userPen,
+                  label: 'Нэр солих',
+                  value: user.name,
+                  onTap: () => _editName(context, ref, user.name),
+                ),
+                _MenuTile(
+                  icon: LucideIcons.palette,
+                  label: 'Аватар солих',
+                  onTap: () => _editAvatar(context, ref, user),
+                ),
+                _MenuTile(
+                  icon: LucideIcons.keyRound,
+                  label: 'Нууц үг солих',
+                  onTap: () => _changePassword(context, ref),
+                ),
+                const SizedBox(height: 22),
+                const SectionLabel('Дэмжлэг'),
+                const SizedBox(height: 12),
+                _MenuTile(
+                  icon: LucideIcons.lifeBuoy,
+                  label: 'Тусламж',
+                  onTap: () => context.push('/help'),
+                ),
+                _MenuTile(
+                  icon: LucideIcons.messageSquare,
+                  label: 'Санал хүсэлт',
+                  onTap: () => context.push('/feedback'),
+                ),
+                const SizedBox(height: 22),
+                const SectionLabel('Мэдээлэл'),
+                const SizedBox(height: 12),
+                _MenuTile(
+                  icon: LucideIcons.fileText,
+                  label: 'Үйлчилгээний нөхцөл',
+                  onTap: () => context.push('/content/terms'),
+                ),
+                _MenuTile(
+                  icon: LucideIcons.shieldCheck,
+                  label: 'Нууцлалын бодлого',
+                  onTap: () => context.push('/content/privacy'),
+                ),
+                const SizedBox(height: 30),
+                _MenuTile(
+                  icon: LucideIcons.logOut,
+                  label: 'Гарах',
+                  color: AppColors.danger,
+                  onTap: () => _logout(context, ref),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: Text('E-Duud 0.1.0',
+                      style: text.bodySmall?.copyWith(fontSize: 11.5)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -102,7 +119,8 @@ class ProfileScreen extends ConsumerWidget {
 
   // ---------- Нэр ----------
 
-  Future<void> _editName(BuildContext context, WidgetRef ref, String current) async {
+  Future<void> _editName(
+      BuildContext context, WidgetRef ref, String current) async {
     // Controller-ийг dialog өөрөө эзэмшинэ — эндээс дамжуулж өгөөд гаднаас
     // dispose хийвэл хаагдах animation дээр "used after dispose" алдаа гарна.
     final saved = await showAppDialog<bool>(
@@ -181,7 +199,8 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Болих', style: TextStyle(color: AppColors.muted)),
+              child:
+                  const Text('Болих', style: TextStyle(color: AppColors.muted)),
             ),
           ],
         ),
@@ -208,7 +227,7 @@ class _Header extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            OpalRing(
+            CoralRing(
               size: 110,
               strokeWidth: 3,
               child: AppAvatar(
@@ -228,7 +247,7 @@ class _Header extends StatelessWidget {
                   border: Border.all(color: AppColors.bg, width: 3),
                 ),
                 child: const Icon(LucideIcons.palette,
-                    size: 13, color: AppColors.sapphireSoft),
+                    size: 13, color: AppColors.ink),
               ),
             ),
           ],
@@ -317,9 +336,8 @@ class _AvatarSheetState extends State<_AvatarSheet> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.sapphire
-                            : Colors.transparent,
+                        color:
+                            isSelected ? AppColors.coral : Colors.transparent,
                         width: 2.4,
                       ),
                     ),
@@ -351,10 +369,10 @@ class _AvatarSheetState extends State<_AvatarSheet> {
                               padding: const EdgeInsets.all(3),
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColors.sapphire,
+                                color: AppColors.coral,
                               ),
                               child: const Icon(LucideIcons.check,
-                                  size: 11, color: Colors.white),
+                                  size: 11, color: AppColors.ctaInk),
                             ),
                           ),
                       ],
@@ -463,7 +481,8 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           const SizedBox(height: 6),
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
-            child: const Text('Болих', style: TextStyle(color: AppColors.muted)),
+            child:
+                const Text('Болих', style: TextStyle(color: AppColors.muted)),
           ),
         ],
       ),
@@ -570,7 +589,9 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
             shakeToken: _shake,
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {
-              if (_nextError != null) _nextError = Validators.password(_next.text);
+              if (_nextError != null) {
+                _nextError = Validators.password(_next.text);
+              }
               if (_confirmError != null) {
                 _confirmError =
                     Validators.confirmPassword(_confirm.text, _next.text);
@@ -604,9 +625,76 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           const SizedBox(height: 6),
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
-            child: const Text('Болих', style: TextStyle(color: AppColors.muted)),
+            child:
+                const Text('Болих', style: TextStyle(color: AppColors.muted)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Данс / Ялалт — том, шүрэн icon-той онцлох мөр.
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({
+    required this.icon,
+    required this.label,
+    required this.sub,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String sub;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AnimatedPressable(
+        onPressed: onTap,
+        scale: 0.98,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 76),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceHi.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.borderHi),
+          ),
+          child: Row(children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.coral.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 22, color: AppColors.coral),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink)),
+                  const SizedBox(height: 2),
+                  Text(sub,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.inkSoft,
+                          fontFeatures: [FontFeature.tabularFigures()])),
+                ],
+              ),
+            ),
+            const Icon(LucideIcons.chevronRight, size: 20, color: AppColors.muted),
+          ]),
+        ),
       ),
     );
   }
@@ -650,7 +738,7 @@ class _MenuTile extends StatelessWidget {
                 color: AppColors.surfaceHi,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 18, color: color ?? AppColors.sapphireSoft),
+              child: Icon(icon, size: 18, color: color ?? AppColors.ink),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -669,13 +757,15 @@ class _MenuTile extends StatelessWidget {
                       value!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                      style:
+                          const TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(LucideIcons.chevronRight, size: 17, color: AppColors.muted),
+            const Icon(LucideIcons.chevronRight,
+                size: 17, color: AppColors.muted),
           ]),
         ),
       ),

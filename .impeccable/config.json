@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-17T09:55:58.475Z",
+        "reason": "Claude: canon card intentionally depicts the category standard (Inter, cards)"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-17T09:55:58.486Z",
+        "reason": "Claude: canon card intentionally depicts the category standard"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "inter",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-17T10:28:43.244Z",
+        "reason": "Claude: canon decision card intentionally depicts the category standard (Inter)"
+      }
+    ]
+  }
+}

@@ -107,7 +107,7 @@ class HelpScreen extends StatelessWidget {
               for (final group in _groups) ...[
                 Row(
                   children: [
-                    Icon(group.icon, size: 15, color: AppColors.sapphireSoft),
+                    Icon(group.icon, size: 15, color: AppColors.ink),
                     const SizedBox(width: 9),
                     SectionLabel(group.title),
                   ],
@@ -280,7 +280,7 @@ class _LinkTile extends StatelessWidget {
             border: Border.all(color: AppColors.border),
           ),
           child: Row(children: [
-            Icon(icon, size: 18, color: AppColors.sapphireSoft),
+            Icon(icon, size: 18, color: AppColors.ink),
             const SizedBox(width: 14),
             Expanded(
               child: Text(label,

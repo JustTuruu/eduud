@@ -34,141 +34,139 @@ class WalletScreen extends ConsumerWidget {
     final txs = ref.watch(walletTxProvider);
 
     return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(fallback: '/profile'),
+        title: Text('Данс', style: Theme.of(context).textTheme.displaySmall),
+      ),
       body: AppBackground(
         child: SafeArea(
+          top: false,
           child: PageFrame(
             maxWidth: 720,
             child: RefreshIndicator(
-            color: AppColors.sapphire,
-            backgroundColor: AppColors.surfaceHi,
-            onRefresh: () async {
-              ref.invalidate(walletTxProvider);
-              await ref.read(authProvider.notifier).refreshProfile();
-            },
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
-              children: [
-                Text('Данс', style: Theme.of(context).textTheme.displayMedium),
-                const SizedBox(height: 18),
-                // Үлдэгдлийн premium карт
-                GlowCard(
-                  glow: true,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 26),
-                    decoration: const BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.topCenter,
-                        radius: 1.8,
-                        colors: [Color(0xFF16294F), Color(0xFF0B1220)],
-                      ),
-                    ),
-                    child: Column(children: [
-                      const SectionLabel('Үлдэгдэл'),
-                      const SizedBox(height: 18),
-                      // Опал цагираг — дансны гол дүр.
-                      OpalRing(
-                        size: 176,
-                        strokeWidth: 4,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ShaderMask(
-                              shaderCallback: (b) =>
-                                  AppColors.opalGradient.createShader(b),
-                              child: const Icon(LucideIcons.gem,
-                                  size: 24, color: Colors.white),
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 26),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text('${user?.balance ?? 0}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge),
-                              ),
-                            ),
-                            Text('token',
-                                style:
-                                    Theme.of(context).textTheme.bodySmall),
-                          ],
+              color: AppColors.coral,
+              backgroundColor: AppColors.surfaceHi,
+              onRefresh: () async {
+                ref.invalidate(walletTxProvider);
+                await ref.read(authProvider.notifier).refreshProfile();
+              },
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 40),
+                children: [
+                  // Үлдэгдлийн premium карт
+                  GlowCard(
+                    glow: true,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 26),
+                      decoration: const BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.topCenter,
+                          radius: 1.8,
+                          colors: [Color(0xFF2E1D45), Color(0xFF1A1024)],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                    ]),
+                      child: Column(children: [
+                        const SectionLabel('Үлдэгдэл'),
+                        const SizedBox(height: 18),
+                        // Опал цагираг — дансны гол дүр.
+                        CoralRing(
+                          size: 176,
+                          strokeWidth: 4,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(LucideIcons.gem,
+                                  size: 24, color: AppColors.coral),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 26),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text('${user?.balance ?? 0}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayLarge),
+                                ),
+                              ),
+                              Text('token',
+                                  style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ]),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 26),
-                const SectionLabel('Цэнэглэх'),
-                const SizedBox(height: 12),
-                packages.when(
-                  loading: () => GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.35,
-                    children: const [
-                      Skeleton(height: 90, radius: 20),
-                      Skeleton(height: 90, radius: 20),
-                      Skeleton(height: 90, radius: 20),
-                      Skeleton(height: 90, radius: 20),
-                    ],
-                  ),
-                  error: (e, _) =>
-                      EmptyState(icon: LucideIcons.wifiOff, title: apiErrorMessage(e)),
-                  data: (list) {
-                    // Хамгийн ашигтай багц (нэг token-ы үнэ хамгийн бага)
-                    String? bestId;
-                    double best = double.infinity;
-                    for (final p in list) {
-                      final per = p.priceMnt / p.tokens;
-                      if (per < best) {
-                        best = per;
-                        bestId = p.id;
-                      }
-                    }
-                    return GridView.count(
+                  const SizedBox(height: 26),
+                  const SectionLabel('Цэнэглэх'),
+                  const SizedBox(height: 12),
+                  packages.when(
+                    loading: () => GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       childAspectRatio: 1.35,
-                      children: list
-                          .map((p) =>
-                              _PackageCard(pkg: p, popular: p.id == bestId))
-                          .toList(),
-                    );
-                  },
-                ),
-                const SizedBox(height: 26),
-                const SectionLabel('Гүйлгээний түүх'),
-                const SizedBox(height: 12),
-                txs.when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (e, _) => Text(apiErrorMessage(e)),
-                  data: (list) => list.isEmpty
-                      ? const EmptyState(
-                          icon: LucideIcons.receipt,
-                          title: 'Гүйлгээ алга',
-                          subtitle: 'Цэнэглэлт хийснээр энд харагдана.',
-                        )
-                      : Column(
-                          children: list
-                              .map((tx) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 9),
-                                    child: _TxTile(tx: tx),
-                                  ))
-                              .toList(),
-                        ),
-                ),
-              ],
+                      children: const [
+                        Skeleton(height: 90, radius: 20),
+                        Skeleton(height: 90, radius: 20),
+                        Skeleton(height: 90, radius: 20),
+                        Skeleton(height: 90, radius: 20),
+                      ],
+                    ),
+                    error: (e, _) => EmptyState(
+                        icon: LucideIcons.wifiOff, title: apiErrorMessage(e)),
+                    data: (list) {
+                      // Хамгийн ашигтай багц (нэг token-ы үнэ хамгийн бага)
+                      String? bestId;
+                      double best = double.infinity;
+                      for (final p in list) {
+                        final per = p.priceMnt / p.tokens;
+                        if (per < best) {
+                          best = per;
+                          bestId = p.id;
+                        }
+                      }
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.35,
+                        children: list
+                            .map((p) =>
+                                _PackageCard(pkg: p, popular: p.id == bestId))
+                            .toList(),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 26),
+                  const SectionLabel('Гүйлгээний түүх'),
+                  const SizedBox(height: 12),
+                  txs.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, _) => Text(apiErrorMessage(e)),
+                    data: (list) => list.isEmpty
+                        ? const EmptyState(
+                            icon: LucideIcons.receipt,
+                            title: 'Гүйлгээ алга',
+                            subtitle: 'Цэнэглэлт хийснээр энд харагдана.',
+                          )
+                        : Column(
+                            children: list
+                                .map((tx) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 9),
+                                      child: _TxTile(tx: tx),
+                                    ))
+                                .toList(),
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),
@@ -228,13 +226,13 @@ class _PackageCard extends ConsumerWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(LucideIcons.gem, size: 16, color: AppColors.sapphireSoft),
+                  const Icon(LucideIcons.gem, size: 16, color: AppColors.ink),
                   const SizedBox(width: 8),
                   Text('${pkg.tokens}',
                       style: Theme.of(context)
                           .textTheme
                           .displayMedium
-                          ?.copyWith(color: AppColors.sapphireSoft)),
+                          ?.copyWith(color: AppColors.ink)),
                 ],
               ),
               const SizedBox(height: 6),
@@ -307,8 +305,7 @@ class _TxTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(_icon,
-                size: 17,
-                color: positive ? AppColors.success : AppColors.sapphireSoft),
+                size: 17, color: positive ? AppColors.success : AppColors.ink),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -323,7 +320,10 @@ class _TxTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${tx.createdAt.toLocal()}'.substring(0, 16),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontSize: 11.5),
                 ),
               ],
             ),

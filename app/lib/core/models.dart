@@ -79,6 +79,26 @@ class AuctionSummary {
             ? null
             : Bidder.fromJson(j['lastBidder'] as Map<String, dynamic>),
       );
+
+  /// Realtime event ирэхэд өөрчлөгдөх талбаруудыг л шинэчилнэ.
+  AuctionSummary copyWith({
+    int? currentPrice,
+    int? bidCount,
+    DateTime? endsAt,
+    Bidder? lastBidder,
+    String? status,
+  }) =>
+      AuctionSummary(
+        id: id,
+        title: title,
+        images: images,
+        currentPrice: currentPrice ?? this.currentPrice,
+        bidCount: bidCount ?? this.bidCount,
+        startsAt: startsAt,
+        endsAt: endsAt ?? this.endsAt,
+        status: status ?? this.status,
+        lastBidder: lastBidder ?? this.lastBidder,
+      );
 }
 
 class BidItem {
@@ -87,7 +107,11 @@ class BidItem {
   final DateTime createdAt;
   final Bidder user;
 
-  BidItem({required this.id, required this.price, required this.createdAt, required this.user});
+  BidItem(
+      {required this.id,
+      required this.price,
+      required this.createdAt,
+      required this.user});
 
   factory BidItem.fromJson(Map<String, dynamic> j) => BidItem(
         id: j['id'] as String,
@@ -145,7 +169,8 @@ class AuctionDetail {
         bids: (j['bids'] as List? ?? const [])
             .map((b) => BidItem.fromJson(b as Map<String, dynamic>))
             .toList(),
-        serverTime: (j['serverTime'] ?? DateTime.now().millisecondsSinceEpoch) as int,
+        serverTime:
+            (j['serverTime'] ?? DateTime.now().millisecondsSinceEpoch) as int,
       );
 
   AuctionDetail copyWith({
@@ -178,7 +203,8 @@ class TokenPackage {
   final int tokens;
   final int priceMnt;
 
-  TokenPackage({required this.id, required this.tokens, required this.priceMnt});
+  TokenPackage(
+      {required this.id, required this.tokens, required this.priceMnt});
 
   factory TokenPackage.fromJson(Map<String, dynamic> j) => TokenPackage(
         id: j['id'] as String,
@@ -276,11 +302,14 @@ abstract class FeedbackMeta {
     'closed': 'Хаагдсан',
   };
 
-  static String typeLabel(String id) =>
-      types.firstWhere((t) => t.id == id, orElse: () => const FeedbackOption('', '—')).label;
+  static String typeLabel(String id) => types
+      .firstWhere((t) => t.id == id,
+          orElse: () => const FeedbackOption('', '—'))
+      .label;
 
   static String categoryLabel(String id) => categories
-      .firstWhere((c) => c.id == id, orElse: () => const FeedbackOption('', '—'))
+      .firstWhere((c) => c.id == id,
+          orElse: () => const FeedbackOption('', '—'))
       .label;
 
   static String statusLabel(String id) => statuses[id] ?? id;
@@ -347,4 +376,66 @@ class OrderItem {
       auctionImages: (auction['images'] as List? ?? const []).cast<String>(),
     );
   }
+}
+
+/// Дуудлага худалдаа зохион байгуулах хүсэлт (UC-05).
+class AuctionRequest {
+  final String id;
+  final String title;
+  final String description;
+  final String? category;
+  final int? startPrice;
+  final String? preferredDate;
+  final String? otherInfo;
+  final String status;
+  final String? adminNote;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  AuctionRequest({
+    required this.id,
+    required this.title,
+    required this.description,
+    this.category,
+    this.startPrice,
+    this.preferredDate,
+    this.otherInfo,
+    required this.status,
+    this.adminNote,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  /// Төлөв → монгол шошго.
+  static const statusLabels = {
+    'draft': 'Ноорог',
+    'pending': 'Хүлээгдэж буй',
+    'reviewing': 'Хянагдаж буй',
+    'info_requested': 'Мэдээлэл дутуу',
+    'approved': 'Зөвшөөрсөн',
+    'rejected': 'Татгалзсан',
+    'cancelled': 'Цуцлагдсан',
+  };
+
+  static String statusLabel(String s) => statusLabels[s] ?? s;
+
+  /// Хэрэглэгч цуцалж болох төлвүүд.
+  bool get canCancel =>
+      status == 'draft' || status == 'pending' || status == 'info_requested';
+
+  factory AuctionRequest.fromJson(Map<String, dynamic> j) => AuctionRequest(
+        id: j['id'] as String,
+        title: j['title'] as String,
+        description: (j['description'] ?? '') as String,
+        category: j['category'] as String?,
+        startPrice: (j['startPrice'] as num?)?.toInt(),
+        preferredDate: j['preferredDate'] as String?,
+        otherInfo: j['otherInfo'] as String?,
+        status: (j['status'] ?? 'pending') as String,
+        adminNote: j['adminNote'] as String?,
+        createdAt: DateTime.parse(j['createdAt'] as String),
+        updatedAt: j['updatedAt'] == null
+            ? null
+            : DateTime.parse(j['updatedAt'] as String),
+      );
 }

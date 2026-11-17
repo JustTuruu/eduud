@@ -1,0 +1,59 @@
+{
+  "title": "E-Duud — визуал ертөнц сонгох",
+  "question": "Шинэ дизайны чиглэл: санамсаргүй сонголт 'Шууд дамжуулалт' гарлаа. Үүнийг авах, өөр хувилбар сонгох, эсвэл дахин эргүүлэх.",
+  "options": [
+    {
+      "id": "assigned",
+      "kind": "assigned",
+      "label": "Шууд дамжуулалт (Live Broadcast)",
+      "kicker": "THE ROLL",
+      "lineage": "Спортын ТВ дамжуулалтын график — score bug, lower-third, цагны хавтан",
+      "thesis": "Дуудлага худалдаа бүр шууд дамжуулж буй тэмцээн: үнэ нь оноо, сүүлийн bidder нь тэргүүлэгч, таймер нь тоглолтын цаг.",
+      "palette": ["#1330C9", "#FFD60A", "#FFFFFF", "#0B0F1F", "#FF3B30"],
+      "materials": ["broadcast plates", "condensed sport numerals", "wipe transitions", "frosted glass nav"],
+      "viewport": "Утасны дэлгэц: дээр wordmark + token chip; live барааны том зураг дээр broadcast lower-third — ЛОТ код, нэр, шар үнийн хавтан, цагны хавтан (урт нь үлдсэн хугацаа), тэргүүлэгчийн нэр; доор 'Удахгүй', 'Дууссан' хэвтээ мөрүүд; доод талд шилэн 3 табтай нав.",
+      "risk": "Хэт 'спорт' болвол тансаг бараа хямдхан харагдах эрсдэлтэй — зураг ба цагаан зайг тансаг байлгах хэрэгтэй.",
+      "raised": [
+        {"from": "challenger-labanotation", "raise": "Цагны хавтангийн зурвасын урт нь яг үлдсэн хугацаа — урт = хугацаа."},
+        {"from": "challenger-crouwel", "raise": "Хэвтээ мөрүүд бүхэл картаар snap хийнэ, 8pt сүлжээ хатуу."},
+        {"from": "challenger-console", "raise": "Bid товч ганцаараа, хажууд нь санамсаргүй дарагдах зүйлгүй."},
+        {"from": "challenger-doujin", "raise": "Дуудлага худалдаа бүр ЛОТ кодтой (ЛОТ 024) — хайх, ярихад хялбар."},
+        {"from": "challenger-varfont", "raise": "Үлдсэн хугацаа hero-гийн хурцадмал байдлыг тасралтгүй удирдана (шар → улаан)."},
+        {"from": "challenger-rail", "raise": "Бүх хуваагч шугам 1 device pixel."}
+      ],
+      "html": ".impeccable/mocks/decision/assigned.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "model-pick",
+      "kind": "pick",
+      "label": "Одоо тоглож буй (Now Playing)",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Хөгжмийн аппын 'Now Playing' — цомгийн зургийн өнгө бүх дэлгэцэнд шингэнэ",
+      "thesis": "Live бараа нь 'одоо тоглож буй' дуу: зургийн өнгө дэлгэцийг будаж, таймер нь progress bar.",
+      "palette": ["#2A1B3D", "#E9D8C4", "#FF6B4A", "#FFFFFF"],
+      "materials": ["blurred art ambience", "frosted glass", "large rounded artwork"],
+      "viewport": "Барааны зураг том дөрвөлжин 'цомог' шиг, ард нь бүдгэрсэн өнгө; доор үнэ, progress таймер; доор 'цомгийн' мөрүүд.",
+      "risk": "Хамгийн танил — Apple Music-ийн хуулбар шиг харагдах эрсдэлтэй.",
+      "html": ".impeccable/mocks/decision/model-pick.html",
+      "htmlFrame": "390x844"
+    },
+    {"id": "challenger-crouwel", "kind": "challenger", "catalogId": "crouwel-grid-specimen", "label": "Crouwel Grid Specimen", "verdict": "declined", "lineage": "Wim Crouwel grid posters", "palette": ["#FFFFFF", "#1E4DFF"], "materials": ["construction grid"], "case": "Хэрэглэгч өөрийгөө таньдаггүй, бүтээгдэхүүний ойлгомж буурна.", "kept": "Бүхэл нүдээр snap хийх хатуу сүлжээ."},
+    {"id": "challenger-rail", "kind": "challenger", "catalogId": "rw-centre-rail-reference-setting", "label": "Centre-rail Reference", "verdict": "declined", "lineage": "wide-margin editions", "palette": ["#1A1A1A", "#C0392B", "#EFE8DA"], "materials": ["ruled hairlines"], "case": "Унших ертөнц — утсан дээрх хурдан auction-д тохирохгүй.", "kept": "1px hairline нарийвчлал."},
+    {"id": "challenger-console", "kind": "challenger", "catalogId": "digital-design-canon-dark-first-developer-console", "label": "Dark Developer Console", "verdict": "declined", "lineage": "developer consoles", "palette": ["#1C1F24", "#7AA2F7"], "materials": ["graphite seams"], "case": "Хөгжүүлэгчийн хэрэгсэл шиг, жирийн хэрэглэгч таньдаггүй.", "kept": "Аюултай/чухал үйлдлийг тусгаарлах."},
+    {"id": "challenger-doujin", "kind": "challenger", "catalogId": "pop-culture-shelf-doujin-event-catalog", "label": "Doujin Event Catalog", "verdict": "declined", "lineage": "convention catalogs", "palette": ["#111111", "#E6E1D3"], "materials": ["newsprint"], "case": "Монгол хэрэглэгчийн соёлд хол, хэт нягт.", "kept": "Нэгж бүр кодтой (ЛОТ дугаар)."},
+    {"id": "challenger-labanotation", "kind": "challenger", "catalogId": "notation-diagram-systems-labanotation", "label": "Labanotation Score", "verdict": "declined", "lineage": "dance notation", "palette": ["#FFFFFF", "#000000"], "materials": ["score paper"], "case": "Ойлгомжгүй, хэрэглэгч таньдаггүй.", "kept": "Урт = яг хугацаа."},
+    {"id": "challenger-varfont", "kind": "challenger", "catalogId": "variable-font-specimen", "label": "Variable Font Specimen", "verdict": "declined", "lineage": "type foundry specimens", "palette": ["#FAFAF7", "#111111", "#FF4F00"], "materials": ["flat paper"], "case": "Үсгийн ертөнц — бараа, үнийг тэргүүлж чадахгүй.", "kept": "Нэг хэмжигдэхүүн бүх хуудсыг тасралтгүй удирдана."}
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "canon": true,
+  "canonCard": {
+    "kind": "canon",
+    "label": "Категорийн стандарт",
+    "thesis": "E-commerce аппын стандарт — цагаан дэвсгэр, цэвэр карт, нэг өнгө.",
+    "palette": ["#FFFFFF", "#111827", "#2563EB"],
+    "materials": ["clean grid", "product photography"],
+    "html": ".impeccable/mocks/decision/canon.html",
+    "htmlFrame": "390x844"
+  }
+}

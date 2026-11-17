@@ -30,57 +30,61 @@ class OrdersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(ordersProvider);
     return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(fallback: '/profile'),
+        title: Text('Миний ялалтууд',
+            style: Theme.of(context).textTheme.displaySmall),
+      ),
       body: AppBackground(
         child: SafeArea(
+          top: false,
           child: PageFrame(
             maxWidth: 720,
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-                child: Text('Миний ялалтууд',
-                    style: Theme.of(context).textTheme.displayMedium),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  color: AppColors.sapphire,
-                  backgroundColor: AppColors.surfaceHi,
-                  onRefresh: () => ref.refresh(ordersProvider.future),
-                  child: orders.when(
-                    loading: () => ListView(
-                      padding: const EdgeInsets.all(18),
-                      children: const [
-                        Skeleton(height: 110, radius: 24),
-                        SizedBox(height: 12),
-                        Skeleton(height: 110, radius: 24),
-                      ],
-                    ),
-                    error: (e, _) => ListView(children: [
-                      EmptyState(
-                          icon: LucideIcons.wifiOff, title: apiErrorMessage(e)),
-                    ]),
-                    data: (list) => list.isEmpty
-                        ? ListView(children: const [
-                            EmptyState(
-                              icon: LucideIcons.trophy,
-                              title: 'Ялалт хараахан алга',
-                              subtitle:
-                                  'Дуудлага худалдаанд санал өгч түрүүлээрэй — ялсан бараа тань энд гарч ирнэ.',
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    color: AppColors.coral,
+                    backgroundColor: AppColors.surfaceHi,
+                    onRefresh: () => ref.refresh(ordersProvider.future),
+                    child: orders.when(
+                      loading: () => ListView(
+                        padding: const EdgeInsets.all(18),
+                        children: const [
+                          Skeleton(height: 110, radius: 24),
+                          SizedBox(height: 12),
+                          Skeleton(height: 110, radius: 24),
+                        ],
+                      ),
+                      error: (e, _) => ListView(children: [
+                        EmptyState(
+                            icon: LucideIcons.wifiOff,
+                            title: apiErrorMessage(e)),
+                      ]),
+                      data: (list) => list.isEmpty
+                          ? ListView(children: const [
+                              EmptyState(
+                                icon: LucideIcons.trophy,
+                                title: 'Ялалт хараахан алга',
+                                subtitle:
+                                    'Дуудлага худалдаанд санал өгч түрүүлээрэй — ялсан бараа тань энд гарч ирнэ.',
+                              ),
+                            ])
+                          : ListView.separated(
+                              padding:
+                                  const EdgeInsets.fromLTRB(18, 4, 18, 40),
+                              itemCount: list.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 13),
+                              itemBuilder: (context, i) =>
+                                  _OrderCard(order: list[i]),
                             ),
-                          ])
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(18, 4, 18, 110),
-                            itemCount: list.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 13),
-                            itemBuilder: (context, i) =>
-                                _OrderCard(order: list[i]),
-                          ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ),
@@ -192,7 +196,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
               PriceText(
                 amount: o.finalPrice,
                 fontSize: 17,
-                gradient: paid ? AppColors.winGradient : null,
+                color: paid ? AppColors.gold : AppColors.ink,
               ),
             ]),
             if (pending) ...[

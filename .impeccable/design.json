@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T10:29:23.718279+00:00",
+  "title": "Design System: E-Duud",
+  "extensions": {
+    "colorMeta": {
+      "plum-night": {
+        "role": "neutral",
+        "displayName": "Plum Night",
+        "canonical": "Color(0xFF140B1C)",
+        "tonalRamp": [
+          "#271B32",
+          "#412A55",
+          "#5E397F",
+          "#7B45AB",
+          "#9669BF",
+          "#B497CE",
+          "#D2C3DF",
+          "#F0ECF4"
+        ]
+      },
+      "plum-surface": {
+        "role": "neutral",
+        "displayName": "Plum Surface",
+        "canonical": "Color(0xFF1A1024)",
+        "tonalRamp": [
+          "#261C30",
+          "#402D53",
+          "#5C3D7B",
+          "#784BA5",
+          "#946EBA",
+          "#B29ACB",
+          "#D1C5DE",
+          "#F0ECF3"
+        ]
+      },
+      "plum-raised": {
+        "role": "neutral",
+        "displayName": "Plum Raised",
+        "canonical": "Color(0xFF2A1B3D)",
+        "tonalRamp": [
+          "#251C30",
+          "#3E2D53",
+          "#583D7B",
+          "#734BA5",
+          "#8F6DBA",
+          "#B09ACB",
+          "#D0C4DE",
+          "#EFECF3"
+        ]
+      },
+      "cream-ink": {
+        "role": "neutral",
+        "displayName": "Cream Ink",
+        "canonical": "Color(0xFFF3E9DC)",
+        "tonalRamp": [
+          "#332819",
+          "#584328",
+          "#836135",
+          "#B17F3F",
+          "#C59A63",
+          "#D1B794",
+          "#E1D3C1",
+          "#F4F0EB"
+        ]
+      },
+      "cream-soft": {
+        "role": "neutral",
+        "displayName": "Cream Soft",
+        "canonical": "Color(0xFFD8CCD6)",
+        "tonalRamp": [
+          "#2A2329",
+          "#463944",
+          "#665163",
+          "#876882",
+          "#A1879D",
+          "#BBAAB8",
+          "#D5CDD4",
+          "#F1EEF1"
+        ]
+      },
+      "mauve-muted": {
+        "role": "neutral",
+        "displayName": "Mauve Muted",
+        "canonical": "Color(0xFFA999B4)",
+        "tonalRamp": [
+          "#27222A",
+          "#413847",
+          "#5E5068",
+          "#7B668A",
+          "#9785A3",
+          "#B4A9BC",
+          "#D2CCD6",
+          "#F0EEF1"
+        ]
+      },
+      "cream-hairline": {
+        "role": "neutral",
+        "displayName": "Cream Hairline (8%)",
+        "canonical": "Color(0x14F3E9DC)",
+        "tonalRamp": [
+          "#332819",
+          "#584328",
+          "#836135",
+          "#B17F3F",
+          "#C59A63",
+          "#D1B794",
+          "#E1D3C1",
+          "#F4F0EB"
+        ],
+        "note": "ARGB: alpha 14 over cream #F3E9DC"
+      },
+      "cream-hairline-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline (16%)",
+        "canonical": "Color(0x29F3E9DC)",
+        "tonalRamp": [
+          "#332819",
+          "#584328",
+          "#836135",
+          "#B17F3F",
+          "#C59A63",
+          "#D1B794",
+          "#E1D3C1",
+          "#F4F0EB"
+        ],
+        "note": "ARGB: alpha 29 over cream #F3E9DC"
+      },
+      "ember-coral": {
+        "role": "primary",
+        "displayName": "Ember Coral",
+        "canonical": "Color(0xFFFF6B4A)",
+        "tonalRamp": [
+          "#40160C",
+          "#71200E",
+          "#AC290C",
+          "#EC2E03",
+          "#F75531",
+          "#F18B74",
+          "#F2BCB0",
+          "#F9EAE6"
+        ]
+      },
+      "coral-glow": {
+        "role": "primary",
+        "displayName": "Coral Glow",
+        "canonical": "Color(0xFFFF9275)",
+        "tonalRamp": [
+          "#40170C",
+          "#71230E",
+          "#AC2D0C",
+          "#EC3403",
+          "#F75A31",
+          "#F18E74",
+          "#F2BEB0",
+          "#F9EAE6"
+        ]
+      },
+      "cta-ink": {
+        "role": "primary",
+        "displayName": "CTA Ink",
+        "canonical": "Color(0xFF1C0C16)",
+        "tonalRamp": [
+          "#311C29",
+          "#542C45",
+          "#7C3C64",
+          "#A64984",
+          "#BC6C9E",
+          "#CC99B9",
+          "#DEC4D4",
+          "#F3ECF1"
+        ]
+      },
+      "live-rose": {
+        "role": "semantic",
+        "displayName": "Live Rose",
+        "canonical": "Color(0xFFFF4F7B)",
+        "tonalRamp": [
+          "#400C19",
+          "#710E27",
+          "#AC0C34",
+          "#EC033E",
+          "#F73162",
+          "#F17493",
+          "#F2B0C1",
+          "#F9E6EB"
+        ]
+      },
+      "win-gold": {
+        "role": "semantic",
+        "displayName": "Win Gold",
+        "canonical": "Color(0xFFF2C14E)",
+        "tonalRamp": [
+          "#3D2F10",
+          "#6A5115",
+          "#A17817",
+          "#DDA013",
+          "#EAB63E",
+          "#E9C87C",
+          "#EDDCB5",
+          "#F8F3E8"
+        ]
+      },
+      "success-mint": {
+        "role": "semantic",
+        "displayName": "Success Mint",
+        "canonical": "Color(0xFF63D9A4)",
+        "tonalRamp": [
+          "#163628",
+          "#225E43",
+          "#2B8D61",
+          "#31BF7F",
+          "#57D09A",
+          "#8CD9B6",
+          "#BDE5D3",
+          "#EAF5F0"
+        ]
+      },
+      "danger-rose": {
+        "role": "semantic",
+        "displayName": "Danger Rose",
+        "canonical": "Color(0xFFFF7A85)",
+        "tonalRamp": [
+          "#400C10",
+          "#710E17",
+          "#AC0C19",
+          "#EC0317",
+          "#F73141",
+          "#F1747E",
+          "#F2B0B6",
+          "#F9E6E8"
+        ]
+      },
+      "warn-amber": {
+        "role": "semantic",
+        "displayName": "Warn Amber",
+        "canonical": "Color(0xFFFFB547)",
+        "tonalRamp": [
+          "#402B0C",
+          "#71490E",
+          "#AC6B0C",
+          "#EC8F03",
+          "#F7A731",
+          "#F1BF74",
+          "#F2D7B0",
+          "#F9F2E6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Large numeric moments."
+      },
+      "price-hero": {
+        "displayName": "Price Hero",
+        "purpose": "Live price; rolls up on each bid."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Screen titles and shelf headers."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Live item name."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Meta, leader line, helper text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field and section labels, sentence case, no tracking."
+      },
+      "nav-label": {
+        "displayName": "Nav Label",
+        "purpose": "Nav tabs; 800 when active."
+      }
+    },
+    "gradients": [
+      {
+        "name": "cta",
+        "value": "linear-gradient(180deg,#FF7556,#FF6140)",
+        "purpose": "Bid and primary CTA fill."
+      },
+      {
+        "name": "card",
+        "value": "linear-gradient(180deg,#231533,#1C1129)",
+        "purpose": "GlowCard surface."
+      },
+      {
+        "name": "win",
+        "value": "linear-gradient(90deg,#F2C14E,#F8DB90)",
+        "purpose": "Win moments only."
+      }
+    ],
+    "shadows": [
+      {
+        "name": "artwork-drop",
+        "value": "0 22px 40px rgba(0,0,0,0.5)",
+        "purpose": "Under the live hero artwork."
+      },
+      {
+        "name": "card-drop",
+        "value": "0 0 24px rgba(0,0,0,0.4)",
+        "purpose": "GlowCard."
+      },
+      {
+        "name": "glass-float",
+        "value": "0 14px 32px rgba(0,0,0,0.45)",
+        "purpose": "Under the floating nav capsule."
+      },
+      {
+        "name": "coral-halo",
+        "value": "0 10px 26px rgba(255,107,74,0.38)",
+        "purpose": "Bid button only."
+      },
+      {
+        "name": "urgency-glow",
+        "value": "0 0 6px-14px rgba(255,107,74,0.25-0.7) pulsing",
+        "purpose": "Timer fill, final 10 seconds."
+      }
+    ],
+    "blur": [
+      {
+        "name": "glass",
+        "value": "blur(30px)",
+        "purpose": "Floating nav capsule and chips over artwork only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fast",
+        "value": "200ms",
+        "purpose": "Colour/label state changes."
+      },
+      {
+        "name": "base",
+        "value": "320ms",
+        "purpose": "Tab content slide."
+      },
+      {
+        "name": "slow",
+        "value": "480ms",
+        "purpose": "Larger reveals."
+      },
+      {
+        "name": "ambient",
+        "value": "900ms ease-in-out",
+        "purpose": "Ambient palette cross-fade."
+      },
+      {
+        "name": "ambient-drift",
+        "value": "40s loop",
+        "purpose": "Backdrop blob drift."
+      },
+      {
+        "name": "enter",
+        "value": "cubic-bezier(0.33,1,0.68,1)",
+        "purpose": "easeOutCubic entrances."
+      },
+      {
+        "name": "exit",
+        "value": "cubic-bezier(0.32,0,0.67,0)",
+        "purpose": "easeInCubic exits."
+      },
+      {
+        "name": "fluid",
+        "value": "cubic-bezier(0.22,1,0.36,1)",
+        "purpose": "easeOutQuint tab slide."
+      },
+      {
+        "name": "nav-spring",
+        "value": "spring(mass 1, stiffness 320, damping 26)",
+        "purpose": "Active nav pill."
+      },
+      {
+        "name": "beat",
+        "value": "420ms scale 1 to 1.03 to 1",
+        "purpose": "Artwork on new bid."
+      },
+      {
+        "name": "press",
+        "value": "scale 0.96-0.97",
+        "purpose": "All tappables."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "two-columns",
+        "value": "700px"
+      },
+      {
+        "name": "wide",
+        "value": "900px"
+      },
+      {
+        "name": "three-columns",
+        "value": "1080px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bid Button",
+      "kind": "button",
+      "refersTo": "button-bid",
+      "description": "The single, isolated live-bid action under the Now Playing hero.",
+      "html": "<button class=\"ds-bid\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999\"/><path d=\"M15.973 4.027 20 8\"/><path d=\"m21 9-6-6\"/><path d=\"m9 11 4 4\"/><path d=\"m8 12 4-4\"/><path d=\"m14 18 4-4\"/></svg>Санал өгөх</button>",
+      "css": ".ds-bid{font-family:Manrope,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;width:320px;height:56px;border:none;border-radius:28px;background:linear-gradient(180deg,#FF7556,#FF6140);color:#1C0C16;font-size:16px;font-weight:800;box-shadow:0 10px 26px rgba(255,107,74,.38);cursor:pointer;transition:transform .2s cubic-bezier(.33,1,.68,1),box-shadow .2s}.ds-bid:hover{box-shadow:0 12px 30px rgba(255,107,74,.5)}.ds-bid:active{transform:scale(.96)}.ds-bid:focus-visible{outline:2px solid #F3E9DC;outline-offset:3px}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Form CTA: coral gradient, 18px radius.",
+      "html": "<button class=\"ds-btn-primary\">Илгээх</button>",
+      "css": ".ds-btn-primary{font-family:Manrope,sans-serif;padding:16px 24px;min-width:280px;border:none;border-radius:18px;background:linear-gradient(180deg,#FF7556,#FF6140);color:#1C0C16;font-size:15.5px;font-weight:800;box-shadow:0 0 22px rgba(255,107,74,.3);cursor:pointer;transition:transform .2s,box-shadow .2s}.ds-btn-primary:active{transform:scale(.97);box-shadow:0 0 30px rgba(255,107,74,.55)}.ds-btn-primary:focus-visible{outline:2px solid #F3E9DC;outline-offset:3px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hairline outlined secondary action.",
+      "html": "<button class=\"ds-btn-secondary\">Ноорог хадгалах</button>",
+      "css": ".ds-btn-secondary{font-family:Manrope,sans-serif;padding:14px 24px;min-width:280px;background:transparent;border:1px solid rgba(243,233,220,.16);border-radius:18px;color:#F3E9DC;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s,transform .2s}.ds-btn-secondary:hover{background:rgba(243,233,220,.05)}.ds-btn-secondary:active{transform:scale(.97)}.ds-btn-secondary:focus-visible{outline:2px solid #FF6B4A;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Plum filled field, hairline border, coral focus.",
+      "html": "<label class=\"ds-field\"><span>Барааны нэр *</span><input placeholder=\"Жиш. iPhone 15 Pro 256GB\"></label>",
+      "css": ".ds-field{font-family:Manrope,sans-serif;display:flex;flex-direction:column;gap:8px;width:320px}.ds-field span{font-size:13px;font-weight:700;color:#D8CCD6}.ds-field input{font-family:Manrope,sans-serif;padding:16px;background:rgba(26,16,36,.7);border:1px solid rgba(243,233,220,.08);border-radius:18px;color:#F3E9DC;font-size:15px;outline:none;transition:border-color .2s}.ds-field input::placeholder{color:#A999B4}.ds-field input:focus-visible{border:1.6px solid #FF6B4A}"
+    },
+    {
+      "name": "Floating Glass Nav",
+      "kind": "nav",
+      "refersTo": "nav-floating",
+      "description": "Three-tab glass capsule with a sliding coral pill.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-i on\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg>Нүүр</a><a class=\"ds-nav-i\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M12 12v6M9 15h6\"/></svg>Хүсэлт</a><a class=\"ds-nav-i\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>Профайл</a></nav>",
+      "css": ".ds-nav{font-family:Manrope,sans-serif;display:flex;gap:0;width:380px;height:64px;padding:6px;box-sizing:border-box;border-radius:30px;background:rgba(26,16,36,.62);border:1px solid rgba(243,233,220,.16);backdrop-filter:blur(30px);box-shadow:0 14px 32px rgba(0,0,0,.45)}.ds-nav-i{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:24px;border:1px solid transparent;color:#A999B4;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .2s,color .2s}.ds-nav-i:hover{color:#D8CCD6}.ds-nav-i.on{background:rgba(255,107,74,.16);border-color:rgba(255,107,74,.28);color:#F3E9DC;font-weight:800}.ds-nav-i.on svg{color:#FF6B4A}.ds-nav-i:focus-visible{outline:2px solid #FF6B4A}"
+    },
+    {
+      "name": "Token Chip",
+      "kind": "chip",
+      "refersTo": "chip-token",
+      "description": "Token balance pill, top-right of Home and top nav.",
+      "html": "<span class=\"ds-token\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#FF6B4A\" stroke-width=\"2\"><path d=\"M6 3h12l4 6-10 13L2 9z\"/><path d=\"M2 9h20\"/></svg>999</span>",
+      "css": ".ds-token{font-family:Manrope,sans-serif;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(42,27,61,.7);border:1px solid rgba(243,233,220,.08);color:#F3E9DC;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "chip-status",
+      "description": "Request status: hue at 14% fill, full-hue text.",
+      "html": "<span class=\"ds-status\">Хүлээгдэж буй</span>",
+      "css": ".ds-status{font-family:Manrope,sans-serif;display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,181,71,.14);color:#FFB547;font-size:12px;font-weight:800}"
+    },
+    {
+      "name": "Now Playing Timer",
+      "kind": "custom",
+      "refersTo": "now-artwork",
+      "description": "Progress bar whose length equals remaining time; time left, bids right.",
+      "html": "<div class=\"ds-timer\"><div class=\"ds-track\"><div class=\"ds-fill\"></div><div class=\"ds-thumb\"></div></div><div class=\"ds-meta\"><span>07:19</span><span>214 санал</span></div></div>",
+      "css": ".ds-timer{font-family:Manrope,sans-serif;width:320px}.ds-track{position:relative;height:5px;border-radius:3px;background:rgba(243,233,220,.14)}.ds-fill{position:absolute;left:0;top:0;height:5px;width:12%;border-radius:3px;background:#FF6B4A}.ds-thumb{position:absolute;top:-4.5px;left:calc(12% - 7px);width:14px;height:14px;border-radius:50%;background:#F3E9DC}.ds-meta{display:flex;justify-content:space-between;margin-top:8px;color:#D8CCD6;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Album Shelf Tile",
+      "kind": "card",
+      "refersTo": "auction-tile",
+      "description": "Square 20px-radius art + title + meta; ended shows winner and gold price.",
+      "html": "<div class=\"ds-tile\"><div class=\"ds-art\"></div><div class=\"ds-t\">Load test auction 3</div><div class=\"ds-m\">LoadTest 399</div><div class=\"ds-p\">9,720₮</div></div>",
+      "css": ".ds-tile{font-family:Manrope,sans-serif;width:148px;cursor:pointer;transition:transform .2s}.ds-tile:active{transform:scale(.97)}.ds-art{width:148px;height:148px;border-radius:20px;background:linear-gradient(135deg,#5A3A7A,#2A1B3D)}.ds-t{margin-top:8px;color:#F3E9DC;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-m{color:#A999B4;font-size:12.5px}.ds-p{color:#F2C14E;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Now Playing",
+    "overview": "**Creative North Star: \"Now Playing\"**\n\nA live auction is the track that is playing right now. The item photo is the album cover, the countdown is the scrub bar, and the bid is the play button. One live item owns the screen: a large square artwork, its name and leader, a big tabular price, a progress timer, and one coral bid control. Everything else (upcoming, ended) sits below as horizontal album shelves that snap a whole card at a time.\n\nThe world is a deep plum night tinted by the artwork itself. The ambient backdrop pulls three colours from the active item's image and spreads them as slow-drifting, heavily dimmed blobs over the plum base, cross-fading in 900ms when the item changes. Text is warm cream, never grey. Coral is the single action voice. Depth comes from soft drop shadows under artwork and from one glass surface, the floating nav.\n\nDensity is low on the hero and medium on shelves and forms. The auction data (price, leader, bid count, remaining time) is the content; the music-player grammar is the frame, not a copy of any player's icons or layout.",
+    "keyCharacteristics": [
+      "Image-derived ambient colour field over a plum base, with a bottom-darkening scrim for contrast.",
+      "One coral action per screen; coral also marks progress and the active tab.",
+      "Manrope throughout; money and counts are weight 800 with tabular figures.",
+      "Large rounded square artwork (20-28px corners) with deep soft shadows.",
+      "1px cream hairlines at 8% for borders and dividers.",
+      "Floating glass capsule nav (blur 30) as the only frosted chrome."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Coral is the only action colour. If something is coral, it is the bid, the primary CTA, progress, or the current location.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cream Not Grey Rule",
+        "body": "Text hues stay in the cream-to-mauve family; no neutral greys.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gold Means Won Rule",
+        "body": "Gold appears only where someone has won.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Every price, countdown and count uses tabular figures at weight 700-800.",
+        "section": "typography"
+      },
+      {
+        "name": "The Plain Label Rule",
+        "body": "Section and field labels are sentence-case 13px/700 with no letter-spacing. No eyebrows.",
+        "section": "typography"
+      },
+      {
+        "name": "The Glass Is For Floating Rule",
+        "body": "Backdrop blur (sigma 30) belongs to floating chrome (the nav capsule) and to chips laid over artwork. Content surfaces are tinted plum, not frosted.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Coral Halo Rule",
+        "body": "A coloured glow is reserved for the coral action and urgent progress. Ordinary surfaces get neutral black shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** let the active item's artwork tint the whole screen through AmbientBackdrop, and cross-fade it over 900ms when the item changes.",
+      "**Do** keep exactly one coral action per screen and give it room.",
+      "**Do** set every price, countdown and count in Manrope 800 with tabular figures.",
+      "**Do** make the timer bar's length equal the true remaining fraction of the time window.",
+      "**Do** use 1px cream hairlines (8%, 16% on glass) for borders and dividers.",
+      "**Do** honour reduced motion: springs, beats, drift and slides collapse to instant changes.",
+      "**Do** pad content by the nav inset so the floating nav never covers it."
+    ],
+    "donts": [
+      "**Don't** use neutral greys for text; stay in cream, cream-soft and mauve.",
+      "**Don't** put cream text on coral; use cta-ink.",
+      "**Don't** use gold for anything except a win.",
+      "**Don't** frost content cards; blur is for floating chrome and chips over artwork.",
+      "**Don't** add eyebrow or kicker labels (small tracked uppercase lines above headings).",
+      "**Don't** use hard-edged or sideways-offset shadows.",
+      "**Don't** copy a music player's icons or layout; the auction data is the content."
+    ]
+  }
+}

@@ -440,7 +440,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
             child: Text(
               _resendIn > 0 ? 'Дахин код авах ($_resendIn сек)' : 'Дахин код авах',
               style: TextStyle(
-                color: _resendIn > 0 ? AppColors.muted : AppColors.sapphireSoft,
+                color: _resendIn > 0 ? AppColors.muted : AppColors.ink,
                 fontWeight: FontWeight.w700,
               ),
             ),

@@ -90,14 +90,14 @@ class _TopBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   boxShadow: [
                     BoxShadow(
-                        color: AppColors.sapphire.withValues(alpha: 0.35),
+                        color: AppColors.coral.withValues(alpha: 0.35),
                         blurRadius: 18,
                         offset: const Offset(0, 6)),
                   ],
                 ),
                 child: const Text('Бүртгүүлэх',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.ctaInk,
                         fontWeight: FontWeight.w800,
                         fontSize: 13.5)),
               ),
@@ -173,7 +173,8 @@ class _Hero extends StatelessWidget {
         const SizedBox(height: 18),
         title,
         const SizedBox(height: 18),
-        ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560), child: subtitle),
+        ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560), child: subtitle),
         const SizedBox(height: 30),
         ctas,
       ],
@@ -240,8 +241,7 @@ class _HeroVisual extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(children: [
-                const Icon(LucideIcons.timer,
-                    size: 18, color: AppColors.sapphireSoft),
+                const Icon(LucideIcons.timer, size: 18, color: AppColors.ink),
                 const SizedBox(width: 10),
                 const Flexible(
                   child: Text('Дуусахад',
@@ -292,8 +292,8 @@ class _LoopingCountdownState extends State<_LoopingCountdown> {
       style: widget.style ?? const TextStyle(),
       onFinished: () {
         if (!mounted) return;
-        setState(() =>
-            _endsAt = DateTime.now().add(const Duration(seconds: 15)));
+        setState(
+            () => _endsAt = DateTime.now().add(const Duration(seconds: 15)));
       },
     );
   }
@@ -306,14 +306,14 @@ class _Eyebrow extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassChip(
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(LucideIcons.zap, size: 12, color: AppColors.sapphireSoft),
+        const Icon(LucideIcons.zap, size: 12, color: AppColors.ink),
         const SizedBox(width: 7),
         Flexible(
           child: Text('БАГА ҮНИЙН ДУУДЛАГА ХУДАЛДАА',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.sapphireSoft,
+                    color: AppColors.ink,
                     letterSpacing: 1.8,
                   )),
         ),
@@ -347,7 +347,7 @@ class _GhostButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: AppColors.sapphireSoft),
+            Icon(icon, size: 18, color: AppColors.ink),
             const SizedBox(width: 10),
             Flexible(
               child: Text(label,
@@ -468,7 +468,7 @@ class _HowItWorks extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.borderHi),
                   ),
-                  child: Icon(icon, size: 20, color: AppColors.sapphireSoft),
+                  child: Icon(icon, size: 20, color: AppColors.ink),
                 ),
                 const SizedBox(width: 14),
                 Text(
@@ -545,7 +545,7 @@ class _FinalCta extends StatelessWidget {
             gradient: RadialGradient(
               center: Alignment.topLeft,
               radius: 1.6,
-              colors: [Color(0xFF16294F), Color(0xFF0B1220)],
+              colors: [Color(0xFF2E1D45), Color(0xFF1A1024)],
             ),
           ),
           child: Column(

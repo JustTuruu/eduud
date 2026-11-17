@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme/app_theme.dart';
@@ -13,12 +14,59 @@ class NavDestination {
   final String label;
 }
 
-/// Доод навигаци.
+/// Хөвөгч шилэн навигацийн өндөр (margin-тай) — дэлгэцүүд доод padding-даа
+/// үүнийг нэмж агуулгыг нав дарахаас сэргийлнэ.
+abstract class NavMetrics {
+  static const barHeight = 64.0;
+  static const bottomGap = 16.0;
+
+  static double bottomInset(BuildContext context) =>
+      barHeight + bottomGap + 16 + MediaQuery.paddingOf(context).bottom;
+}
+
+/// Шилэн хөвөгч гадаргуу — nav-ын цорын ганц blur (функциональ).
+class _Glass extends StatelessWidget {
+  const _Glass({required this.radius, required this.child});
+
+  final double radius;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 32,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surface.withValues(alpha: 0.62),
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: AppColors.borderHi),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Доод навигаци — Apple Music маягийн хөвөгч шилэн капсул.
 ///
-/// Идэвхтэй байдлыг **гулсдаг градиент дэвсгэр**-ээр илэрхийлнэ — хаанаас
-/// хаашаа шилжсэнийг нүд дагаж чадна. Icon нь сонгогдох агшинд нэг удаа
-/// пүршин үсэрнэ. Шошго үргэлж харагдана (icon дангаараа таагдахгүй).
-class AppNavBar extends StatelessWidget {
+/// Идэвхтэй таб: шүрэн pill пүршин (spring) хөдөлгөөнөөр гулсана, icon нэг
+/// удаа үсэрч шүрэн болно, шошго жин нэмнэ. Таб бүр шошготой.
+class AppNavBar extends StatefulWidget {
   const AppNavBar({
     super.key,
     required this.destinations,
@@ -31,124 +79,102 @@ class AppNavBar extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   @override
-  Widget build(BuildContext context) {
-    final count = destinations.length;
-    final calm = reducedMotion(context);
+  State<AppNavBar> createState() => _AppNavBarState();
+}
 
+class _AppNavBarState extends State<AppNavBar>
+    with SingleTickerProviderStateMixin {
+  static const _spring =
+      SpringDescription(mass: 1, stiffness: 320, damping: 26);
+
+  late final AnimationController _pos = AnimationController.unbounded(
+      vsync: this, value: widget.currentIndex.toDouble());
+
+  @override
+  void didUpdateWidget(covariant AppNavBar old) {
+    super.didUpdateWidget(old);
+    if (old.currentIndex != widget.currentIndex) {
+      if (reducedMotion(context)) {
+        _pos.value = widget.currentIndex.toDouble();
+      } else {
+        _pos.animateWith(SpringSimulation(
+          _spring,
+          _pos.value,
+          widget.currentIndex.toDouble(),
+          _pos.velocity,
+        ));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pos.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = widget.destinations.length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.82),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 30,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 62,
-                child: Stack(
-                  children: [
-                    // Гулсагч дэвсгэр
-                    AnimatedAlign(
-                      alignment: Alignment(
-                        count <= 1 ? 0 : -1 + 2 * currentIndex / (count - 1),
-                        0,
-                      ),
-                      duration: calm ? Duration.zero : AppMotion.base,
-                      curve: AppMotion.spring,
-                      child: FractionallySizedBox(
-                        widthFactor: 1 / count,
-                        // heightFactor-гүй бол хүүхэд DecoratedBox нь агуулгагүй
-                        // учраас 0 өндөртэй болж дэвсгэр огт харагдахгүй.
-                        heightFactor: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 7),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: AppColors.ctaGradient,
-                              borderRadius: BorderRadius.circular(19),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      AppColors.sapphire.withValues(alpha: 0.42),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 6),
-                                ),
-                                // Аврорагийн зөөлөн туяа — сонгогдсон таб "амьд" гэрэлтэнэ.
-                                BoxShadow(
-                                  color:
-                                      AppColors.lavender.withValues(alpha: 0.16),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: List.generate(count, (i) {
-                        final d = destinations[i];
-                        final selected = i == currentIndex;
-                        return Expanded(
-                          child: Semantics(
-                            button: true,
-                            selected: selected,
-                            label: d.label,
-                            child: InkWell(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                onSelected(i);
-                              },
-                              borderRadius: BorderRadius.circular(19),
-                              splashColor: Colors.white.withValues(alpha: 0.06),
-                              highlightColor: Colors.transparent,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _BouncyIcon(
-                                    icon: d.icon,
-                                    selected: selected,
-                                    calm: calm,
-                                  ),
-                                  const SizedBox(height: 3),
-                                  AnimatedDefaultTextStyle(
-                                    duration: AppMotion.fast,
-                                    curve: AppMotion.enter,
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: selected
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                      color: selected
-                                          ? Colors.white
-                                          : AppColors.muted,
-                                    ),
-                                    child: Text(d.label),
-                                  ),
-                                ],
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        NavMetrics.bottomGap + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: _Glass(
+            radius: 30,
+            child: SizedBox(
+              height: NavMetrics.barHeight,
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final w = (box.maxWidth - 12) / count;
+                  return Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Stack(
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pos,
+                          builder: (context, _) => Positioned(
+                            left: _pos.value * w,
+                            top: 0,
+                            bottom: 0,
+                            width: w,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: AppColors.coral.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                    color: AppColors.coral
+                                        .withValues(alpha: 0.28)),
                               ),
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                        Row(
+                          children: [
+                            for (var i = 0; i < count; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  destination: widget.destinations[i],
+                                  selected: i == widget.currentIndex,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    widget.onSelected(i);
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -158,36 +184,81 @@ class AppNavBar extends StatelessWidget {
   }
 }
 
-/// Сонгогдох агшинд нэг удаа пүршин үсэрдэг icon.
-class _BouncyIcon extends StatelessWidget {
-  const _BouncyIcon({
-    required this.icon,
+class _NavItem extends StatefulWidget {
+  const _NavItem({
+    required this.destination,
     required this.selected,
-    required this.calm,
+    required this.onTap,
   });
 
-  final IconData icon;
+  final NavDestination destination;
   final bool selected;
-  final bool calm;
+  final VoidCallback onTap;
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
+  /// Icon нэг удаа үсрэх: 1 → 1.22 → 1.
+  late final AnimationController _bounce = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 420));
+
+  @override
+  void didUpdateWidget(covariant _NavItem old) {
+    super.didUpdateWidget(old);
+    if (!old.selected && widget.selected && !reducedMotion(context)) {
+      _bounce.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _bounce.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final child = Icon(
-      icon,
-      size: 21,
-      color: selected ? Colors.white : AppColors.muted,
-    );
-
-    if (!selected || calm) return child;
-
-    // key нь сонголт солигдох бүрд шинэчлэгдэж, хөдөлгөөнийг дахин эхлүүлнэ.
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(icon),
-      tween: Tween(begin: 0.7, end: 1),
-      duration: const Duration(milliseconds: 460),
-      curve: Curves.elasticOut,
-      builder: (context, scale, c) => Transform.scale(scale: scale, child: c),
-      child: child,
+    final color = widget.selected ? AppColors.coral : AppColors.muted;
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      label: widget.destination.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _bounce,
+              builder: (context, child) {
+                final t = _bounce.value;
+                final scale = 1 + 0.22 * (t < 0.5 ? t * 2 : (1 - t) * 2);
+                return Transform.scale(scale: scale, child: child);
+              },
+              child: TweenAnimationBuilder<Color?>(
+                tween: ColorTween(end: color),
+                duration: AppMotion.fast,
+                builder: (context, c, _) =>
+                    Icon(widget.destination.icon, size: 22, color: c),
+              ),
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: AppMotion.fast,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: widget.selected ? FontWeight.w800 : FontWeight.w600,
+                color: widget.selected ? AppColors.ink : AppColors.muted,
+              ),
+              child: Text(widget.destination.label, maxLines: 1),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -260,9 +331,8 @@ class _AnimatedShellBodyState extends State<AnimatedShellBody>
   }
 }
 
-/// Өргөн дэлгэц (web/desktop) дээрх дээд навигац — доод навигацтай яг ижил
-/// 4 чиглэл, нэмээд wordmark болон token үлдэгдэл. Хоёр нав нэг
-/// [NavDestination] жагсаалтыг хуваалцдаг тул үйлдэл нь салахгүй.
+/// Өргөн дэлгэц (web/desktop) дээрх дээд навигац — ижил ертөнц: дээр нь
+/// хөвөх шилэн капсул, доод навтай яг ижил 3 чиглэл + token chip.
 class AppTopNav extends StatelessWidget {
   const AppTopNav({
     super.key,
@@ -282,79 +352,75 @@ class AppTopNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final display = Theme.of(context).textTheme.displayMedium;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.72),
-            border: const Border(bottom: BorderSide(color: AppColors.border)),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Row(
-                    children: [
-                      Wordmark(size: 20, display: display),
-                      const SizedBox(width: 36),
-                      ...List.generate(destinations.length, (i) {
-                        final d = destinations[i];
-                        final selected = i == currentIndex;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: AnimatedPressable(
-                            onPressed: () => onSelected(i),
-                            scale: 0.96,
-                            child: AnimatedContainer(
-                              duration: AppMotion.base,
-                              curve: AppMotion.enter,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                gradient: selected ? AppColors.ctaGradient : null,
-                                color: selected ? null : Colors.transparent,
-                                borderRadius: BorderRadius.circular(999),
-                                boxShadow: selected
-                                    ? [
-                                        BoxShadow(
-                                          color: AppColors.sapphire
-                                              .withValues(alpha: 0.35),
-                                          blurRadius: 18,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ]
-                                    : null,
+    return SafeArea(
+      bottom: false,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: _Glass(
+              radius: 30,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 12),
+                    Wordmark(size: 20, display: display),
+                    const SizedBox(width: 32),
+                    ...List.generate(destinations.length, (i) {
+                      final d = destinations[i];
+                      final selected = i == currentIndex;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: AnimatedPressable(
+                          onPressed: () => onSelected(i),
+                          scale: 0.96,
+                          child: AnimatedContainer(
+                            duration: AppMotion.base,
+                            curve: AppMotion.enter,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.coral.withValues(alpha: 0.16)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: selected
+                                    ? AppColors.coral.withValues(alpha: 0.28)
+                                    : Colors.transparent,
                               ),
-                              child: Row(children: [
-                                Icon(d.icon,
-                                    size: 17,
-                                    color:
-                                        selected ? Colors.white : AppColors.muted),
-                                const SizedBox(width: 8),
-                                Text(
-                                  d.label,
-                                  style: TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: selected
-                                        ? FontWeight.w800
-                                        : FontWeight.w600,
-                                    color:
-                                        selected ? Colors.white : AppColors.muted,
-                                  ),
-                                ),
-                              ]),
                             ),
+                            child: Row(children: [
+                              Icon(d.icon,
+                                  size: 17,
+                                  color: selected
+                                      ? AppColors.coral
+                                      : AppColors.muted),
+                              const SizedBox(width: 8),
+                              Text(
+                                d.label,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: selected
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: selected
+                                      ? AppColors.ink
+                                      : AppColors.muted,
+                                ),
+                              ),
+                            ]),
                           ),
-                        );
-                      }),
-                      const Spacer(),
-                      if (trailing != null) trailing!,
-                    ],
-                  ),
+                        ),
+                      );
+                    }),
+                    const Spacer(),
+                    if (trailing != null) trailing!,
+                    const SizedBox(width: 4),
+                  ],
                 ),
               ),
             ),
@@ -379,14 +445,7 @@ class Wordmark extends StatelessWidget {
         ?.copyWith(fontSize: size);
     final mark = Text.rich(TextSpan(children: [
       TextSpan(text: 'E-', style: style),
-      WidgetSpan(
-        alignment: PlaceholderAlignment.baseline,
-        baseline: TextBaseline.alphabetic,
-        child: ShaderMask(
-          shaderCallback: (b) => AppColors.opalGradient.createShader(b),
-          child: Text('DUUD', style: style?.copyWith(color: Colors.white)),
-        ),
-      ),
+      TextSpan(text: 'DUUD', style: style?.copyWith(color: AppColors.coral)),
     ]));
     if (onTap == null) return mark;
     return MouseRegion(

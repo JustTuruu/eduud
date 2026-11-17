@@ -25,7 +25,7 @@ class ContentScreen extends ConsumerWidget {
       body: AppBackground(
           child: content.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.sapphire)),
+            child: CircularProgressIndicator(color: AppColors.coral)),
         error: (e, _) => Center(child: Text(apiErrorMessage(e))),
         data: (c) => ListView(
           padding: const EdgeInsets.all(20),

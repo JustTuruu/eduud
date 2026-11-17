@@ -275,7 +275,7 @@ class _FeedbackTile extends StatelessWidget {
         'resolved' => AppColors.success,
         'reviewing' => AppColors.warn,
         'closed' => AppColors.muted,
-        _ => AppColors.sapphireSoft,
+        _ => AppColors.ink,
       };
 
   @override
@@ -293,7 +293,7 @@ class _FeedbackTile extends StatelessWidget {
           Row(
             children: [
               Icon(_typeIcons[item.type] ?? LucideIcons.messageSquare,
-                  size: 15, color: AppColors.sapphireSoft),
+                  size: 15, color: AppColors.ink),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -345,7 +345,7 @@ class _FeedbackTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(LucideIcons.messageSquare,
-                      size: 13, color: AppColors.sapphireSoft),
+                      size: 13, color: AppColors.ink),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

@@ -97,6 +97,12 @@ void main() {
       final wide = size.width >= 900;
       expect(find.byType(AppTopNav), wide ? findsOneWidget : findsNothing);
       expect(find.byType(AppNavBar), wide ? findsNothing : findsOneWidget);
+      // Гурван таб: Нүүр, Хүсэлт, Профайл (Данс/Ялалт Профайлаас орно).
+      for (final label in ['Нүүр', 'Хүсэлт', 'Профайл']) {
+        expect(find.text(label), findsWidgets);
+      }
+      expect(find.text('Данс'), findsNothing);
+      expect(find.text('Одоо явагдаж буй'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

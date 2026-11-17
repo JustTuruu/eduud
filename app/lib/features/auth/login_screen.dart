@@ -107,8 +107,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  String get _target =>
-      (widget.next != null && widget.next!.startsWith('/')) ? widget.next! : '/';
+  String get _target => (widget.next != null && widget.next!.startsWith('/'))
+      ? widget.next!
+      : '/';
 
   /// Бүртгүүлэх/мартсан руу шилжихдээ `next`-ийг хадгална.
   String _withNext(String path) => widget.next == null
@@ -125,7 +126,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // Гарын өндрийг Scaffold өөрөө нөхдөг тул viewInsets давхар нэмэхгүй.
               padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 48),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
@@ -147,7 +149,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             invalid: _credentialsInvalid,
                             keyboardType: TextInputType.phone,
                             textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.telephoneNumber],
+                            autofillHints: const [
+                              AutofillHints.telephoneNumber
+                            ],
                             maxLength: Validators.phoneLength,
                             enabled: !_loading,
                             shakeToken: _shake,
@@ -221,12 +225,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               TextButton(
                                 onPressed: _loading
                                     ? null
-                                    : () => context.push(
-                                        _withNext('/auth/register')),
+                                    : () => context
+                                        .push(_withNext('/auth/register')),
                                 child: const Text(
                                   'Бүртгүүлэх',
                                   style: TextStyle(
-                                      color: AppColors.sapphireSoft,
+                                      color: AppColors.ink,
                                       fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -258,16 +262,14 @@ class _Wordmark extends StatelessWidget {
         Text.rich(
           TextSpan(children: [
             TextSpan(
-                text: 'E-', style: display.displayMedium?.copyWith(fontSize: 30)),
+                text: 'E-',
+                style: display.displayMedium?.copyWith(fontSize: 30)),
             WidgetSpan(
               alignment: PlaceholderAlignment.baseline,
               baseline: TextBaseline.alphabetic,
-              child: ShaderMask(
-                shaderCallback: (b) => AppColors.opalGradient.createShader(b),
-                child: Text('DUUD',
-                    style: display.displayMedium
-                        ?.copyWith(fontSize: 30, color: Colors.white)),
-              ),
+              child: Text('DUUD',
+                  style: display.displayMedium
+                      ?.copyWith(fontSize: 30, color: AppColors.coral)),
             ),
           ]),
           textAlign: TextAlign.center,

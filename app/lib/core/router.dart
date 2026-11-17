@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,10 +11,12 @@ import '../features/auth/otp_flow_screen.dart';
 import '../features/content/content_screen.dart';
 import '../features/feedback/feedback_screen.dart';
 import '../features/help/help_screen.dart';
+import '../features/home/auction_list_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/landing/landing_screen.dart';
 import '../features/orders/orders_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/requests/requests_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../shared/app_nav_bar.dart';
 import '../shared/responsive.dart';
@@ -54,13 +57,16 @@ bool _requiresAuth(String location) {
   return location.startsWith('/wallet') ||
       location.startsWith('/orders') ||
       location.startsWith('/profile') ||
+      location.startsWith('/requests') ||
       location.startsWith('/feedback');
 }
 
 /// Нэвтрэх дэлгэц рүү `next` параметртэй илгээнэ — нэвтэрсний дараа тэр
 /// газраа буцааж аваачна (жиш. санал өгөх гэж байсан auction).
 String loginLocation({String? next}) {
-  if (next == null || next == '/' || !next.startsWith('/')) return '/auth/login';
+  if (next == null || next == '/' || !next.startsWith('/')) {
+    return '/auth/login';
+  }
   return Uri(path: '/auth/login', queryParameters: {'next': next}).toString();
 }
 
@@ -76,13 +82,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       // үлддэг. Үүнийг "тодорхойгүй" гэж үзвэл router дахин үүсээд навигаци
       // тэглэгдэнэ — тиймээс утга огт байхгүй үед л unknown гэнэ.
       if (s.isLoading && !s.hasValue) return _AuthStatus.unknown;
-      return s.valueOrNull != null ? _AuthStatus.loggedIn : _AuthStatus.loggedOut;
+      return s.valueOrNull != null
+          ? _AuthStatus.loggedIn
+          : _AuthStatus.loggedOut;
     }),
   );
   final loggedIn = status == _AuthStatus.loggedIn;
 
   return GoRouter(
-    initialLocation: '/',
+    // Web дээр хуудсыг дахин ачаалахад (auth unknown → loggedIn болж router
+    // дахин үүсэх үед) браузерын одоогийн хаягаас эхэлнэ — үгүй бол үргэлж
+    // Нүүр рүү буцаж /requests, /profile дээрх reload алдагдана.
+    initialLocation: kIsWeb
+        ? (Uri.base.path.isEmpty ? '/' : Uri.base.path) +
+            (Uri.base.hasQuery ? '?${Uri.base.query}' : '')
+        : '/',
     redirect: (context, state) {
       final loc = state.matchedLocation;
       final onAuth = loc.startsWith('/auth');
@@ -133,6 +147,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           ContentScreen(contentKey: state.pathParameters['key']!),
         ),
       ),
+      // Данс ба Ялалт — Профайлаас орох, shell-ээс гадуурх энгийн дэлгэц
+      // (нэвтрэлт шаардана — _requiresAuth).
+      GoRoute(
+        path: '/wallet',
+        pageBuilder: (_, state) => _slidePage(state, const WalletScreen()),
+      ),
+      GoRoute(
+        path: '/orders',
+        pageBuilder: (_, state) => _slidePage(state, const OrdersScreen()),
+      ),
+      // Нүүрний "Бүгд" — удахгүй эхлэх / дууссан дуудлагын бүтэн жагсаалт.
+      GoRoute(
+        path: '/lists/:status',
+        pageBuilder: (_, state) => _slidePage(
+          state,
+          AuctionListScreen(status: state.pathParameters['status']!),
+        ),
+      ),
       GoRoute(
         path: '/feedback',
         pageBuilder: (_, state) => _slidePage(state, const FeedbackScreen()),
@@ -149,19 +181,19 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
+              GoRoute(
+                  path: '/requests',
+                  builder: (_, __) => const RequestsScreen()),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
-            ]),
-            StatefulShellBranch(routes: [
-              GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+              GoRoute(
+                  path: '/profile', builder: (_, __) => const ProfileScreen()),
             ]),
           ],
         )
       else ...[
         // Нэвтрээгүй үед `/` нь landing page. Төлөв тодорхойгүй (token
-        // шалгаж байх) агшинд хоосон navy дэлгэц — landing/нүүр хооронд
+        // шалгаж байх) агшинд хоосон чавга дэлгэц — landing/нүүр хооронд
         // анивчихгүй.
         GoRoute(
           path: '/',
@@ -172,7 +204,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Нэвтрэлт шаардах замууд: redirect нэвтрэх дэлгэц рүү аваачна.
         // Route байхгүй бол go_router "олдсонгүй" хуудас харуулах тул
         // хоосон placeholder бүртгэнэ.
-        for (final p in const ['/wallet', '/orders', '/profile'])
+        for (final p in const ['/requests', '/profile'])
           GoRoute(path: p, builder: (_, __) => const _Splash()),
       ],
     ],
@@ -180,9 +212,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 const _destinations = [
-  NavDestination(icon: LucideIcons.gavel, label: 'Нүүр'),
-  NavDestination(icon: LucideIcons.wallet, label: 'Данс'),
-  NavDestination(icon: LucideIcons.trophy, label: 'Ялалт'),
+  NavDestination(icon: LucideIcons.house, label: 'Нүүр'),
+  NavDestination(icon: LucideIcons.filePlus2, label: 'Хүсэлт'),
   NavDestination(icon: LucideIcons.user, label: 'Профайл'),
 ];
 
@@ -195,7 +226,7 @@ class _Splash extends StatelessWidget {
 }
 
 /// Нэвтэрсэн хэрэглэгчийн бүрхүүл. Утас: доод нав. Өргөн дэлгэц (web):
-/// дээд нав + агуулга — ижил 4 таб, ижил төлөв.
+/// дээд нав + агуулга — ижил 3 таб, ижил төлөв.
 class _AppShell extends ConsumerWidget {
   const _AppShell({required this.shell});
 
@@ -219,7 +250,7 @@ class _AppShell extends ConsumerWidget {
                 ? null
                 : TokenBalanceChip(
                     balance: user.balance,
-                    onTap: () => select(1),
+                    onTap: () => context.push('/wallet'),
                   ),
           ),
           Expanded(
