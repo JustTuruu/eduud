@@ -936,7 +936,7 @@ class _TimerBarState extends State<_TimerBar>
     return Column(
       children: [
         SizedBox(
-          height: 14,
+          height: 6,
           child: LayoutBuilder(builder: (context, box) {
             return TweenAnimationBuilder<double>(
               tween: Tween(end: frac),
@@ -956,14 +956,14 @@ class _TimerBarState extends State<_TimerBar>
                     clipBehavior: Clip.none,
                     children: [
                       Container(
-                        height: 5,
+                        height: 6,
                         decoration: BoxDecoration(
                           color: AppColors.ink.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
                       Container(
-                        height: 5,
+                        height: 6,
                         width: x,
                         decoration: BoxDecoration(
                           color: fill,
@@ -977,17 +977,6 @@ class _TimerBarState extends State<_TimerBar>
                                   ),
                                 ]
                               : null,
-                        ),
-                      ),
-                      Positioned(
-                        left: (x - 7).clamp(-7.0, box.maxWidth - 7),
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _urgent ? fill : AppColors.ink,
-                          ),
                         ),
                       ),
                     ],

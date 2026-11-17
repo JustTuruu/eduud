@@ -541,12 +541,12 @@ class _TimerBar extends StatelessWidget {
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth * fraction;
       return SizedBox(
-        height: 14,
+        height: 6,
         child: Stack(
           alignment: Alignment.centerLeft,
           children: [
             Container(
-              height: 5,
+              height: 6,
               decoration: BoxDecoration(
                 color: AppColors.ink.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(3),
@@ -556,21 +556,10 @@ class _TimerBar extends StatelessWidget {
               duration: const Duration(milliseconds: 900),
               curve: Curves.linear,
               width: w,
-              height: 5,
+              height: 6,
               decoration: BoxDecoration(
                 color: urgent ? AppColors.coralLight : AppColors.coral,
                 borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.linear,
-              left: (w - 7).clamp(0.0, c.maxWidth - 14),
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: AppColors.ink),
               ),
             ),
           ],

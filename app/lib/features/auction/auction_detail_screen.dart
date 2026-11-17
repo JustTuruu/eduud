@@ -778,7 +778,7 @@ class _DetailTimerState extends State<_DetailTimer>
         child: Column(
           children: [
             SizedBox(
-              height: 14,
+              height: 6,
               child: LayoutBuilder(builder: (context, box) {
                 return TweenAnimationBuilder<double>(
                   tween: Tween(end: frac),
@@ -819,17 +819,6 @@ class _DetailTimerState extends State<_DetailTimer>
                                       ),
                                     ]
                                   : null,
-                            ),
-                          ),
-                          Positioned(
-                            left: (x - 7).clamp(-7.0, box.maxWidth - 7),
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _urgent ? fill : AppColors.ink,
-                              ),
                             ),
                           ),
                         ],
