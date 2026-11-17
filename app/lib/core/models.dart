@@ -276,8 +276,8 @@ class FeedbackOption {
 abstract class FeedbackMeta {
   static const types = [
     FeedbackOption('bug', 'Алдаа'),
-    FeedbackOption('idea', 'Шинэ санаа'),
-    FeedbackOption('improvement', 'Сайжруулалт'),
+    FeedbackOption('idea', 'Санаа'),
+    FeedbackOption('improvement', 'Сайжруулах зүйл'),
     FeedbackOption('complaint', 'Гомдол'),
     FeedbackOption('suggestion', 'Санал'),
     FeedbackOption('praise', 'Талархал'),
@@ -285,21 +285,21 @@ abstract class FeedbackMeta {
   ];
 
   static const categories = [
-    FeedbackOption('design', 'Дизайн'),
-    FeedbackOption('ux', 'Хэрэглэгчийн туршлага'),
-    FeedbackOption('performance', 'Хурд'),
-    FeedbackOption('reliability', 'Ажиллагаа'),
-    FeedbackOption('usability', 'Үйлдэл'),
-    FeedbackOption('content', 'Агуулга'),
-    FeedbackOption('billing', 'Төлбөр тооцоо'),
+    FeedbackOption('design', 'Дүр төр'),
+    FeedbackOption('ux', 'Ашиглахад ойлгомжтой эсэх'),
+    FeedbackOption('performance', 'Ажиллах хурд'),
+    FeedbackOption('reliability', 'Алдаа саатал'),
+    FeedbackOption('usability', 'Хэрэглэхэд хялбар'),
+    FeedbackOption('content', 'Мэдээлэл'),
+    FeedbackOption('billing', 'Төлбөр'),
     FeedbackOption('general', 'Ерөнхий'),
   ];
 
   static const statuses = {
-    'open': 'Хүлээгдэж буй',
-    'reviewing': 'Хянагдаж буй',
-    'resolved': 'Шийдэгдсэн',
-    'closed': 'Хаагдсан',
+    'open': 'Хүлээгдэж байна',
+    'reviewing': 'Хянагдаж байна',
+    'resolved': 'Шийдвэрлэгдсэн',
+    'closed': 'Дууссан',
   };
 
   static String typeLabel(String id) => types
@@ -409,10 +409,10 @@ class AuctionRequest {
   /// Төлөв → монгол шошго.
   static const statusLabels = {
     'draft': 'Ноорог',
-    'pending': 'Хүлээгдэж буй',
-    'reviewing': 'Хянагдаж буй',
+    'pending': 'Хүлээгдэж байна',
+    'reviewing': 'Хянагдаж байна',
     'info_requested': 'Мэдээлэл дутуу',
-    'approved': 'Зөвшөөрсөн',
+    'approved': 'Зөвшөөрөгдсөн',
     'rejected': 'Татгалзсан',
     'cancelled': 'Цуцлагдсан',
   };

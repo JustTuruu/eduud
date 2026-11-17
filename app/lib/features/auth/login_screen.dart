@@ -11,6 +11,7 @@ import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
 import '../../shared/widgets.dart';
 import 'auth_controller.dart';
+import 'auth_shell.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.next});
@@ -98,7 +99,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _shake++;
         if (status == 401) {
           // Хоёулангийнх нь хүрээг улаан болгож, шалтгааныг дээр нь тайлбарлана.
-          _formError = 'Утасны дугаар эсвэл нууц үг буруу байна.';
+          _formError =
+              'Утасны дугаар эсвэл нууц үг буруу байна. Дахин шалгана уу.';
           _credentialsInvalid = true;
         } else {
           _formError = apiErrorMessage(e);
@@ -119,168 +121,122 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AuthBackground(
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              // Гарын өндрийг Scaffold өөрөө нөхдөг тул viewInsets давхар нэмэхгүй.
-              padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: constraints.maxHeight - 48),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: AutofillGroup(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const _Wordmark(),
-                          const SizedBox(height: 34),
-                          ErrorBanner(message: _formError, shakeToken: _shake),
-                          AppField(
-                            label: 'Утасны дугаар',
-                            controller: _phone,
-                            focusNode: _phoneFocus,
-                            hint: '99xxxxxx',
-                            icon: LucideIcons.smartphone,
-                            error: _phoneError,
-                            invalid: _credentialsInvalid,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [
-                              AutofillHints.telephoneNumber
-                            ],
-                            maxLength: Validators.phoneLength,
-                            enabled: !_loading,
-                            shakeToken: _shake,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(
-                                  Validators.phoneLength),
-                            ],
-                            onChanged: (_) {
-                              if (_formError != null) {
-                                setState(() {
-                                  _formError = null;
-                                  _credentialsInvalid = false;
-                                });
-                              }
-                              _revalidate();
-                            },
-                            onSubmitted: (_) => _passwordFocus.requestFocus(),
-                          ),
-                          const SizedBox(height: 16),
-                          PasswordField(
-                            label: 'Нууц үг',
-                            controller: _password,
-                            focusNode: _passwordFocus,
-                            hint: 'Нууц үгээ оруулна уу',
-                            error: _passwordError,
-                            invalid: _credentialsInvalid,
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.password],
-                            enabled: !_loading,
-                            shakeToken: _shake,
-                            onChanged: (_) {
-                              if (_formError != null) {
-                                setState(() {
-                                  _formError = null;
-                                  _credentialsInvalid = false;
-                                });
-                              }
-                              _revalidate();
-                            },
-                            onSubmitted: (_) => _submit(),
-                          ),
-                          // Голлосон найрлага — дэлгэцийн бүх элемент нэг
-                          // босоо тэнхлэг дээр цэгцэрнэ.
-                          Center(
-                            child: TextButton(
-                              onPressed: _loading
-                                  ? null
-                                  : () => context.push('/auth/forgot'),
-                              child: const Text(
-                                'Нууц үгээ мартсан уу?',
-                                style: TextStyle(
-                                    color: AppColors.muted,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          PrimaryButton(
-                            label: 'Нэвтрэх',
-                            icon: LucideIcons.logIn,
-                            loading: _loading,
-                            onPressed: _loading ? null : _submit,
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Шинэ хэрэглэгч үү?',
-                                  style: Theme.of(context).textTheme.bodySmall),
-                              TextButton(
-                                onPressed: _loading
-                                    ? null
-                                    : () => context
-                                        .push(_withNext('/auth/register')),
-                                child: const Text(
-                                  'Бүртгүүлэх',
-                                  style: TextStyle(
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w800),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+      body: AuthShell(
+        backEnabled: !_loading,
+        child: AutofillGroup(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AuthHeading(
+                title: 'Нэвтрэх',
+                subtitle:
+                    'Санал өгөх, эрхээ цэнэглэх, хожсон бараагаа авахын тулд нэвтэрнэ үү.',
+              ),
+              ErrorBanner(message: _formError, shakeToken: _shake),
+              AppField(
+                label: 'Утасны дугаар',
+                controller: _phone,
+                focusNode: _phoneFocus,
+                hint: '99xxxxxx',
+                icon: LucideIcons.smartphone,
+                error: _phoneError,
+                invalid: _credentialsInvalid,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.telephoneNumber],
+                maxLength: Validators.phoneLength,
+                enabled: !_loading,
+                shakeToken: _shake,
+                autofocus: true,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(Validators.phoneLength),
+                ],
+                onChanged: (_) {
+                  _clearFormError();
+                  _revalidate();
+                },
+                onSubmitted: (_) => _passwordFocus.requestFocus(),
+              ),
+              const SizedBox(height: 20),
+              PasswordField(
+                label: 'Нууц үг',
+                controller: _password,
+                focusNode: _passwordFocus,
+                hint: 'Нууц үгээ оруулна уу',
+                error: _passwordError,
+                invalid: _credentialsInvalid,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.password],
+                enabled: !_loading,
+                shakeToken: _shake,
+                onChanged: (_) {
+                  _clearFormError();
+                  _revalidate();
+                },
+                onSubmitted: (_) => _submit(),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed:
+                      _loading ? null : () => context.push('/auth/forgot'),
+                  child: const Text(
+                    'Нууц үгээ мартсан уу?',
+                    style: TextStyle(
+                        color: AppColors.inkSoft,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 12),
+              PrimaryButton(
+                label: 'Нэвтрэх',
+                icon: LucideIcons.logIn,
+                loading: _loading,
+                onPressed: _loading ? null : _submit,
+              ),
+              const SizedBox(height: 28),
+              Container(height: 1, color: AppColors.border),
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text('Шинэ хэрэглэгч үү?',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.inkSoft)),
+                  TextButton(
+                    onPressed: _loading
+                        ? null
+                        : () => context.push(_withNext('/auth/register')),
+                    child: const Text(
+                      'Бүртгүүлэх',
+                      style: TextStyle(
+                          color: AppColors.ink,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
-/// Тэмдэг (logo) байхгүй — зөвхөн нэр. Маягт нь дэлгэцийн гол баатар.
-class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    final display = Theme.of(context).textTheme;
-    return Column(
-      children: [
-        Text.rich(
-          TextSpan(children: [
-            TextSpan(
-                text: 'E-',
-                style: display.displayMedium?.copyWith(fontSize: 30)),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.baseline,
-              baseline: TextBaseline.alphabetic,
-              child: Text('DUUD',
-                  style: display.displayMedium
-                      ?.copyWith(fontSize: 30, color: AppColors.coral)),
-            ),
-          ]),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Бага үнийн дуудлага худалдаа',
-          textAlign: TextAlign.center,
-          style: display.bodySmall,
-        ),
-      ],
-    );
+  void _clearFormError() {
+    if (_formError != null) {
+      setState(() {
+        _formError = null;
+        _credentialsInvalid = false;
+      });
+    }
   }
 }

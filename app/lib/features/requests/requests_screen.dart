@@ -13,6 +13,7 @@ import '../../shared/app_nav_bar.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
+import '../wallet/sub_page.dart';
 import 'request_validators.dart';
 
 final myRequestsProvider =
@@ -181,17 +182,20 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
               children: [
-                Text('Дуудлага худалдаа зохион байгуулах хүсэлт',
-                    style: text.displayMedium),
+                Reveal(
+                  index: 0,
+                  child: Text('Бараагаа дуудлага худалдаанд оруулах',
+                      style: text.displayMedium),
+                ),
                 const SizedBox(height: 8),
                 const Text(
                   'Барааныхаа мэдээллийг илгээгээрэй — бид хянаж, '
                   'тохирвол дуудлага худалдаанд оруулна.',
                   style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 ErrorBanner(message: _formError, shakeToken: _shake),
-                Text('Барааны мэдээлэл', style: text.displaySmall),
+                const PlainLabel('Барааны мэдээлэл'),
                 const SizedBox(height: 16),
                 AppField(
                   label: 'Барааны нэр *',
@@ -208,11 +212,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                 const SizedBox(height: 18),
                 const Padding(
                   padding: EdgeInsets.only(left: 4, bottom: 8),
-                  child: Text('Ангилал',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.muted)),
+                  child: PlainLabel('Ангилал'),
                 ),
                 AppChoiceChips<String>(
                   options: [for (final c in _categories) ChipOption(c, c)],
@@ -251,7 +251,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                   onChanged: (_) => _revalidate(),
                 ),
                 const SizedBox(height: 28),
-                Text('Бусад мэдээлэл', style: text.displaySmall),
+                const PlainLabel('Бусад мэдээлэл'),
                 const SizedBox(height: 16),
                 AppField(
                   label: 'Тохиромжтой хугацаа',
@@ -283,14 +283,22 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                   label: 'Ноорог хадгалах',
                   onPressed: _loading ? null : () => _submit(draft: true),
                 ),
-                const SizedBox(height: 40),
-                Text('Миний хүсэлтүүд', style: text.displayMedium),
+                const SizedBox(height: 48),
+                const Reveal(
+                  index: 1,
+                  child: Text('Миний хүсэлтүүд',
+                      style: TextStyle(
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          color: AppColors.ink)),
+                ),
                 const SizedBox(height: 16),
                 history.when(
                   loading: () => const Column(children: [
-                    Skeleton(height: 96, radius: 20),
+                    Skeleton(height: 88, radius: 16),
                     SizedBox(height: 12),
-                    Skeleton(height: 96, radius: 20),
+                    Skeleton(height: 88, radius: 16),
                   ]),
                   error: (e, _) => Column(children: [
                     Text(apiErrorMessage(e),
@@ -306,7 +314,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                       ? const EmptyState(
                           icon: LucideIcons.filePlus2,
                           title: 'Хүсэлт хараахан алга',
-                          subtitle: 'Илгээсэн хүсэлт тань энд төлөвтэйгээ харагдана.',
+                          subtitle: 'Илгээсэн хүсэлт энд харагдана.',
                         )
                       : Column(children: [
                           for (final r in list)
@@ -378,11 +386,9 @@ class _RequestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _statusColor(item.status);
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,18 +406,21 @@ class _RequestTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(999),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 ),
-                child: Text(
+                const SizedBox(width: 6),
+                Text(
                   AuctionRequest.statusLabel(item.status),
-                  style: TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w800, color: color),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink),
                 ),
-              ),
+              ]),
             ],
           ),
           const SizedBox(height: 8),
@@ -428,7 +437,10 @@ class _RequestTile extends StatelessWidget {
               if (item.startPrice != null) formatMnt(item.startPrice!),
               DateFormat('yyyy.MM.dd HH:mm').format(item.createdAt.toLocal()),
             ].join(' · '),
-            style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+            style: const TextStyle(
+                fontSize: 12.5,
+                color: AppColors.inkSoft,
+                fontFeatures: [FontFeature.tabularFigures()]),
           ),
           if (item.adminNote != null && item.adminNote!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),

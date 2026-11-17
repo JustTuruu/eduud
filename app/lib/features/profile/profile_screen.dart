@@ -9,11 +9,15 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/app_nav_bar.dart';
 import '../../shared/avatars.dart';
 import '../../shared/form_widgets.dart';
+import '../../shared/invoice_sheet.dart' show showGlassSheet;
 import '../../shared/validators.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
+import '../orders/orders_screen.dart' show ordersProvider;
+import '../wallet/sub_page.dart';
 
+/// Профайл — хүн, түүний эрх ба хожсон бараа, дараа нь тохиргооны жагсаалтууд.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -21,93 +25,152 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const SizedBox.shrink();
-    final text = Theme.of(context).textTheme;
+    final due = ref
+            .watch(ordersProvider)
+            .valueOrNull
+            ?.where((o) => o.status == 'pending')
+            .length ??
+        0;
 
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: AppBackground(
+        seed: 'profile',
         child: SafeArea(
+          bottom: false,
           child: PageFrame(
             maxWidth: 720,
             child: ListView(
               padding: EdgeInsets.fromLTRB(
-                  18,
-                  24,
-                  18,
+                  20,
+                  20,
+                  20,
                   Breakpoints.isWide(context)
                       ? 40
                       : NavMetrics.bottomInset(context)),
               children: [
-                _Header(user: user),
-                const SizedBox(height: 26),
-                // Данс ба Ялалт — хамгийн их хэрэглэгддэг тул дээр нь.
-                _FeatureRow(
-                  icon: LucideIcons.wallet,
-                  label: 'Данс',
-                  sub: '${user.balance} token',
-                  onTap: () => context.push('/wallet'),
+                Reveal(
+                  index: 0,
+                  child: _Header(
+                    user: user,
+                    onAvatar: () => _editAvatar(context, ref, user),
+                  ),
                 ),
-                _FeatureRow(
-                  icon: LucideIcons.trophy,
-                  label: 'Ялалт',
-                  sub: 'Ялсан бараа, төлбөр',
-                  onTap: () => context.push('/orders'),
+                const SizedBox(height: 28),
+                Reveal(
+                  index: 1,
+                  // Row-ийн stretch нь ListView-д хязгааргүй өндөр авдаг тул
+                  // IntrinsicHeight-аар хоёр tile-ийн өндрийг тэгшилнэ.
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _HeroTile(
+                            icon: LucideIcons.gem,
+                            label: 'Миний эрх',
+                            value: '${user.balance}',
+                            unit: 'эрх',
+                            hint: 'Цэнэглэх',
+                            onTap: () => context.push('/wallet'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _HeroTile(
+                            icon: LucideIcons.trophy,
+                            label: 'Хожсон бараа',
+                            value: due > 0 ? '$due' : null,
+                            unit: due > 0 ? 'төлөх' : null,
+                            hint: due > 0 ? 'Төлбөр хүлээж байна' : 'Харах',
+                            highlight: due > 0,
+                            onTap: () => context.push('/orders'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 22),
-                const SectionLabel('Бүртгэл'),
-                const SizedBox(height: 12),
-                _MenuTile(
-                  icon: LucideIcons.userPen,
-                  label: 'Нэр солих',
-                  value: user.name,
-                  onTap: () => _editName(context, ref, user.name),
+                const SizedBox(height: 36),
+                Reveal(
+                  index: 2,
+                  child: _Group(title: 'Бүртгэл', rows: [
+                    _Row(
+                      icon: LucideIcons.userPen,
+                      label: 'Нэр солих',
+                      value: user.name,
+                      onTap: () => _editName(context, ref, user.name),
+                    ),
+                    _Row(
+                      icon: LucideIcons.palette,
+                      label: 'Аватар солих',
+                      onTap: () => _editAvatar(context, ref, user),
+                    ),
+                    _Row(
+                      icon: LucideIcons.keyRound,
+                      label: 'Нууц үг солих',
+                      onTap: () => _changePassword(context, ref),
+                    ),
+                  ]),
                 ),
-                _MenuTile(
-                  icon: LucideIcons.palette,
-                  label: 'Аватар солих',
-                  onTap: () => _editAvatar(context, ref, user),
+                const SizedBox(height: 28),
+                Reveal(
+                  index: 3,
+                  child: _Group(title: 'Тусламж', rows: [
+                    _Row(
+                      icon: LucideIcons.lifeBuoy,
+                      label: 'Тусламж',
+                      onTap: () => context.push('/help'),
+                    ),
+                    _Row(
+                      icon: LucideIcons.messageSquare,
+                      label: 'Санал хүсэлт',
+                      onTap: () => context.push('/feedback'),
+                    ),
+                  ]),
                 ),
-                _MenuTile(
-                  icon: LucideIcons.keyRound,
-                  label: 'Нууц үг солих',
-                  onTap: () => _changePassword(context, ref),
+                const SizedBox(height: 28),
+                Reveal(
+                  index: 4,
+                  child: _Group(title: 'Нөхцөл', rows: [
+                    _Row(
+                      icon: LucideIcons.fileText,
+                      label: 'Үйлчилгээний нөхцөл',
+                      onTap: () => context.push('/content/terms'),
+                    ),
+                    _Row(
+                      icon: LucideIcons.shieldCheck,
+                      label: 'Нууцлалын бодлого',
+                      onTap: () => context.push('/content/privacy'),
+                    ),
+                  ]),
                 ),
-                const SizedBox(height: 22),
-                const SectionLabel('Дэмжлэг'),
-                const SizedBox(height: 12),
-                _MenuTile(
-                  icon: LucideIcons.lifeBuoy,
-                  label: 'Тусламж',
-                  onTap: () => context.push('/help'),
-                ),
-                _MenuTile(
-                  icon: LucideIcons.messageSquare,
-                  label: 'Санал хүсэлт',
-                  onTap: () => context.push('/feedback'),
-                ),
-                const SizedBox(height: 22),
-                const SectionLabel('Мэдээлэл'),
-                const SizedBox(height: 12),
-                _MenuTile(
-                  icon: LucideIcons.fileText,
-                  label: 'Үйлчилгээний нөхцөл',
-                  onTap: () => context.push('/content/terms'),
-                ),
-                _MenuTile(
-                  icon: LucideIcons.shieldCheck,
-                  label: 'Нууцлалын бодлого',
-                  onTap: () => context.push('/content/privacy'),
-                ),
-                const SizedBox(height: 30),
-                _MenuTile(
-                  icon: LucideIcons.logOut,
-                  label: 'Гарах',
-                  color: AppColors.danger,
-                  onTap: () => _logout(context, ref),
-                ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 56),
                 Center(
+                  child: AnimatedPressable(
+                    onPressed: () => _logout(context, ref),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      alignment: Alignment.center,
+                      child:
+                          const Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(LucideIcons.logOut,
+                            size: 18, color: AppColors.danger),
+                        SizedBox(width: 10),
+                        Text('Гарах',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.danger)),
+                      ]),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
                   child: Text('E-Duud 0.1.0',
-                      style: text.bodySmall?.copyWith(fontSize: 11.5)),
+                      style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
                 ),
               ],
             ),
@@ -138,9 +201,9 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _editAvatar(
       BuildContext context, WidgetRef ref, UserProfile user) async {
-    final picked = await showAppSheet<String>(
+    final picked = await showGlassSheet<String>(
       context,
-      builder: (ctx) => _AvatarSheet(user: user),
+      builder: (ctx) => AvatarPicker(name: user.name, current: user.avatarUrl),
     );
     if (picked == null) return;
 
@@ -183,10 +246,14 @@ class ProfileScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Гарах уу?', style: Theme.of(ctx).textTheme.displayMedium),
+            const Text('Гарах уу?',
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink)),
             const SizedBox(height: 8),
-            Text('Та дахин нэвтрэх шаардлагатай болно.',
-                style: Theme.of(ctx).textTheme.bodySmall),
+            const Text('Дахин орохдоо нэвтэрнэ.',
+                style: TextStyle(fontSize: 14, color: AppColors.inkSoft)),
             const SizedBox(height: 22),
             PrimaryButton(
               label: 'Гарах',
@@ -199,8 +266,8 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child:
-                  const Text('Болих', style: TextStyle(color: AppColors.muted)),
+              child: const Text('Болих',
+                  style: TextStyle(color: AppColors.inkSoft)),
             ),
           ],
         ),
@@ -215,182 +282,279 @@ class ProfileScreen extends ConsumerWidget {
 
 // ---------------------------------------------------------------------------
 
+/// Толгой — аватар, нэр, утас зүүн талдаа; админ бол жижиг тэмдэг.
 class _Header extends StatelessWidget {
-  const _Header({required this.user});
+  const _Header({required this.user, required this.onAvatar});
 
   final UserProfile user;
+  final VoidCallback onAvatar;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            CoralRing(
-              size: 110,
-              strokeWidth: 3,
-              child: AppAvatar(
-                name: user.name,
-                avatarUrl: user.avatarUrl,
-                size: 92,
-              ),
-            ),
+    return Row(children: [
+      Semantics(
+        button: true,
+        label: 'Аватар солих',
+        child: AnimatedPressable(
+          onPressed: onAvatar,
+          child: Stack(clipBehavior: Clip.none, children: [
+            AppAvatar(name: user.name, avatarUrl: user.avatarUrl, size: 76),
             Positioned(
               right: -2,
               bottom: -2,
               child: Container(
-                padding: const EdgeInsets.all(7),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.surfaceHi,
-                  border: Border.all(color: AppColors.bg, width: 3),
+                  border: Border.all(color: AppColors.bg, width: 2.5),
                 ),
-                child: const Icon(LucideIcons.palette,
-                    size: 13, color: AppColors.ink),
+                child: const Icon(LucideIcons.pencil,
+                    size: 12, color: AppColors.ink),
               ),
             ),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 18),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(user.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: AppColors.ink)),
+            const SizedBox(height: 2),
+            Text(user.phone,
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.inkSoft,
+                    fontFeatures: [FontFeature.tabularFigures()])),
+            if (user.isAdmin) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceHi.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.badgeCheck,
+                      size: 13, color: AppColors.inkSoft),
+                  SizedBox(width: 6),
+                  Text('Админ',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.inkSoft)),
+                ]),
+              ),
+            ],
           ],
         ),
-        const SizedBox(height: 14),
-        Text(user.name, style: Theme.of(context).textTheme.displayMedium),
-        const SizedBox(height: 4),
-        Text(user.phone, style: Theme.of(context).textTheme.bodySmall),
-        if (user.isAdmin) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+      ),
+    ]);
+  }
+}
+
+/// "Миний эрх" / "Хожсон бараа" — профайлын хоёр гол орц.
+class _HeroTile extends StatelessWidget {
+  const _HeroTile({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.onTap,
+    this.value,
+    this.unit,
+    this.highlight = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? value;
+  final String? unit;
+  final String hint;
+  final bool highlight;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$label ${value ?? ''} ${unit ?? ''}',
+      child: AnimatedPressable(
+        onPressed: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 144),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: highlight
+                  ? AppColors.coral.withValues(alpha: 0.5)
+                  : AppColors.border,
             ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.badgeCheck, size: 12, color: AppColors.gold),
-              SizedBox(width: 6),
-              Text('Админ',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                    color: AppColors.gold,
-                  )),
-            ]),
           ),
-        ],
-      ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(icon, size: 18, color: AppColors.coralLight),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.inkSoft)),
+                ),
+              ]),
+              const SizedBox(height: 14),
+              if (value != null)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(value!,
+                            style:
+                                AppTheme.price(size: 40).copyWith(height: 1)),
+                      ),
+                    ),
+                    if (unit != null) ...[
+                      const SizedBox(width: 6),
+                      Text(unit!,
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.inkSoft)),
+                    ],
+                  ],
+                )
+              else
+                const Text('Бүгд',
+                    style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        color: AppColors.ink)),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                  child: Text(hint,
+                      style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.coralLight)),
+                ),
+                const Icon(LucideIcons.chevronRight,
+                    size: 16, color: AppColors.coralLight),
+              ]),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _AvatarSheet extends StatefulWidget {
-  const _AvatarSheet({required this.user});
+/// Тохиргооны бүлэг — гарчиг + 1px хуваагчтай мөрүүд (тус тусдаа карт биш).
+class _Group extends StatelessWidget {
+  const _Group({required this.title, required this.rows});
 
-  final UserProfile user;
-
-  @override
-  State<_AvatarSheet> createState() => _AvatarSheetState();
-}
-
-class _AvatarSheetState extends State<_AvatarSheet> {
-  late String? _selected = widget.user.avatarUrl;
+  final String title;
+  final List<_Row> rows;
 
   @override
   Widget build(BuildContext context) {
-    // Жижиг дэлгэц дээр агуулга багтахгүй байвал гүйж болно; доод талд
-    // системийн заагчийн зай үлдээнэ.
-    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(22, 20, 22, 26 + safeBottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Аватар сонгох',
-              style: Theme.of(context).textTheme.displayMedium),
-          const SizedBox(height: 6),
-          Text(
-            'Өнгөө сонгоно уу — нэрийн эхний үсэг тань дээр нь харагдана.',
-            style: Theme.of(context).textTheme.bodySmall,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PlainLabel(title),
+        const SizedBox(height: 4),
+        Container(
+          decoration: const BoxDecoration(
+            border: Border(
+              top: BorderSide(color: AppColors.border),
+              bottom: BorderSide(color: AppColors.border),
+            ),
           ),
-          const SizedBox(height: 22),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-            children: avatarPresets.map((p) {
-              final isSelected = _selected == p.value;
-              return Semantics(
-                button: true,
-                selected: isSelected,
-                label: p.label,
-                child: AnimatedPressable(
-                  onPressed: () => setState(() => _selected = p.value),
-                  child: AnimatedContainer(
-                    duration: AppMotion.fast,
-                    curve: AppMotion.enter,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color:
-                            isSelected ? AppColors.coral : Colors.transparent,
-                        width: 2.4,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: p.gradient,
-                            ),
-                            child: Center(
-                              child: Text(
-                                avatarInitial(widget.user.name),
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (isSelected)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.coral,
-                              ),
-                              child: const Icon(LucideIcons.check,
-                                  size: 11, color: AppColors.ctaInk),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+          child: Column(children: [
+            for (var i = 0; i < rows.length; i++)
+              Container(
+                decoration: BoxDecoration(
+                  border: i == rows.length - 1
+                      ? null
+                      : const Border(
+                          bottom: BorderSide(color: AppColors.border)),
                 ),
-              );
-            }).toList(),
+                child: rows[i],
+              ),
+          ]),
+        ),
+      ],
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPressable(
+      onPressed: onTap,
+      scale: 0.99,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        color: Colors.transparent,
+        child: Row(children: [
+          Icon(icon, size: 20, color: AppColors.inkSoft),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink)),
           ),
-          const SizedBox(height: 26),
-          PrimaryButton(
-            label: 'Хадгалах',
-            icon: LucideIcons.check,
-            onPressed: _selected == null || _selected == widget.user.avatarUrl
-                ? null
-                : () => Navigator.pop(context, _selected),
-          ),
-        ],
+          if (value != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: Text(value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 14, color: AppColors.inkSoft)),
+              ),
+            ),
+          const Icon(LucideIcons.chevronRight,
+              size: 18, color: AppColors.muted),
+        ]),
       ),
     );
   }
@@ -454,7 +618,11 @@ class _EditNameDialogState extends State<_EditNameDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Нэр солих', style: Theme.of(context).textTheme.displayMedium),
+          const Text('Нэр солих',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink)),
           const SizedBox(height: 20),
           AppField(
             label: 'Нэр',
@@ -482,7 +650,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
             child:
-                const Text('Болих', style: TextStyle(color: AppColors.muted)),
+                const Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
       ),
@@ -521,7 +689,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
 
   Future<void> _save() async {
     final currentError =
-        _current.text.isEmpty ? 'Одоогийн нууц үгээ оруулна уу' : null;
+        _current.text.isEmpty ? 'Одоогийн нууц үгээ бичнэ үү' : null;
     final nextError = Validators.password(_next.text);
     final confirmError = Validators.confirmPassword(_confirm.text, _next.text);
 
@@ -563,8 +731,11 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Нууц үг солих',
-              style: Theme.of(context).textTheme.displayMedium),
+          const Text('Нууц үг солих',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink)),
           const SizedBox(height: 20),
           ErrorBanner(message: _formError, shakeToken: _shake),
           PasswordField(
@@ -583,7 +754,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           PasswordField(
             label: 'Шинэ нууц үг',
             controller: _next,
-            hint: 'Дор хаяж 8 тэмдэгт',
+            hint: 'Хамгийн багадаа 8 тэмдэгт',
             error: _nextError,
             enabled: !_loading,
             shakeToken: _shake,
@@ -601,9 +772,9 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           PasswordStrengthMeter(password: _next.text),
           const SizedBox(height: 14),
           PasswordField(
-            label: 'Шинэ нууц үг давтах',
+            label: 'Шинэ нууц үгээ давтах',
             controller: _confirm,
-            hint: 'Дахин оруулна уу',
+            hint: 'Дахин бичнэ үү',
             error: _confirmError,
             enabled: !_loading,
             shakeToken: _shake,
@@ -626,148 +797,9 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
             child:
-                const Text('Болих', style: TextStyle(color: AppColors.muted)),
+                const Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Данс / Ялалт — том, шүрэн icon-той онцлох мөр.
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({
-    required this.icon,
-    required this.label,
-    required this.sub,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String sub;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: AnimatedPressable(
-        onPressed: onTap,
-        scale: 0.98,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 76),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHi.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.borderHi),
-          ),
-          child: Row(children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.coral.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, size: 22, color: AppColors.coral),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink)),
-                  const SizedBox(height: 2),
-                  Text(sub,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.inkSoft,
-                          fontFeatures: [FontFeature.tabularFigures()])),
-                ],
-              ),
-            ),
-            const Icon(LucideIcons.chevronRight, size: 20, color: AppColors.muted),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.value,
-    this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final String? value;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: AnimatedPressable(
-        onPressed: onTap,
-        scale: 0.98,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 62),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.control),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHi,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 18, color: color ?? AppColors.ink),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(label,
-                      style: TextStyle(
-                        color: color ?? AppColors.ink,
-                        fontWeight: FontWeight.w600,
-                      )),
-                  if (value != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      value!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(fontSize: 12, color: AppColors.muted),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const Icon(LucideIcons.chevronRight,
-                size: 17, color: AppColors.muted),
-          ]),
-        ),
       ),
     );
   }

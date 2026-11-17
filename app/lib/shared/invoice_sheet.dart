@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,6 @@ import '../core/api/api_client.dart';
 import '../core/app_config_provider.dart';
 import '../core/models.dart';
 import '../core/theme/app_theme.dart';
-import 'form_widgets.dart';
 import 'widgets.dart';
 
 /// wire.mn нэхэмжлэхийн QR төлбөрийн sheet — цэнэглэлт болон ялсан барааны
@@ -64,7 +65,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Төлбөр хараахан хийгдээгүй байна.')));
+          const SnackBar(content: Text('Төлбөр хараахан орж ирээгүй байна.')));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -75,79 +76,125 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
     }
   }
 
+  Widget _qr(BuildContext context, TopupInvoice inv) {
+    const size = 208.0;
+    // QR уншигдахын тулд цагаан суурь заавал хэрэгтэй.
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 12)),
+          ],
+        ),
+        child: Image.network(
+          inv.qrImageUrl!,
+          width: size,
+          height: size,
+          loadingBuilder: (context, child, progress) => progress == null
+              ? child
+              : const SizedBox(
+                  width: size,
+                  height: size,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.coral, strokeWidth: 2.4),
+                  ),
+                ),
+          errorBuilder: (_, __, ___) => SizedBox(
+            width: size,
+            height: size,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(LucideIcons.imageOff,
+                    size: 30, color: AppColors.surfaceHi),
+                const SizedBox(height: 10),
+                Text('QR харагдсангүй. Дахин нээнэ үү.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.surfaceHi)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _step(int n, String text) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.borderHi),
+              ),
+              child: Text('$n',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.inkSoft)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(text,
+                  style: const TextStyle(
+                      fontSize: 14, height: 1.4, color: AppColors.inkSoft)),
+            ),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final inv = widget.invoice;
     final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    final testMode =
+        ref.watch(serverConfigProvider).valueOrNull?.paymentTestMode ?? false;
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 32 + safeBottom),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 28 + safeBottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SectionLabel('Төлбөр'),
-          const SizedBox(height: 8),
-          Center(child: PriceText(amount: inv.amountMnt, fontSize: 32)),
+          const Text('Төлөх дүн',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.inkSoft)),
+          const SizedBox(height: 6),
+          Text(formatMnt(inv.amountMnt), style: AppTheme.price(size: 40)),
           const SizedBox(height: 20),
           if (inv.qrImageUrl != null)
-            Center(
-              child: GlowCard(
-                radius: 20,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      inv.qrImageUrl!,
-                      width: 190,
-                      height: 190,
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null
-                              ? child
-                              : const SizedBox(
-                                  width: 190,
-                                  height: 190,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                        color: AppColors.coral,
-                                        strokeWidth: 2.4),
-                                  ),
-                                ),
-                      // QR зураг ачаалагдахгүй бол хоосон нүх биш ойлгомжтой
-                      // мессеж харуулна.
-                      errorBuilder: (_, __, ___) => SizedBox(
-                        width: 190,
-                        height: 190,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(LucideIcons.imageOff,
-                                size: 30, color: AppColors.muted),
-                            const SizedBox(height: 10),
-                            Text('QR ачаалагдсангүй',
-                                style:
-                                    Theme.of(context).textTheme.bodySmall),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            )
+            _qr(context, inv)
           else if (inv.qrText != null) ...[
-            GlowCard(
-              radius: 18,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SelectableText(inv.qrText!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 12.5, color: AppColors.inkSoft, height: 1.6)),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.bg.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(color: AppColors.border),
               ),
+              child: SelectableText(inv.qrText!,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.inkSoft, height: 1.6)),
             ),
-            const SizedBox(height: 6),
-            Center(
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: inv.qrText!));
@@ -155,35 +202,77 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
                       .showSnackBar(const SnackBar(content: Text('Хууллаа')));
                 },
                 icon: const Icon(LucideIcons.copy,
-                    size: 15, color: AppColors.muted),
+                    size: 15, color: AppColors.inkSoft),
                 label: const Text('Хуулах',
-                    style: TextStyle(color: AppColors.muted)),
+                    style: TextStyle(color: AppColors.inkSoft)),
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          Text(
-            'Банкны апп-аараа QR уншуулан төлнө үү. Төлбөр хийгдмэгц автоматаар баталгаажна.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          const SizedBox(height: 16),
+          _step(1, 'Банкныхаа апп-ыг нээнэ.'),
+          _step(2, 'QR кодыг уншуулж, төлбөрөө баталгаажуулна.'),
           const SizedBox(height: 22),
           PrimaryButton(
-            label: 'Төлбөр шалгах',
+            label: 'Төлсөн, шалгах',
             icon: LucideIcons.refreshCw,
             loading: _checking,
             onPressed: _checking ? null : _check,
           ),
+          const SizedBox(height: 10),
+          const Text(
+            'Төлбөр орж ирэхэд автоматаар баталгаажна.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.muted),
+          ),
           // Тест орчинд банк руу орох боломжгүй тул төлбөрийг симуляци хийнэ.
-          if (ref.watch(serverConfigProvider).valueOrNull?.paymentTestMode ??
-              false) ...[
-            const SizedBox(height: 14),
-            TestModeCard(
-              title: 'Банкны төлбөр жинхэнээсээ хийгдэхгүй. Доорх товчоор '
-                  'төлөгдсөн гэж үзнэ.',
-              actionLabel: 'Төлөгдсөн гэж үзэх',
-              loading: _simulating,
-              onAction: _simulatePayment,
+          if (testMode) ...[
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              decoration: BoxDecoration(
+                color: AppColors.warnBg,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(color: AppColors.warn.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.flaskConical,
+                      size: 18, color: AppColors.warn),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Туршилтын горим. Банк руу орохгүйгээр төлсөн болгоно.',
+                      style: TextStyle(
+                          fontSize: 13, height: 1.4, color: AppColors.inkSoft),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  AnimatedPressable(
+                    onPressed: _simulating ? null : _simulatePayment,
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.chip),
+                        border: Border.all(
+                            color: AppColors.warn.withValues(alpha: 0.6)),
+                      ),
+                      child: _simulating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.warn))
+                          : const Text('Төлсөн болгох',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.warn)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -191,3 +280,66 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
     );
   }
 }
+
+/// Шилэн bottom sheet — цонхны ард ambient өнгө нэвт харагдана (blur 30).
+/// Хөвөгч гадаргуу тул шилэн байх нь зөв; агуулга нь plum өнгөтэй.
+Future<T?> showGlassSheet<T>(BuildContext context,
+    {required WidgetBuilder builder}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    constraints: BoxConstraints(
+      maxWidth: 560,
+      maxHeight: MediaQuery.of(context).size.height * 0.92,
+    ),
+    builder: (context) => ClipRRect(
+      borderRadius:
+          const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.78),
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.sheet)),
+            border: const Border(
+                top: BorderSide(color: AppColors.borderHi),
+                left: BorderSide(color: AppColors.border),
+                right: BorderSide(color: AppColors.border)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.borderHi,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Flexible(child: builder(context)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Төлбөрийн sheet-ийг шилэн хэлбэрээр нээнэ. Төлөгдвөл `true` буцаана.
+Future<bool?> showInvoiceSheet(
+  BuildContext context, {
+  required TopupInvoice invoice,
+  required String checkPath,
+}) =>
+    showGlassSheet<bool>(
+      context,
+      builder: (_) => PaymentInvoiceSheet(invoice: invoice, checkPath: checkPath),
+    );
+

@@ -5,6 +5,7 @@ import 'package:eduud/core/models.dart';
 import 'package:eduud/core/router.dart';
 import 'package:eduud/core/theme/app_theme.dart';
 import 'package:eduud/features/auth/auth_controller.dart';
+import 'package:eduud/features/home/auction_tiles.dart';
 import 'package:eduud/features/home/home_screen.dart';
 import 'package:eduud/features/landing/landing_screen.dart';
 import 'package:eduud/shared/app_nav_bar.dart';
@@ -80,9 +81,9 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(LandingScreen), findsOneWidget);
-      expect(find.text('Бүртгүүлж эхлэх'), findsOneWidget);
+      expect(find.text('Бүртгүүлэх'), findsWidgets);
       // Идэвхтэй auction картууд landing дээр шууд харагдана
-      expect(find.byType(AuctionCard), findsWidgets);
+      expect(find.byType(AuctionArt), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 

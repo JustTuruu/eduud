@@ -3,6 +3,7 @@
          үгүй бол апп API-тай огт холбогдохгүй. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:usesCleartextTraffic="true"
         android:label="E-Duud"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

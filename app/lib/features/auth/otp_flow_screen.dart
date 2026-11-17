@@ -12,6 +12,7 @@ import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
 import '../../shared/widgets.dart';
 import 'auth_controller.dart';
+import 'auth_shell.dart';
 
 /// Бүртгүүлэх (purpose=register) ба нууц үг сэргээх (purpose=reset) нэг урсгал:
 /// 1. дугаар → OTP илгээх, 2. код шалгах → ticket, 3. нэр/нууц үг.
@@ -85,7 +86,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
     });
   }
 
-  /// Сүлжээний дуудлагыг нэг дор боож, алдааг банnerт гаргана.
+  /// Сүлжээний дуудлагыг нэг дор боож, алдааг баннерт гаргана.
   Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _loading = true;
@@ -162,9 +163,12 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
   void _revalidateFinal() {
     setState(() {
       if (_nameTouched) _nameError = Validators.name(_name.text);
-      if (_passwordTouched) _passwordError = Validators.password(_password.text);
+      if (_passwordTouched) {
+        _passwordError = Validators.password(_password.text);
+      }
       if (_confirmTouched) {
-        _confirmError = Validators.confirmPassword(_confirm.text, _password.text);
+        _confirmError =
+            Validators.confirmPassword(_confirm.text, _password.text);
       }
     });
   }
@@ -173,7 +177,8 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
     if (_loading) return;
     final nameError = _isRegister ? Validators.name(_name.text) : null;
     final passwordError = Validators.password(_password.text);
-    final confirmError = Validators.confirmPassword(_confirm.text, _password.text);
+    final confirmError =
+        Validators.confirmPassword(_confirm.text, _password.text);
 
     setState(() {
       _nameTouched = true;
@@ -210,7 +215,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
             .resetPassword(_ticket!, _password.text);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Нууц үг шинэчлэгдлээ. Одоо нэвтэрнэ үү.')),
+          const SnackBar(content: Text('Нууц үг солигдлоо. Одоо нэвтэрнэ үү.')),
         );
         context.go('/auth/login');
       }
@@ -247,71 +252,42 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         if (!didPop) _back();
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(LucideIcons.arrowLeft, size: 20),
-            onPressed: _loading ? null : _back,
-            tooltip: 'Буцах',
-          ),
-        ),
-        body: AuthBackground(
-          ringCenter: const Alignment(0, -0.35),
-          child: SafeArea(
-            top: false,
-            // Login-той ижил: агуулгыг дэлгэцийн босоо голд байрлуулна —
-            // эс бөгөөс маягт дээд талдаа шахагдаж харагдана.
-            // Гарын өндрийг Scaffold (resizeToAvoidBottomInset) өөрөө нөхдөг
-            // тул padding-д viewInsets давхар нэмэхгүй — нэмбэл маягт дээшээ
-            // шахагдаж, доор нь гарын өндөртэй хоосон зай үүснэ.
-            child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-                child: ConstrainedBox(
-                  constraints:
-                      BoxConstraints(minHeight: constraints.maxHeight - 36),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _StepBar(step: _step, total: 3),
-                          const SizedBox(height: 22),
-                          // Алхам солигдоход агуулга зөөлөн солигдоно.
-                          AnimatedSwitcher(
-                            duration: AppMotion.base,
-                            switchInCurve: AppMotion.enter,
-                            switchOutCurve: AppMotion.exit,
-                            transitionBuilder: (child, anim) => FadeTransition(
-                              opacity: anim,
-                              child: SlideTransition(
-                                position: Tween(
-                                        begin: const Offset(0.05, 0),
-                                        end: Offset.zero)
-                                    .animate(anim),
-                                child: child,
-                              ),
-                            ),
-                            layoutBuilder: (current, previous) => Stack(
-                              alignment: Alignment.topCenter,
-                              children: [
-                                ...previous,
-                                if (current != null) current,
-                              ],
-                            ),
-                            child: KeyedSubtree(
-                              key: ValueKey(_step),
-                              child: _buildStep(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+        body: AuthShell(
+          backEnabled: !_loading,
+          onBack: _back,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Steps(step: _step, isRegister: _isRegister),
+              const SizedBox(height: 32),
+              // Алхам солигдоход агуулга зөөлөн солигдоно.
+              AnimatedSwitcher(
+                duration: AppMotion.base,
+                switchInCurve: AppMotion.enter,
+                switchOutCurve: AppMotion.exit,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position:
+                        Tween(begin: const Offset(0.05, 0), end: Offset.zero)
+                            .animate(anim),
+                    child: child,
                   ),
                 ),
+                layoutBuilder: (current, previous) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    ...previous,
+                    if (current != null) current,
+                  ],
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey(_step),
+                  child: _buildStep(context),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -324,23 +300,8 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         _ => _finalStep(context),
       };
 
-  /// Алхам бүрийн гарчиг голд байрлана — нэвтрэх дэлгэцтэй ижил, төвдөө
-  /// цэгцтэй харагдана.
-  Widget _header(BuildContext context, String title, String subtitle) => Column(
-        children: [
-          Text(title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayMedium),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(subtitle,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall),
-          ),
-          const SizedBox(height: 26),
-        ],
-      );
+  Widget _header(BuildContext context, String title, String subtitle) =>
+      AuthHeading(title: title, subtitle: subtitle);
 
   Widget _phoneStep(BuildContext context) {
     return Column(
@@ -350,8 +311,8 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
           context,
           _isRegister ? 'Бүртгүүлэх' : 'Нууц үг сэргээх',
           _isRegister
-              ? 'Утасны дугаараа оруулна уу. Баталгаажуулах код илгээнэ.'
-              : 'Бүртгэлтэй дугаараа оруулна уу. Баталгаажуулах код илгээнэ.',
+              ? 'Утасны дугаараа оруулна уу. Бид баталгаажуулах код илгээнэ.'
+              : 'Бүртгэлтэй дугаараа оруулна уу. Бид баталгаажуулах код илгээнэ.',
         ),
         ErrorBanner(message: _formError, shakeToken: _shake),
         AppField(
@@ -378,7 +339,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
           },
           onSubmitted: (_) => _sendOtp(),
         ),
-        const SizedBox(height: 26),
+        const SizedBox(height: 28),
         PrimaryButton(
           label: 'Код авах',
           icon: LucideIcons.send,
@@ -396,7 +357,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         _header(
           context,
           'Кодоо оруулна уу',
-          '${_phone.text} дугаарт илгээсэн 6 оронтой код.',
+          '${_phone.text} дугаарт 6 оронтой код илгээлээ.',
         ),
         ErrorBanner(message: _formError, shakeToken: _shake),
         Shake(
@@ -414,10 +375,10 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         if (_devCode != null) ...[
           const SizedBox(height: 18),
           TestModeCard(
-            title: 'SMS илгээгдээгүй. Доорх кодыг ашиглана уу.',
+            title: 'Код SMS-ээр явсангүй. Доорх кодыг ашиглана уу.',
             value: _devCode,
-            description: 'Энэ самбар зөвхөн тест орчинд харагдана.',
-            actionLabel: 'Кодыг талбарт бөглөх',
+            description: 'Энэ самбар зөвхөн тест орчинд гарна.',
+            actionLabel: 'Кодыг оруулах',
             onAction: () {
               _code.text = _devCode!;
               setState(() => _codeError = null);
@@ -438,7 +399,9 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
                 ? null
                 : () => _sendOtp(resend: true),
             child: Text(
-              _resendIn > 0 ? 'Дахин код авах ($_resendIn сек)' : 'Дахин код авах',
+              _resendIn > 0
+                  ? 'Дахин код авах ($_resendIn сек)'
+                  : 'Дахин код авах',
               style: TextStyle(
                 color: _resendIn > 0 ? AppColors.muted : AppColors.ink,
                 fontWeight: FontWeight.w700,
@@ -456,10 +419,10 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
       children: [
         _header(
           context,
-          _isRegister ? 'Бүртгэлээ дуусгана уу' : 'Шинэ нууц үг',
+          _isRegister ? 'Нэр, нууц үгээ оруулна уу' : 'Шинэ нууц үг',
           _isRegister
-              ? 'Нэр болон нууц үгээ тохируулснаар бүртгэл үүснэ.'
-              : 'Шинэ нууц үгээ оруулна уу. Бүх төхөөрөмжөөс гарна.',
+              ? 'Дараа нь шууд санал өгч эхэлнэ.'
+              : 'Нууц үг солигдсоны дараа бүх төхөөрөмжөөс гарна.',
         ),
         ErrorBanner(message: _formError, shakeToken: _shake),
         if (_isRegister) ...[
@@ -529,51 +492,93 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
   }
 }
 
-/// Алхмын явц — тоогоор бус, дүүрч буй зураасаар. Гурван алхам нь жинхэнэ
-/// дараалал учраас дугаарлалт утга агуулна.
-class _StepBar extends StatelessWidget {
-  const _StepBar({required this.step, required this.total});
+/// Алхмын заагч: утас → код → нэр/нууц үг. Дууссан алхам шүрэн цэнхэр
+/// тэмдэгтэй, одоогийнх шүрэн хүрээтэй, дараагийнх hairline.
+class _Steps extends StatelessWidget {
+  const _Steps({required this.step, required this.isRegister});
 
   final int step;
-  final int total;
+  final bool isRegister;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Row(
-            children: List.generate(total, (i) {
-              final done = i <= step;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: i == total - 1 ? 0 : 6),
-                  child: AnimatedContainer(
-                    duration: AppMotion.base,
-                    curve: AppMotion.enter,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      gradient: done ? AppColors.ctaGradient : null,
-                      color: done ? null : AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+    final labels = ['Утас', 'Код', isRegister ? 'Нэр, нууц үг' : 'Нууц үг'];
+    return Semantics(
+      label: '${step + 1}-р алхам, нийт ${labels.length}',
+      child: Row(
+        children: List.generate(labels.length, (i) {
+          final done = i < step;
+          final current = i == step;
+          Widget line(bool on, bool visible) => Expanded(
+                child: AnimatedContainer(
+                  duration: AppMotion.base,
+                  height: 2,
+                  color: !visible
+                      ? Colors.transparent
+                      : on
+                          ? AppColors.coral
+                          : AppColors.borderHi,
                 ),
               );
-            }),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Text(
-          '${step + 1}/$total',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: AppColors.muted,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
+          return Expanded(
+            child: Column(
+              children: [
+                Row(children: [
+                  line(i <= step, i > 0),
+                  AnimatedContainer(
+                    duration: AppMotion.base,
+                    curve: AppMotion.enter,
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: done
+                          ? AppColors.coral
+                          : current
+                              ? AppColors.coral.withValues(alpha: 0.16)
+                              : Colors.transparent,
+                      border: Border.all(
+                        color: done || current
+                            ? AppColors.coral
+                            : AppColors.borderHi,
+                        width: current ? 1.6 : 1,
+                      ),
+                    ),
+                    child: done
+                        ? const Icon(LucideIcons.check,
+                            size: 16, color: AppColors.ctaInk)
+                        : Text(
+                            '${i + 1}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color:
+                                  current ? AppColors.ink : AppColors.inkSoft,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
+                          ),
+                  ),
+                  line(i < step, i < labels.length - 1),
+                ]),
+                const SizedBox(height: 8),
+                Text(
+                  labels[i],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: current ? FontWeight.w800 : FontWeight.w600,
+                    color: current ? AppColors.ink : AppColors.inkSoft,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }

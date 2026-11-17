@@ -240,21 +240,37 @@ class _AppShell extends ConsumerWidget {
 
     if (wide) {
       final user = ref.watch(authProvider).valueOrNull;
+      // Ambient талбар дээд навын ард ч үргэлжилнэ: нав агуулгын ДЭЭР хөвж,
+      // агуулга нь навын өндрөөр дээд padding авна (SafeArea-аар).
+      final mq = MediaQuery.of(context);
       return Scaffold(
-        body: Column(children: [
-          AppTopNav(
-            destinations: _destinations,
-            currentIndex: shell.currentIndex,
-            onSelected: select,
-            trailing: user == null
-                ? null
-                : TokenBalanceChip(
-                    balance: user.balance,
-                    onTap: () => context.push('/wallet'),
-                  ),
+        backgroundColor: Colors.transparent,
+        body: Stack(children: [
+          const Positioned.fill(child: AppBackground(child: SizedBox.shrink())),
+          Positioned.fill(
+            child: MediaQuery(
+              data: mq.copyWith(
+                padding: mq.padding
+                    .copyWith(top: mq.padding.top + NavMetrics.topHeight),
+              ),
+              child: AnimatedShellBody(index: shell.currentIndex, child: shell),
+            ),
           ),
-          Expanded(
-            child: AnimatedShellBody(index: shell.currentIndex, child: shell),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AppTopNav(
+              destinations: _destinations,
+              currentIndex: shell.currentIndex,
+              onSelected: select,
+              trailing: user == null
+                  ? null
+                  : TokenBalanceChip(
+                      balance: user.balance,
+                      onTap: () => context.push('/wallet'),
+                    ),
+            ),
           ),
         ]),
       );

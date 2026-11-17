@@ -77,7 +77,9 @@ class AuthController extends AsyncNotifier<UserProfile?> {
     final refresh = await store.refresh;
     if (refresh != null) {
       try {
-        await ref.read(dioProvider).post('/auth/logout', data: {'refreshToken': refresh});
+        await ref
+            .read(dioProvider)
+            .post('/auth/logout', data: {'refreshToken': refresh});
       } catch (_) {}
     }
     await store.clear();
@@ -90,4 +92,5 @@ class AuthController extends AsyncNotifier<UserProfile?> {
   }
 }
 
-final authProvider = AsyncNotifierProvider<AuthController, UserProfile?>(AuthController.new);
+final authProvider =
+    AsyncNotifierProvider<AuthController, UserProfile?>(AuthController.new);

@@ -86,9 +86,13 @@ String apiErrorMessage(Object error) {
       if (msg is List) return msg.join('\n');
       return msg.toString();
     }
+    if (error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout) {
+      return 'Хариу удаан байна. Дахин оролдоно уу.';
+    }
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.connectionError) {
-      return 'Сервертэй холбогдож чадсангүй. Интернэтээ шалгана уу.';
+      return 'Холболт тасарлаа. Дахин оролдоно уу.';
     }
   }
   return 'Алдаа гарлаа. Дахин оролдоно уу.';

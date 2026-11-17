@@ -23,13 +23,15 @@ class Shake extends StatefulWidget {
 }
 
 class _ShakeState extends State<Shake> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 420));
 
   @override
   void didUpdateWidget(covariant Shake old) {
     super.didUpdateWidget(old);
-    if (old.token != widget.token && widget.token > 0 && !reducedMotion(context)) {
+    if (old.token != widget.token &&
+        widget.token > 0 &&
+        !reducedMotion(context)) {
       _c.forward(from: 0);
     }
   }
@@ -119,7 +121,8 @@ class AppField extends StatelessWidget {
   final int shakeToken;
   final TextCapitalization textCapitalization;
 
-  static OutlineInputBorder _border(Color color, double width) => OutlineInputBorder(
+  static OutlineInputBorder _border(Color color, double width) =>
+      OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
         borderSide: BorderSide(color: color, width: width),
       );
@@ -133,14 +136,13 @@ class AppField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 7),
+          padding: const EdgeInsets.only(left: 2, bottom: 8),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              
-              color: hasError ? AppColors.dangerSoft : AppColors.muted,
+              color: hasError ? AppColors.dangerSoft : AppColors.inkSoft,
             ),
           ),
         ),
@@ -162,10 +164,19 @@ class AppField extends StatelessWidget {
             autofillHints: autofillHints,
             textInputAction: textInputAction,
             textCapitalization: textCapitalization,
-            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink),
             cursorColor: accent,
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.muted),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               counterText: '',
               filled: true,
               fillColor: hasError
@@ -174,13 +185,15 @@ class AppField extends StatelessWidget {
               prefixIcon: icon == null
                   ? null
                   : Icon(icon,
-                      size: 18,
+                      size: 20,
                       color: hasError ? AppColors.dangerSoft : AppColors.muted),
               suffixIcon: suffix,
-              enabledBorder:
+              enabledBorder: _border(
+                  hasError ? AppColors.danger : AppColors.border,
+                  hasError ? 1.4 : 1),
+              focusedBorder: _border(accent, hasError ? 1.8 : 1.6),
+              border:
                   _border(hasError ? AppColors.danger : AppColors.border, 1),
-              focusedBorder: _border(accent, 1.7),
-              border: _border(hasError ? AppColors.danger : AppColors.border, 1),
               disabledBorder: _border(AppColors.border, 1),
             ),
           ),
@@ -219,17 +232,19 @@ class FieldMessage extends StatelessWidget {
                     Icon(
                       isError ? LucideIcons.circleAlert : LucideIcons.info,
                       size: 13,
-                      color: isError ? AppColors.dangerSoft : AppColors.muted,
+                      color: isError ? AppColors.dangerSoft : AppColors.inkSoft,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         text,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 13,
                           height: 1.35,
                           fontWeight: FontWeight.w600,
-                          color: isError ? AppColors.dangerSoft : AppColors.muted,
+                          color: isError
+                              ? AppColors.dangerSoft
+                              : AppColors.inkSoft,
                         ),
                       ),
                     ),
@@ -342,12 +357,12 @@ class PasswordStrengthMeter extends StatelessWidget {
                           child: AnimatedContainer(
                             duration: AppMotion.base,
                             curve: AppMotion.enter,
-                            height: 4,
+                            height: 5,
                             decoration: BoxDecoration(
                               color: filled
                                   ? AppColors.strength[s.level - 1]
-                                  : AppColors.border,
-                              borderRadius: BorderRadius.circular(2),
+                                  : AppColors.borderHi,
+                              borderRadius: BorderRadius.circular(3),
                             ),
                           ),
                         ),
@@ -362,7 +377,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                         Text(
                           s.label,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: AppColors.strength[s.level - 1],
                           ),
@@ -374,7 +389,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 12, color: AppColors.muted),
+                                fontSize: 12.5, color: AppColors.inkSoft),
                           ),
                         ),
                       ],
@@ -408,11 +423,13 @@ class ErrorBanner extends StatelessWidget {
                 liveRegion: true,
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: AppColors.dangerBg,
                     borderRadius: BorderRadius.circular(AppRadius.chip),
-                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.45)),
+                    border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.45)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,7 +441,7 @@ class ErrorBanner extends StatelessWidget {
                         child: Text(
                           message!,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             height: 1.4,
                             fontWeight: FontWeight.w600,
                             color: AppColors.dangerSoft,
@@ -539,32 +556,30 @@ class _OtpInputState extends State<OtpInput> {
 
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: i == widget.length - 1 ? 0 : 8),
+                  padding:
+                      EdgeInsets.only(right: i == widget.length - 1 ? 0 : 10),
                   child: AnimatedContainer(
                     duration: AppMotion.fast,
                     curve: AppMotion.enter,
-                    height: 58,
+                    height: 68,
                     decoration: BoxDecoration(
                       color: widget.hasError
                           ? AppColors.dangerBg
-                          : AppColors.surface.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(AppRadius.chip),
+                          : filled
+                              ? AppColors.surfaceHi.withValues(alpha: 0.8)
+                              : AppColors.surface.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(AppRadius.control),
                       border: Border.all(
-                          color: borderColor, width: isNext ? 1.8 : 1.1),
-                      boxShadow: isNext
-                          ? [
-                              BoxShadow(
-                                  color: AppColors.coral.withValues(alpha: 0.25),
-                                  blurRadius: 16),
-                            ]
-                          : null,
+                          color: borderColor,
+                          width: isNext || widget.hasError ? 1.6 : 1),
                     ),
                     alignment: Alignment.center,
                     child: filled
                         ? TweenAnimationBuilder<double>(
                             key: ValueKey('$i-${value[i]}'),
                             tween: Tween(
-                                begin: reducedMotion(context) ? 1 : 0.5, end: 1),
+                                begin: reducedMotion(context) ? 1 : 0.5,
+                                end: 1),
                             duration: AppMotion.base,
                             curve: Curves.easeOutBack,
                             builder: (context, s, child) =>
@@ -572,7 +587,7 @@ class _OtpInputState extends State<OtpInput> {
                             child: Text(
                               value[i],
                               style: const TextStyle(
-                                fontSize: 22,
+                                fontSize: 28,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.ink,
                                 fontFeatures: [FontFeature.tabularFigures()],
@@ -580,10 +595,10 @@ class _OtpInputState extends State<OtpInput> {
                             ),
                           )
                         : Container(
-                            width: 8,
+                            width: 10,
                             height: 2,
                             decoration: BoxDecoration(
-                              color: AppColors.border,
+                              color: AppColors.muted.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(1),
                             ),
                           ),
@@ -666,19 +681,14 @@ class AppChoiceChips<T> extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
               decoration: BoxDecoration(
-                gradient: isSelected ? AppColors.ctaGradient : null,
-                color: isSelected ? null : AppColors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.chip),
+                color: isSelected
+                    ? AppColors.coral.withValues(alpha: 0.16)
+                    : AppColors.surface.withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(AppRadius.control),
                 border: Border.all(
-                    color: isSelected ? Colors.transparent : AppColors.border),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                            color: AppColors.coral.withValues(alpha: 0.32),
-                            blurRadius: 16,
-                            offset: const Offset(0, 5)),
-                      ]
-                    : null,
+                    color: isSelected
+                        ? AppColors.coral.withValues(alpha: 0.5)
+                        : AppColors.border),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -686,15 +696,17 @@ class AppChoiceChips<T> extends StatelessWidget {
                   if (o.icon != null) ...[
                     Icon(o.icon,
                         size: 15,
-                        color: isSelected ? AppColors.ctaInk : AppColors.ink),
+                        color:
+                            isSelected ? AppColors.coral : AppColors.inkSoft),
                     const SizedBox(width: 7),
                   ],
                   Text(
                     o.label,
                     style: TextStyle(
                       fontSize: 13.5,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected ? AppColors.ctaInk : AppColors.inkSoft,
+                      fontWeight:
+                          isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? AppColors.ink : AppColors.inkSoft,
                     ),
                   ),
                 ],
@@ -712,7 +724,7 @@ class AppChoiceChips<T> extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 /// Зөвхөн тест орчинд харагдах самбар. Жинхэнэ өгөгдөлтэй андуурахгүйн тулд
-/// улбар шар өнгө + колбоны icon-той, үргэлж "ТЕСТ ОРЧИН" гэж бичнэ.
+/// улбар шар өнгө + колбоны icon-той, үргэлж "Тест орчин" гэж бичнэ.
 class TestModeCard extends StatelessWidget {
   const TestModeCard({
     super.key,
@@ -745,14 +757,14 @@ class TestModeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.flaskConical, size: 15, color: AppColors.warn),
+              const Icon(LucideIcons.flaskConical,
+                  size: 15, color: AppColors.warn),
               const SizedBox(width: 8),
               Text(
-                'ТЕСТ ОРЧИН',
+                'Тест орчин',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 1.6,
                   color: AppColors.warn.withValues(alpha: 0.95),
                 ),
               ),
@@ -800,7 +812,8 @@ class TestModeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.warn.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(color: AppColors.warn.withValues(alpha: 0.5)),
+                  border:
+                      Border.all(color: AppColors.warn.withValues(alpha: 0.5)),
                 ),
                 child: loading
                     ? const SizedBox(

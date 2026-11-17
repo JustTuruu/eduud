@@ -26,8 +26,12 @@ abstract class Validators {
 
   static String? password(String value) {
     if (value.isEmpty) return 'Нууц үгээ оруулна уу';
-    if (value.length < passwordMin) return 'Нууц үг доод тал нь 8 тэмдэгт байна';
-    if (value.length > passwordMax) return 'Нууц үг хэт урт байна';
+    if (value.length < passwordMin) {
+      return 'Нууц үг дор хаяж 8 тэмдэгттэй байна';
+    }
+    if (value.length > passwordMax) {
+      return 'Нууц үг хэт урт байна. 72 тэмдэгтээс бага байна';
+    }
     return null;
   }
 
@@ -47,8 +51,8 @@ abstract class Validators {
   static String? name(String value) {
     final v = value.trim();
     if (v.isEmpty) return 'Нэрээ оруулна уу';
-    if (v.length < nameMin) return 'Нэр доод тал нь 2 тэмдэгт байна';
-    if (v.length > nameMax) return 'Нэр 30 тэмдэгтээс хэтрэхгүй';
+    if (v.length < nameMin) return 'Нэр дор хаяж 2 тэмдэгттэй байна';
+    if (v.length > nameMax) return 'Нэр 30 тэмдэгтээс урт байж болохгүй';
     return null;
   }
 
@@ -101,17 +105,18 @@ class PasswordStrength {
     // 8 тэмдэгтэд хүрээгүй бол хэчнээн төрөлжсөн ч "сул" хэвээр — backend
     // хүлээж авахгүй тул хэрэглэгчийг төөрөгдүүлэхгүй.
     if (p.length < 8) {
-      return PasswordStrength(1, 'Сул', 'Дор хаяж 8 тэмдэгт болгоно уу');
+      return PasswordStrength(1, 'Сул', 'Дор хаяж 8 тэмдэгт оруулна уу');
     }
 
     if (points <= 2) {
-      return const PasswordStrength(1, 'Сул', 'Урт болгож, тоо нэмнэ үү');
+      return const PasswordStrength(1, 'Сул', 'Уртыг нэмж, тоо оруулна уу');
     }
     if (points == 3) {
-      return const PasswordStrength(2, 'Дунд', 'Том үсэг эсвэл тоо нэмнэ үү');
+      return const PasswordStrength(2, 'Дунд', 'Том үсэг эсвэл тоо оруулна уу');
     }
     if (points == 4) {
-      return const PasswordStrength(3, 'Сайн', 'Тэмдэгт (!, @, #) нэмбэл хүчтэй болно');
+      return const PasswordStrength(
+          3, 'Сайн', '!, @, # гэх мэт тэмдэгт нэмбэл хүчтэй болно');
     }
     return const PasswordStrength(4, 'Хүчтэй', 'Сайн нууц үг байна');
   }

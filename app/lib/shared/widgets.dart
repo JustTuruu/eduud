@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show FontFeature, ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -97,7 +97,7 @@ class _HairlinePainter extends CustomPainter {
       old.radius != radius || old.gradient != gradient;
 }
 
-/// Карт: чавганы гадаргуу + 1px цөцгий hairline + зөөлөн сүүдэр.
+/// Карт: чавганы гадаргуу + 1px hairline + зөөлөн сүүдэр (glow-гүй).
 /// Дарахад агшина.
 class GlowCard extends StatelessWidget {
   const GlowCard({
@@ -123,13 +123,13 @@ class GlowCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.cardGradient,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -282,70 +282,32 @@ class AuthBackground extends StatelessWidget {
 // Badges & labels
 // ---------------------------------------------------------------------------
 
-/// LIVE badge — цэг нь амьсгалж цохилно.
-class LiveBadge extends StatefulWidget {
+/// "Явагдаж буй" тэмдэг — шүрэн цэг + энгийн текст. Анивчихгүй, том үсэггүй.
+class LiveBadge extends StatelessWidget {
   const LiveBadge({super.key});
 
   @override
-  State<LiveBadge> createState() => _LiveBadgeState();
-}
-
-class _LiveBadgeState extends State<LiveBadge>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1400));
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !reducedMotion(context)) _c.repeat();
-    });
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return GlassChip(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+    return const GlassChip(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedBuilder(
-            animation: _c,
-            builder: (context, _) {
-              final t = Curves.easeInOut
-                  .transform((_c.value < 0.5 ? _c.value : 1 - _c.value) * 2);
-              return Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: AppColors.live,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.live.withValues(alpha: 0.5 + 0.4 * t),
-                      blurRadius: 4 + 8 * t,
-                      spreadRadius: 1 + 2 * t,
-                    ),
-                  ],
-                ),
-              );
-            },
+          SizedBox(
+            width: 8,
+            height: 8,
+            child: DecoratedBox(
+              decoration:
+                  BoxDecoration(color: AppColors.coral, shape: BoxShape.circle),
+            ),
           ),
-          const SizedBox(width: 7),
-          const Text(
-            'LIVE',
+          SizedBox(width: 8),
+          Text(
+            'Явагдаж буй',
             style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.8,
-              color: AppColors.liveSoft,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
             ),
           ),
         ],
@@ -366,7 +328,7 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// Token үлдэгдлийн chip — очир алмаз icon + тоо.
+/// Эрхийн үлдэгдлийн chip — icon + "N эрх".
 class TokenBalanceChip extends StatelessWidget {
   const TokenBalanceChip({super.key, required this.balance, this.onTap});
 
@@ -388,7 +350,7 @@ class TokenBalanceChip extends StatelessWidget {
           const Icon(LucideIcons.gem, size: 14, color: AppColors.coral),
           const SizedBox(width: 7),
           Text(
-            '$balance',
+            '$balance эрх',
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 14,
@@ -662,22 +624,17 @@ class _CountdownTextState extends State<CountdownText> {
       child: Text(
         _format(_left),
         style: base.copyWith(
-          color: urgent ? AppColors.live : base.color,
-          shadows: [
-            Shadow(
-              color: (urgent ? AppColors.live : AppColors.coral)
-                  .withValues(alpha: urgent ? 0.6 : 0.4),
-              blurRadius: 24,
-            ),
-          ],
+          color: urgent ? AppColors.coral : base.color,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
     );
   }
 }
 
-/// Дэлгэцийн "гол жүжигчин" — амьсгалдаг glow-той countdown самбар.
-class CountdownPanel extends StatefulWidget {
+/// Дэлгэцийн "гол жүжигчин" — хугацаа тоолуур. Тайван гадаргуу, анимаци
+/// байхгүй (хөдөлгөөн нь зөвхөн тоонд).
+class CountdownPanel extends StatelessWidget {
   const CountdownPanel({
     super.key,
     required this.label,
@@ -696,79 +653,36 @@ class CountdownPanel extends StatefulWidget {
   final Widget? child;
 
   @override
-  State<CountdownPanel> createState() => _CountdownPanelState();
-}
-
-class _CountdownPanelState extends State<CountdownPanel>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _breath =
-      AnimationController(vsync: this, duration: const Duration(seconds: 3));
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !reducedMotion(context)) _breath.repeat(reverse: true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _breath.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _breath,
-      builder: (context, child) {
-        final t = Curves.easeInOut.transform(_breath.value);
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-          decoration: BoxDecoration(
-            gradient: AppColors.cardGradient,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.borderHi),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.coral.withValues(alpha: 0.10 + 0.10 * t),
-                blurRadius: 30 + 20 * t,
-              ),
-            ],
-          ),
-          child: child,
-        );
-      },
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.borderHi),
+      ),
       child: Column(
         children: [
-          SectionLabel(widget.label),
-          if (widget.endsAt != null) ...[
-            const SizedBox(height: 16),
-            // Шүрэн цагираг доторх countdown.
-            CoralRing(
-              size: 196,
-              strokeWidth: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: CountdownText(
-                    endsAt: widget.endsAt!,
-                    serverOffsetMs: widget.serverOffsetMs,
-                    onFinished: widget.onFinished,
-                    style: Theme.of(context)
-                        .textTheme
-                        .displayLarge
-                        ?.copyWith(fontSize: 34),
-                  ),
+          Text(label, style: theme.textTheme.bodyMedium),
+          if (endsAt != null) ...[
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: CountdownText(
+                endsAt: endsAt!,
+                serverOffsetMs: serverOffsetMs,
+                onFinished: onFinished,
+                style: theme.textTheme.displayLarge?.copyWith(
+                  fontSize: 44,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
-            const SizedBox(height: 6),
-          ] else if (widget.child != null) ...[
-            const SizedBox(height: 6),
-            widget.child!,
+          ] else if (child != null) ...[
+            const SizedBox(height: 8),
+            child!,
           ],
         ],
       ),
@@ -1053,10 +967,6 @@ Future<T?> showAppSheet<T>(BuildContext context,
         borderRadius:
             const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
         border: Border.all(color: AppColors.borderHi),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.coral.withValues(alpha: 0.10), blurRadius: 40),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1077,7 +987,7 @@ Future<T?> showAppSheet<T>(BuildContext context,
   );
 }
 
-/// Нэгдсэн dialog — glow хүрээтэй, төвд нь орж ирнэ.
+/// Нэгдсэн dialog — төвд нь орж ирнэ.
 Future<T?> showAppDialog<T>(BuildContext context,
     {required WidgetBuilder builder}) {
   return showGeneralDialog<T>(
@@ -1103,7 +1013,7 @@ Future<T?> showAppDialog<T>(BuildContext context,
         constraints: const BoxConstraints(maxWidth: 420),
         child: Material(
           color: Colors.transparent,
-          child: GlowCard(glow: true, child: builder(context)),
+          child: GlowCard(child: builder(context)),
         ),
       ),
     ),

@@ -25,37 +25,37 @@ const _groups = [
   _FaqGroup('Дуудлага худалдаа', LucideIcons.gavel, [
     _Faq(
       'Энэ дуудлага худалдаа яаж ажилладаг вэ?',
-      'Дуудлага бүрд 1 token зарцуулагдаж, барааны үнэ бага хэмжээгээр өснө. '
-          'Хугацаа дуусахад хамгийн сүүлд дуудсан хүн ялна. Ялагч эцсийн үнийг '
-          'тусад нь төлж бараагаа авна.',
+      'Санал бүр 1 эрх зарцуулж, барааны үнийг бага зэрэг өсгөнө. '
+          'Хугацаа дуусахад хамгийн сүүлд санал өгсөн хүн ялна. Ялагч эцсийн '
+          'үнийг төлж бараагаа авна.',
     ),
     _Faq(
       'Хугацаа дуусахад яагаад нэмэгдэв?',
-      'Сүүлийн секундэд дуудлага орвол бүгдэд тэгш боломж олгохын тулд '
-          'хугацаа автоматаар багахан хугацаагаар сунгагдана.',
+      'Сүүлийн секундэд санал орвол бүгдэд тэгш боломж олгохын тулд '
+          'хугацаа өөрөө бага зэрэг сунгагдана.',
     ),
     _Faq(
-      'Дуудлага буцаагдах уу?',
-      'Зарцуулсан token буцаагдахгүй. Харин техникийн алдаанаас болж '
-          'дуудлага бүртгэгдээгүй бол token тань автоматаар буцаагдана.',
+      'Өгсөн санал буцаагдах уу?',
+      'Зарцуулсан эрх буцаагдахгүй. Харин техникийн алдаанаас болж '
+          'санал бүртгэгдээгүй бол эрх тань өөрөө буцаагдана.',
     ),
   ]),
-  _FaqGroup('Token ба төлбөр', LucideIcons.gem, [
+  _FaqGroup('Эрх ба төлбөр', LucideIcons.ticket, [
     _Faq(
-      'Token яаж авах вэ?',
-      'Данс хэсгээс багцаа сонгоод банкны апп-аараа QR уншуулж төлнө. '
-          'Төлбөр баталгаажмагц token тань шууд нэмэгдэнэ.',
+      'Эрх яаж авах вэ?',
+      'Эрх цэнэглэх хэсгээс багцаа сонгоод банкны апп-аараа QR уншуулж төлнө. '
+          'Төлбөр ормогц эрх тань шууд нэмэгдэнэ.',
     ),
     _Faq(
-      'Төлсөн боловч token орж ирэхгүй байна.',
-      'Төлбөрийн цонхон дахь "Төлбөр шалгах" товчийг дарна уу. Хэрэв 10 минутын '
-          'дараа ч орж ирэхгүй бол Санал хүсэлт хэсгээр дамжуулан "Төлбөр тооцоо" '
-          'ангиллаар бидэнд мэдэгдээрэй.',
+      'Төлсөн боловч эрх орж ирсэнгүй.',
+      'Төлбөрийн цонхон дахь "Төлбөр шалгах" товчийг дарна уу. 10 минутын '
+          'дараа ч орж ирэхгүй бол Санал хүсэлт хэсгээр "Төлбөр" ангиллаар '
+          'бидэнд мэдэгдээрэй.',
     ),
     _Faq(
-      'Ялсан барааныхаа төлбөрийг хэзээ төлөх вэ?',
-      'Ялсанаас хойш 24 цагийн дотор төлнө. Хугацаа хэтэрвэл захиалга '
-          'цуцлагдана.',
+      'Хожсон барааныхаа төлбөрийг хэзээ төлөх вэ?',
+      'Хожсноос хойш 24 цагийн дотор төлнө. Хугацаа хэтэрвэл бараа '
+          'танд олгогдохгүй.',
     ),
   ]),
   _FaqGroup('Бүртгэл ба нууцлал', LucideIcons.shieldCheck, [
@@ -83,78 +83,90 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        leading: const BackButton(),
-        title: Text('Тусламж', style: text.displaySmall),
+        backgroundColor: Colors.transparent,
+        leading: const AppBackButton(),
       ),
       body: AppBackground(
+        seed: 'help',
         child: SafeArea(
           top: false,
           child: PageFrame(
-            maxWidth: 720,
+            maxWidth: 640,
             child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
-            children: [
-              Text(
-                'Түгээмэл асуултууд. Хариултаа олохгүй бол доод талаас бидэнд '
-                'бичээрэй.',
-                style: text.bodySmall,
-              ),
-              const SizedBox(height: 24),
-              for (final group in _groups) ...[
-                Row(
-                  children: [
-                    Icon(group.icon, size: 15, color: AppColors.ink),
-                    const SizedBox(width: 9),
-                    SectionLabel(group.title),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...group.items.map((f) => _FaqTile(faq: f)),
-                const SizedBox(height: 24),
-              ],
-              const SectionLabel('Хариултаа олсонгүй юу?'),
-              const SizedBox(height: 12),
-              GlowCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Бидэнд шууд бичээрэй', style: text.titleLarge),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Алдаа, санал, гомдол — юу ч бай бүртгэж, хариу өгнө.',
-                        style: text.bodySmall,
-                      ),
-                      const SizedBox(height: 18),
-                      PrimaryButton(
-                        label: 'Санал хүсэлт илгээх',
-                        icon: LucideIcons.send,
-                        onPressed: () => context.push('/feedback'),
-                      ),
-                    ],
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 64),
+              children: [
+                const Text(
+                  'Тусламж',
+                  style: TextStyle(
+                    fontSize: 32,
+                    height: 1.15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    color: AppColors.ink,
                   ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              const SectionLabel('Бичиг баримт'),
-              const SizedBox(height: 12),
-              _LinkTile(
-                icon: LucideIcons.fileText,
-                label: 'Үйлчилгээний нөхцөл',
-                onTap: () => context.push('/content/terms'),
-              ),
-              _LinkTile(
-                icon: LucideIcons.shieldCheck,
-                label: 'Нууцлалын бодлого',
-                onTap: () => context.push('/content/privacy'),
-              ),
-            ],
-          ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Түгээмэл асуултууд. Хариултаа олохгүй бол доороос бидэнд бичээрэй.',
+                  style: TextStyle(
+                      fontSize: 15, height: 1.5, color: AppColors.inkSoft),
+                ),
+                for (final group in _groups) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40, bottom: 4),
+                    child: Row(children: [
+                      Icon(group.icon, size: 18, color: AppColors.coralLight),
+                      const SizedBox(width: 10),
+                      Text(
+                        group.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ]),
+                  ),
+                  for (final f in group.items) _FaqTile(faq: f),
+                ],
+                const Padding(
+                  padding: EdgeInsets.only(top: 40, bottom: 8),
+                  child: Text(
+                    'Хариултаа олсонгүй юу?',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Алдаа, санал, гомдол — юу ч бай бичээрэй, бид хариу өгнө.',
+                  style: TextStyle(
+                      fontSize: 15, height: 1.5, color: AppColors.inkSoft),
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  label: 'Санал хүсэлт илгээх',
+                  icon: LucideIcons.send,
+                  onPressed: () => context.push('/feedback'),
+                ),
+                const SizedBox(height: 32),
+                _LinkRow(
+                  icon: LucideIcons.fileText,
+                  label: 'Үйлчилгээний нөхцөл',
+                  onTap: () => context.push('/content/terms'),
+                ),
+                _LinkRow(
+                  icon: LucideIcons.shieldCheck,
+                  label: 'Нууцлалын бодлого',
+                  onTap: () => context.push('/content/privacy'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -162,7 +174,8 @@ class HelpScreen extends StatelessWidget {
   }
 }
 
-/// Дэлгэгддэг асуулт. Хариулт нээгдэхэд зөөлөн тэлж, сум эргэнэ.
+/// Дэлгэгддэг асуулт — зөвхөн хацар шугамтай мөр. Нээгдэхэд хариулт зөөлөн
+/// тэлж, сум эргэнэ. Screen reader-т нээлттэй/хаалттай төлөв уншигдана.
 class _FaqTile extends StatefulWidget {
   const _FaqTile({required this.faq});
 
@@ -177,84 +190,77 @@ class _FaqTileState extends State<_FaqTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.enter,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(
-              color: _open ? AppColors.borderHi : AppColors.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => setState(() => _open = !_open),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+    final reduce = reducedMotion(context);
+    final dur = reduce ? Duration.zero : AppMotion.base;
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: _open,
+            child: InkWell(
+              onTap: () => setState(() => _open = !_open),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 56),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Row(
                     children: [
                       Expanded(
-                        child: Semantics(
-                          button: true,
-                          expanded: _open,
-                          child: Text(
-                            widget.faq.question,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
+                        child: Text(
+                          widget.faq.question,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            height: 1.4,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       AnimatedRotation(
                         turns: _open ? 0.5 : 0,
-                        duration: AppMotion.fast,
+                        duration: dur,
                         curve: AppMotion.enter,
                         child: const Icon(LucideIcons.chevronDown,
-                            size: 18, color: AppColors.muted),
+                            size: 20, color: AppColors.inkSoft),
                       ),
                     ],
                   ),
-                  AnimatedSize(
-                    duration: AppMotion.base,
-                    curve: AppMotion.enter,
-                    alignment: Alignment.topCenter,
-                    child: _open
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 12, right: 26),
-                            child: Text(
-                              widget.faq.answer,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                height: 1.65,
-                                color: AppColors.inkSoft,
-                              ),
-                            ),
-                          )
-                        : const SizedBox(width: double.infinity, height: 0),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+          AnimatedSize(
+            duration: dur,
+            curve: AppMotion.enter,
+            alignment: Alignment.topCenter,
+            child: _open
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: 18, right: 32),
+                    child: Text(
+                      widget.faq.answer,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.65,
+                        color: AppColors.inkSoft,
+                      ),
+                    ),
+                  )
+                : const SizedBox(width: double.infinity, height: 0),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _LinkTile extends StatelessWidget {
-  const _LinkTile({
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -266,28 +272,27 @@ class _LinkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: AnimatedPressable(
-        onPressed: onTap,
-        scale: 0.98,
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 56),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.control),
-            border: Border.all(color: AppColors.border),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
           child: Row(children: [
-            Icon(icon, size: 18, color: AppColors.ink),
+            Icon(icon, size: 18, color: AppColors.inkSoft),
             const SizedBox(width: 14),
             Expanded(
               child: Text(label,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600, color: AppColors.ink)),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink)),
             ),
-            const Icon(LucideIcons.chevronRight, size: 17, color: AppColors.muted),
+            const Icon(LucideIcons.chevronRight,
+                size: 18, color: AppColors.muted),
           ]),
         ),
       ),

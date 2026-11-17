@@ -24,6 +24,15 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Dev горим: http:// backend (LAN IP) руу хандахыг зөвшөөрнө.
+	     Production-д NSAllowsArbitraryLoads-ыг устгаж, зөвхөн https домэйнээр хязгаарлана. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Апп таны компьютер дээр ажиллаж буй сервертэй холбогдоход орон нутгийн сүлжээг ашиглана.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -12,6 +12,8 @@ import '../../shared/form_widgets.dart';
 import '../../shared/validators.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
+import '../wallet/sub_page.dart';
+import 'package:intl/intl.dart';
 
 final myFeedbackProvider = FutureProvider<List<FeedbackItem>>((ref) async {
   final res = await ref.watch(dioProvider).get('/feedback/mine');
@@ -84,8 +86,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 
   Future<void> _submit() async {
-    final typeError = _type == null ? 'Төрлөө сонгоно уу' : null;
-    final categoryError = _category == null ? 'Ангиллаа сонгоно уу' : null;
+    final typeError = _type == null ? 'Юу тухай бичихээ сонгоно уу' : null;
+    final categoryError = _category == null ? 'Аль хэсэгт хамаарахыг сонгоно уу' : null;
     final messageError = Validators.feedbackMessage(_message.text);
 
     setState(() {
@@ -137,128 +139,150 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final history = ref.watch(myFeedbackProvider);
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: Text('Санал хүсэлт', style: text.displaySmall),
-      ),
+      backgroundColor: AppColors.bg,
       body: AppBackground(
+        seed: 'feedback',
         child: SafeArea(
-          top: false,
+          bottom: false,
           child: PageFrame(
             maxWidth: 720,
             child: ListView(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 32 + viewInsets),
-            children: [
-              Text(
-                'Юуг сайжруулах ёстойг хэлж өгөөрэй. Санал бүрийг уншиж, '
-                'дараагийн хувилбарт тусгана.',
-                style: text.bodySmall,
-              ),
-              const SizedBox(height: 26),
-              ErrorBanner(message: _formError, shakeToken: _shake),
-
-              const SectionLabel('Төрөл'),
-              const SizedBox(height: 12),
-              Shake(
-                token: _typeError == null ? 0 : _shake,
-                child: AppChoiceChips<String>(
-                  options: FeedbackMeta.types
-                      .map((t) => ChipOption(t.id, t.label, icon: _typeIcons[t.id]))
-                      .toList(),
-                  selected: _type,
-                  onSelected: (v) => setState(() {
-                    _type = v;
-                    _typeError = null;
-                  }),
+              padding:
+                  EdgeInsets.fromLTRB(20, 12, 20, 40 + safeBottom + viewInsets),
+              children: [
+                const SubPageHeader(title: 'Санал хүсэлт'),
+                const SizedBox(height: 24),
+                Reveal(
+                  index: 0,
+                  child: const Text(
+                    'Юуг сайжруулах ёстойг хэлээрэй. Санал болгоныг бид уншина.',
+                    style: TextStyle(
+                        fontSize: 15, height: 1.5, color: AppColors.inkSoft),
+                  ),
                 ),
-              ),
-              FieldMessage(error: _typeError),
-
-              const SizedBox(height: 24),
-              const SectionLabel('Ангилал'),
-              const SizedBox(height: 12),
-              Shake(
-                token: _categoryError == null ? 0 : _shake,
-                child: AppChoiceChips<String>(
-                  options: FeedbackMeta.categories
-                      .map((c) =>
-                          ChipOption(c.id, c.label, icon: _categoryIcons[c.id]))
-                      .toList(),
-                  selected: _category,
-                  onSelected: (v) => setState(() {
-                    _category = v;
-                    _categoryError = null;
-                  }),
-                ),
-              ),
-              FieldMessage(error: _categoryError),
-
-              const SizedBox(height: 24),
-              AppField(
-                label: 'Дэлгэрэнгүй',
-                controller: _message,
-                focusNode: _messageFocus,
-                hint: 'Юу болсныг, хаана болсныг аль болох тодорхой бичнэ үү.',
-                error: _messageError,
-                helper: _messageError == null
-                    ? '${_message.text.characters.length} / 2000'
-                    : null,
-                maxLines: 7,
-                minLines: 5,
-                maxLength: 2000,
-                enabled: !_loading,
-                shakeToken: _shake,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: (_) {
-                  if (_messageTouched) {
-                    setState(() =>
-                        _messageError = Validators.feedbackMessage(_message.text));
-                  }
-                },
-              ),
-
-              const SizedBox(height: 26),
-              PrimaryButton(
-                label: 'Илгээх',
-                icon: LucideIcons.send,
-                loading: _loading,
-                onPressed: _loading ? null : _submit,
-              ),
-
-              const SizedBox(height: 34),
-              const SectionLabel('Миний илгээсэн'),
-              const SizedBox(height: 12),
-              history.when(
-                loading: () => const Column(
-                  children: [
-                    Skeleton(height: 74, radius: 18),
-                    SizedBox(height: 10),
-                    Skeleton(height: 74, radius: 18),
-                  ],
-                ),
-                error: (e, _) => Text(apiErrorMessage(e), style: text.bodySmall),
-                data: (list) => list.isEmpty
-                    ? const EmptyState(
-                        icon: LucideIcons.messageSquare,
-                        title: 'Одоогоор санал алга',
-                        subtitle: 'Илгээсэн санал тань энд түүхээрээ хадгалагдана.',
-                      )
-                    : Column(
-                        children: list
-                            .map((f) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: _FeedbackTile(item: f),
-                                ))
-                            .toList(),
+                const SizedBox(height: 28),
+                ErrorBanner(message: _formError, shakeToken: _shake),
+                Reveal(
+                  index: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const PlainLabel('Юу тухай вэ?'),
+                      const SizedBox(height: 10),
+                      Shake(
+                        token: _typeError == null ? 0 : _shake,
+                        child: _Choices(
+                          options: [
+                            for (final t in FeedbackMeta.types)
+                              (t.id, t.label, _typeIcons[t.id]),
+                          ],
+                          selected: _type,
+                          onSelected: (v) => setState(() {
+                            _type = v;
+                            _typeError = null;
+                          }),
+                        ),
                       ),
-              ),
-            ],
-          ),
+                      FieldMessage(error: _typeError),
+                      const SizedBox(height: 24),
+                      const PlainLabel('Аль хэсэгт хамаарах вэ?'),
+                      const SizedBox(height: 10),
+                      Shake(
+                        token: _categoryError == null ? 0 : _shake,
+                        child: _Choices(
+                          options: [
+                            for (final c in FeedbackMeta.categories)
+                              (c.id, c.label, _categoryIcons[c.id]),
+                          ],
+                          selected: _category,
+                          onSelected: (v) => setState(() {
+                            _category = v;
+                            _categoryError = null;
+                          }),
+                        ),
+                      ),
+                      FieldMessage(error: _categoryError),
+                      const SizedBox(height: 24),
+                      AppField(
+                        label: 'Дэлгэрэнгүй',
+                        controller: _message,
+                        focusNode: _messageFocus,
+                        hint: 'Юу болсныг, хаана болсныг тодорхой бичээрэй.',
+                        error: _messageError,
+                        helper: _messageError == null
+                            ? '${_message.text.characters.length} / 2000'
+                            : null,
+                        maxLines: 7,
+                        minLines: 5,
+                        maxLength: 2000,
+                        enabled: !_loading,
+                        shakeToken: _shake,
+                        textCapitalization: TextCapitalization.sentences,
+                        onChanged: (_) {
+                          if (_messageTouched) {
+                            setState(() => _messageError =
+                                Validators.feedbackMessage(_message.text));
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      PrimaryButton(
+                        label: 'Илгээх',
+                        icon: LucideIcons.send,
+                        loading: _loading,
+                        onPressed: _loading ? null : _submit,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 48),
+                const Text('Миний илгээсэн',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink)),
+                const SizedBox(height: 8),
+                history.when(
+                  loading: () => const Column(children: [
+                    Skeleton(height: 74, radius: 16),
+                    SizedBox(height: 10),
+                    Skeleton(height: 74, radius: 16),
+                  ]),
+                  error: (e, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text(apiErrorMessage(e),
+                            style: const TextStyle(color: AppColors.inkSoft)),
+                      ),
+                      TextButton(
+                        onPressed: () => ref.invalidate(myFeedbackProvider),
+                        child: const Text('Дахин оролдох',
+                            style: TextStyle(
+                                color: AppColors.coralLight,
+                                fontWeight: FontWeight.w800)),
+                      ),
+                    ]),
+                  ),
+                  data: (list) => list.isEmpty
+                      ? const EmptyState(
+                          icon: LucideIcons.messageSquare,
+                          title: 'Санал хараахан илгээгээгүй',
+                          subtitle: 'Илгээсэн санал чинь энд харагдана.',
+                        )
+                      : Column(children: [
+                          for (var i = 0; i < list.length; i++)
+                            _FeedbackRow(
+                                item: list[i], last: i == list.length - 1),
+                        ]),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -266,10 +290,81 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   }
 }
 
-class _FeedbackTile extends StatelessWidget {
-  const _FeedbackTile({required this.item});
+typedef _Option = (String, String, IconData?);
+
+/// Сонголтын chip-үүд. Сонгосон нь шүрэн 16% дүүргэлт + шүрэн хүрээтэй
+/// (одоогийн сонголтыг шүрэнээр тэмдэглэнэ).
+class _Choices extends StatelessWidget {
+  const _Choices(
+      {required this.options, required this.selected, required this.onSelected});
+
+  final List<_Option> options;
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final o in options)
+          Semantics(
+            button: true,
+            selected: o.$1 == selected,
+            label: o.$2,
+            child: AnimatedPressable(
+              onPressed: () => onSelected(o.$1),
+              child: AnimatedContainer(
+                duration: AppMotion.fast,
+                curve: AppMotion.enter,
+                constraints: const BoxConstraints(minHeight: 44),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: o.$1 == selected
+                      ? AppColors.coral.withValues(alpha: 0.16)
+                      : AppColors.surface.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
+                  border: Border.all(
+                    color: o.$1 == selected
+                        ? AppColors.coral.withValues(alpha: 0.6)
+                        : AppColors.border,
+                  ),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (o.$3 != null) ...[
+                    Icon(o.$3,
+                        size: 16,
+                        color: o.$1 == selected
+                            ? AppColors.coralLight
+                            : AppColors.inkSoft),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(o.$2,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight:
+                            o.$1 == selected ? FontWeight.w800 : FontWeight.w600,
+                        color: AppColors.ink,
+                      )),
+                ]),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+final _fbDate = DateFormat('yyyy.MM.dd HH:mm');
+
+/// Илгээсэн саналын мөр — хуваагчтай жагсаалт.
+class _FeedbackRow extends StatelessWidget {
+  const _FeedbackRow({required this.item, required this.last});
 
   final FeedbackItem item;
+  final bool last;
 
   Color get _statusColor => switch (item.status) {
         'resolved' => AppColors.success,
@@ -281,88 +376,82 @@ class _FeedbackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: AppColors.border),
+        border: last
+            ? null
+            : const Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(_typeIcons[item.type] ?? LucideIcons.messageSquare,
-                  size: 15, color: AppColors.ink),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${FeedbackMeta.typeLabel(item.type)} · '
-                  '${FeedbackMeta.categoryLabel(item.category)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12.5,
+          Row(children: [
+            Icon(_typeIcons[item.type] ?? LucideIcons.messageSquare,
+                size: 16, color: AppColors.inkSoft),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${FeedbackMeta.typeLabel(item.type)} · '
+                '${FeedbackMeta.categoryLabel(item.category)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.inkSoft,
-                  ),
-                ),
+                    color: AppColors.inkSoft),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  FeedbackMeta.statusLabel(item.status),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _statusColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(FeedbackMeta.statusLabel(item.status),
                   style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: _statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: _statusColor)),
+            ),
+          ]),
           const SizedBox(height: 10),
-          Text(
-            item.message,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-                fontSize: 13, height: 1.5, color: AppColors.inkSoft),
-          ),
+          Text(item.message,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 14, height: 1.5, color: AppColors.ink)),
           if (item.adminNote != null) ...[
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(11),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceHi,
+                color: AppColors.surfaceHi.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(AppRadius.chip),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.messageSquare,
-                      size: 13, color: AppColors.ink),
-                  const SizedBox(width: 8),
+                  const Icon(LucideIcons.reply,
+                      size: 15, color: AppColors.coralLight),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      item.adminNote!,
-                      style: const TextStyle(
-                          fontSize: 12.5, height: 1.45, color: AppColors.inkSoft),
-                    ),
+                    child: Text(item.adminNote!,
+                        style: const TextStyle(
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: AppColors.inkSoft)),
                   ),
                 ],
               ),
             ),
           ],
           const SizedBox(height: 8),
-          Text(
-            '${item.createdAt.toLocal()}'.substring(0, 16),
-            style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
-          ),
+          Text(_fbDate.format(item.createdAt.toLocal()),
+              style: const TextStyle(
+                  fontSize: 12.5,
+                  color: AppColors.muted,
+                  fontFeatures: [FontFeature.tabularFigures()])),
         ],
       ),
     );
@@ -402,18 +491,21 @@ class _ThanksDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          Text('Хүлээж авлаа',
+          const Text('Баярлалаа',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayMedium),
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink)),
           const SizedBox(height: 8),
-          Text(
-            'Санал тань бүртгэгдлээ. Хариуг доорх түүхээс хараарай.',
+          const Text(
+            'Санал чинь хүрлээ. Хариуг доорх жагсаалтаас харна.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
           ),
           const SizedBox(height: 22),
           PrimaryButton(
-            label: 'Ойлголоо',
+            label: 'За',
             onPressed: () => Navigator.pop(context),
           ),
         ],

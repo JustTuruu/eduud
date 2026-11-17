@@ -788,13 +788,13 @@ class _NowInfo extends StatelessWidget {
         const SizedBox(height: 4),
         a.lastBidder == null
             ? const Text(
-                'Анхны санал өгөгч болоорой',
+                'Анхны санал өгч эхлээрэй',
                 style: TextStyle(fontSize: 14, color: AppColors.inkSoft),
               )
             : Text.rich(
                 TextSpan(children: [
                   const TextSpan(
-                    text: 'Тэргүүлж буй: ',
+                    text: 'Тэргүүлж байна: ',
                     style: TextStyle(color: AppColors.inkSoft),
                   ),
                   TextSpan(
@@ -1152,7 +1152,7 @@ class _EmptyHero extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Одоогоор шууд дуудлага худалдаа алга',
+                'Одоо явагдаж буй дуудлага алга',
                 textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme
@@ -1484,7 +1484,7 @@ class AuctionCard extends StatelessWidget {
                     Icon(LucideIcons.calendarClock,
                         size: 12, color: AppColors.ink),
                     SizedBox(width: 6),
-                    Text('Удахгүй',
+                    Text('Удахгүй эхлэх',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,

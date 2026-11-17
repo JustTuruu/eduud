@@ -3,20 +3,29 @@
 Luxe Navy дизайн системтэй (батлагдсан mockup-аас):
 `lib/core/theme/app_theme.dart` — өнгөний токен, Unbounded + Manrope typography.
 
-## Анх удаа ажиллуулах
+## Ажиллуулах
 
-Flutter SDK суулгасны дараа (https://docs.flutter.dev/get-started/install/windows):
+Эхлээд backend ажиллаж байх ёстой (`backend-spring/` — API :3000, Socket.IO :3001).
 
 ```bash
 cd app
-flutter create . --platforms=android,ios   # платформын хавтсуудыг үүсгэнэ (lib/-д нөлөөлөхгүй)
 flutter pub get
-flutter run --dart-define=API_URL=http://10.0.2.2:3000
+./tool/run.sh -d <төхөөрөмж>      # төхөөрөмжийн жагсаалт: flutter devices
 ```
 
-- Android emulator: `http://10.0.2.2:3000` (default)
-- Бодит төхөөрөмж: `--dart-define=API_URL=http://<компьютерийн-LAN-IP>:3000`
-- Web (Chrome): `flutter run -d chrome` — default `http://localhost:3000`
+`tool/run.sh` нь компьютерийн LAN IP-г (`en0`, байхгүй бол `en1`) олж
+`API_URL`, `SOCKET_URL`-ийг автоматаар тохируулна. `-d chrome` үед localhost.
+
+- **Бодит iPhone/Android**: утас компьютертэйгээ нэг Wi-Fi дээр байх ёстой.
+  iOS дээр анх удаа "Local Network" зөвшөөрөл асууна — зөвшөөрнө.
+  `./tool/run.sh -d <iPhone-ийн id>`
+- **Chrome**: `./tool/run.sh -d chrome` (эсвэл `flutter run -d chrome`)
+- **iOS simulator**: `flutter run` — анхдагч `http://localhost:3000`
+- **Android emulator**: `flutter run` — анхдагч `http://10.0.2.2:3000`
+- Гараар: `flutter run --dart-define=API_URL=http://<LAN-IP>:3000 --dart-define=SOCKET_URL=http://<LAN-IP>:3001`
+
+Dev горимд iOS (`NSAllowsArbitraryLoads`) болон Android (`usesCleartextTraffic`)
+дээр http холболтыг нээсэн. Production-д эдгээрийг хаагаад https ашиглана.
 
 ## Web (landing page + дуудлага худалдаа)
 

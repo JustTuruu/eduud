@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/app_theme.dart';
+import 'widgets.dart';
 
 /// Бэлэн аватар. Сервер лүү `preset:<id>` гэж хадгалагдана — зураг байршуулах
 /// хэрэггүй тул офлайн ч зөв харагдана.
@@ -18,6 +20,12 @@ class AvatarPreset {
       );
 
   String get value => 'preset:$id';
+
+  /// Нэрийн эхний үсгийн өнгө — цайвар өнгөн дээр бараан, бараан дээр цагаан.
+  Color get foreground {
+    final avg = Color.lerp(colors.first, colors.last, 0.5)!;
+    return avg.computeLuminance() > 0.38 ? AppColors.ctaInk : Colors.white;
+  }
 }
 
 const avatarPresets = <AvatarPreset>[
@@ -84,16 +92,21 @@ class AppAvatar extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _Initial(name: name, size: size),
             )
-          : _Initial(name: name, size: size),
+          : _Initial(
+              name: name,
+              size: size,
+              color: preset?.foreground ?? Colors.white),
     );
   }
 }
 
 class _Initial extends StatelessWidget {
-  const _Initial({required this.name, required this.size});
+  const _Initial(
+      {required this.name, required this.size, this.color = Colors.white});
 
   final String name;
   final double size;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -103,8 +116,107 @@ class _Initial extends StatelessWidget {
         style: TextStyle(
           fontSize: size * 0.42,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: color,
           height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+/// Аватар сонгогч — дээр нь сонгосон өнгөөр үзүүлэх томоор, доор нь өнгөний
+/// жагсаалт. Хадгалахад `preset:<id>` утгыг буцаана (sheet-ээс).
+class AvatarPicker extends StatefulWidget {
+  const AvatarPicker({super.key, required this.name, required this.current});
+
+  final String name;
+  final String? current;
+
+  @override
+  State<AvatarPicker> createState() => _AvatarPickerState();
+}
+
+class _AvatarPickerState extends State<AvatarPicker> {
+  late String? _selected = widget.current;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + safeBottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Аватар сонгох',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink)),
+          const SizedBox(height: 20),
+          Center(
+            child: AnimatedSwitcher(
+              duration: reducedMotion(context) ? Duration.zero : AppMotion.base,
+              switchInCurve: AppMotion.spring,
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: AppAvatar(
+                key: ValueKey(_selected),
+                name: widget.name,
+                avatarUrl: _selected,
+                size: 96,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 14,
+            children: [
+              for (final p in avatarPresets) _swatch(p),
+            ],
+          ),
+          const SizedBox(height: 26),
+          PrimaryButton(
+            label: 'Хадгалах',
+            icon: LucideIcons.check,
+            onPressed: _selected == null || _selected == widget.current
+                ? null
+                : () => Navigator.pop(context, _selected),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _swatch(AvatarPreset p) {
+    final on = _selected == p.value;
+    return Semantics(
+      button: true,
+      selected: on,
+      label: p.label,
+      child: AnimatedPressable(
+        onPressed: () => setState(() => _selected = p.value),
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.enter,
+          width: 52,
+          height: 52,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: on ? AppColors.ink : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(shape: BoxShape.circle, gradient: p.gradient),
+            child: on
+                ? Icon(LucideIcons.check, size: 18, color: p.foreground)
+                : null,
+          ),
         ),
       ),
     );

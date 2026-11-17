@@ -20,6 +20,9 @@ abstract class NavMetrics {
   static const barHeight = 64.0;
   static const bottomGap = 16.0;
 
+  /// Өргөн дэлгэцийн дээд навын өндөр (SafeArea-гүй) — агуулга дээд padding-д нэмнэ.
+  static const topHeight = 84.0;
+
   static double bottomInset(BuildContext context) =>
       barHeight + bottomGap + 16 + MediaQuery.paddingOf(context).bottom;
 }
