@@ -221,6 +221,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
               error: _bidError,
               busy: _bidding,
               step: _step,
+              currentPrice: a.currentPrice,
               onStep: (v) => setState(() => _step = v),
               onBid: _bid,
               onLogin: _requireLogin,
@@ -1236,11 +1237,13 @@ class BidControl extends StatelessWidget {
     required this.onBid,
     required this.onLogin,
     required this.onTopUp,
+    this.currentPrice = 0,
     this.step = 1,
     this.onStep,
   });
 
   final String? meId;
+  final int currentPrice;
   final int balance;
   final String? error;
   final bool busy;
@@ -1264,30 +1267,48 @@ class BidControl extends StatelessWidget {
       label = 'Эрх цэнэглэх';
       action = onTopUp;
     } else {
-      label = 'Үнэ илгээх · +$step₮';
+      label = 'Үнэ илгээх · ${formatMnt(currentPrice + step)}';
       action = onBid;
     }
     final showSteps = !guest && !noBalance;
+
+    final button = PrimaryButton(
+      label: label,
+      loading: busy,
+      onPressed: action,
+      radius:
+          showSteps ? bidControlRadius - bidControlPadding : bidControlRadius,
+      minHeight: 52,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showSteps) ...[
-          BidStepSelector(
-            value: step,
-            enabled: !busy,
-            onChanged: (v) => onStep?.call(v),
-          ),
-          const SizedBox(height: 8),
-        ],
-        PrimaryButton(
-          label: label,
-          loading: busy,
-          onPressed: action,
-          radius: bidControlRadius,
-          minHeight: 52,
-        ),
+        if (showSteps)
+          // Алхам сонгогч + илгээх товч нэг хайрцагт — нэг физик control
+          Container(
+            padding: const EdgeInsets.all(bidControlPadding),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(bidControlRadius),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                BidStepSelector(
+                  value: step,
+                  enabled: !busy,
+                  onChanged: (v) => onStep?.call(v),
+                ),
+                const SizedBox(height: 4),
+                button,
+              ],
+            ),
+          )
+        else
+          button,
         if (error != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -1302,7 +1323,8 @@ class BidControl extends StatelessWidget {
 }
 
 /// Үнэ илгээх товч ба алхам сонгогчийн нийтлэг булан (capsule).
-const double bidControlRadius = 26;
+const double bidControlRadius = 28;
+const double bidControlPadding = 4;
 
 /// Үнийн алхам сонгогч: +1..+5 ₮ — товчтой ижил accent өнгөний гэр бүл,
 /// сонгосон хэсэг дээр гулсдаг thumb.
@@ -1332,13 +1354,8 @@ class BidStepSelector extends StatelessWidget {
       child: AnimatedOpacity(
         opacity: enabled ? 1 : 0.5,
         duration: dur,
-        child: Container(
-          height: 46,
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(bidControlRadius),
-          ),
+        child: SizedBox(
+          height: 44,
           child: Stack(
             children: [
               AnimatedAlign(
@@ -1350,8 +1367,17 @@ class BidStepSelector extends StatelessWidget {
                   heightFactor: 1,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(bidControlRadius),
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(
+                          bidControlRadius - bidControlPadding),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: AppColors.isDark ? 0.4 : 0.12),
+                          blurRadius: 6,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1408,7 +1434,7 @@ class _StepSegment extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color: selected ? AppColors.ctaInk : AppColors.accent,
+                color: AppColors.accent,
               ),
               child: Text('+$step'),
             ),

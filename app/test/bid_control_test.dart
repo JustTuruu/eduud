@@ -25,6 +25,7 @@ void main() {
         balance: 5,
         error: null,
         busy: false,
+        currentPrice: 1000,
         step: step,
         onStep: (v) => setState(() => step = v),
         onBid: () => sent = step,
@@ -36,14 +37,14 @@ void main() {
     for (final v in [1, 2, 3, 4, 5]) {
       expect(find.text('+$v'), findsOneWidget);
     }
-    expect(find.text('Үнэ илгээх · +1₮'), findsOneWidget);
+    expect(find.text('Үнэ илгээх · 1,001₮'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('+3'));
     await tester.pump();
-    expect(find.text('Үнэ илгээх · +3₮'), findsOneWidget);
+    expect(find.text('Үнэ илгээх · 1,003₮'), findsOneWidget);
 
-    await tester.tap(find.text('Үнэ илгээх · +3₮'));
+    await tester.tap(find.text('Үнэ илгээх · 1,003₮'));
     await tester.pump();
     expect(sent, 3);
   });
