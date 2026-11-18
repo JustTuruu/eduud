@@ -20,6 +20,7 @@ import '../auth/auth_controller.dart';
 import '../home/auction_tiles.dart' show ArtPlaceholder;
 import 'consent_sheet.dart';
 import '../home/auction_timing.dart';
+import 'image_peek.dart';
 import '../wallet/sub_page.dart' show GroupSection;
 
 /// Auction-ы дэлгэрэнгүй + realtime төлөв.
@@ -528,15 +529,20 @@ class _GalleryState extends State<_Gallery> {
                 : PageView.builder(
                     itemCount: images.length,
                     onPageChanged: (i) => setState(() => _index = i),
-                    itemBuilder: (context, i) => Image.network(
-                      images[i],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      semanticLabel: 'Зураг ${i + 1}',
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null ? child : placeholder,
-                      errorBuilder: (_, __, ___) => placeholder,
+                    itemBuilder: (context, i) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () =>
+                          showImagePeek(context, images: images, initial: i),
+                      child: Image.network(
+                        images[i],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        semanticLabel: 'Зураг ${i + 1}',
+                        loadingBuilder: (context, child, progress) =>
+                            progress == null ? child : placeholder,
+                        errorBuilder: (_, __, ___) => placeholder,
+                      ),
                     ),
                   ),
           ),
@@ -720,85 +726,32 @@ class TimingCardState extends State<TimingCard> {
     final live = a.status == 'live';
     final scheduled = a.status == 'scheduled';
     final ended = a.status == 'ended' || a.status == 'settled';
-    const tab = [FontFeature.tabularFigures()];
-
     final rounds = a.rounds;
     final hasRounds = rounds != null && rounds.isNotEmpty;
     final waitingFirst = hasRounds && live && a.bidCount == 0;
 
     final rows = <Widget>[
-      _valueRow(scheduled ? 'Эхлэх' : 'Эхэлсэн',
-          formatDateTimeLabel(a.startsAt, _now)),
+      _valueRow(
+          scheduled ? 'Эхлэх' : 'Эхэлсэн', formatExactDateTime(a.startsAt)),
       _valueRow(
           ended
               ? 'Дууссан'
               : waitingFirst
                   ? 'Хамгийн оройдоо'
                   : 'Дуусах',
-          formatDateTimeLabel(
-              waitingFirst ? _lastEnd(rounds) : a.endsAt, _now)),
+          formatExactDateTime(waitingFirst ? _lastEnd(rounds) : a.endsAt)),
     ];
 
-    if (hasRounds && live) {
-      rows.add(_roundHeader(a, rounds, waitingFirst));
-    } else if (live || scheduled) {
-      final target = scheduled ? a.startsAt : a.endsAt;
-      final remaining = target.difference(_now);
-      final urgent =
-          live && remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
-      final soft = live && inSoftClose(remaining, a.softCloseSec);
-      final phase = scheduled
-          ? 'Эхлэх хүртэл'
-          : soft
-              ? 'Сунгалтын шат'
-              : 'Үндсэн хугацаа';
-      final phaseColor = soft ? AppColors.danger : AppColors.muted;
-      final rule = StringBuffer();
-      if (live && a.softCloseSec > 0 && a.extendSec > 0) {
-        rule.write(
-            'Сүүлийн ${a.softCloseSec} секундэд үнэ ирвэл хугацаа ${a.extendSec} секундээр сунгагдана');
-        if (a.hardCloseAt != null) {
-          rule.write(
-              ' · Эцсийн хаалт ${DateFormat('HH:mm').format(a.hardCloseAt!.toLocal())}');
-        }
+    if (live || scheduled) {
+      rows.add(_splitBox(a, rounds, hasRounds, waitingFirst));
+      if (hasRounds && live && !waitingFirst) {
+        rows.add(Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Text('Үнэ ирэх бүрт тухайн round-ын хугацаагаар дахин эхэлнэ',
+              style: TextStyle(
+                  fontSize: 12, height: 1.35, color: AppColors.muted)),
+        ));
       }
-      rows.add(Semantics(
-        label: scheduled
-            ? 'Эхлэх хүртэл ${formatRemaining(remaining)}'
-            : 'Үлдсэн хугацаа ${formatRemaining(remaining)}',
-        child: ExcludeSemantics(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(phase,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: phaseColor)),
-                const SizedBox(height: 4),
-                Text(
-                  formatRemaining(remaining),
-                  style: TextStyle(
-                    fontSize: 40,
-                    height: 1.1,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: tab,
-                    color: urgent ? AppColors.danger : AppColors.ink,
-                  ),
-                ),
-                if (rule.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(rule.toString(),
-                      style: TextStyle(
-                          fontSize: 12, height: 1.35, color: AppColors.muted)),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ));
     }
 
     final card = GroupSection(children: rows);
@@ -818,60 +771,144 @@ class TimingCardState extends State<TimingCard> {
 
   DateTime _lastEnd(List<AuctionRound> r) => r.last.endsAt;
 
-  /// Round-той үеийн толгой: "Round N · урт" + тоолуур / хүлээлтийн мөр.
-  Widget _roundHeader(
-      AuctionDetail a, List<AuctionRound> rounds, bool waitingFirst) {
+  Widget _small(String text, {Color? color, FontWeight? weight}) => Text(text,
+      style: TextStyle(
+          fontSize: 12,
+          height: 1.35,
+          fontWeight: weight,
+          color: color ?? AppColors.muted));
+
+  /// Нэг хайрцаг, хоёр тэнцүү хагас: зүүн — тоолуур, баруун — одоогийн round
+  /// (round байхгүй бол сунгалтын шат). Дунд нь нимгэн босоо зураас.
+  Widget _splitBox(AuctionDetail a, List<AuctionRound>? rounds, bool hasRounds,
+      bool waitingFirst) {
     const tab = [FontFeature.tabularFigures()];
-    final idx = roundIndexAt(rounds, _now) ?? 0;
-    final round = rounds[idx];
-    final dur = formatRoundDuration(round.durationSec);
-    final remaining = a.endsAt.difference(_now);
-    final urgent = !waitingFirst &&
+    final live = a.status == 'live';
+    final scheduled = a.status == 'scheduled';
+    final target = scheduled ? a.startsAt : a.endsAt;
+    final remaining = target.difference(_now);
+    final urgent = live &&
+        !waitingFirst &&
         remaining.inMilliseconds > 0 &&
         remaining.inSeconds < 10;
+    final soft = live && inSoftClose(remaining, a.softCloseSec);
+    final countdown = formatRemaining(remaining);
+
+    // Зүүн хагас
+    final leftLabel = scheduled ? 'Эхлэх хүртэл' : 'Үлдсэн хугацаа';
+    final Widget leftValue = waitingFirst
+        ? Text('—',
+            style: TextStyle(
+                fontSize: 32,
+                height: 1.15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink))
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(countdown,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 32,
+                  height: 1.15,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: tab,
+                  color: urgent ? AppColors.danger : AppColors.ink,
+                )),
+          );
+
+    // Баруун хагас
+    String rightLabel;
+    String rightValue;
+    Color rightColor = AppColors.accent;
+    String rightNote;
+    String semRight;
+    if (hasRounds) {
+      final idx = roundIndexAt(rounds!, _now) ?? 0;
+      final r = rounds[idx];
+      rightLabel = scheduled ? 'Эхний round' : 'Одоогийн round';
+      rightValue = 'Round ${idx + 1}';
+      rightNote =
+          '${formatRoundDuration(r.durationSec)} · ${formatTimeRange(r.startsAt, r.endsAt)}';
+      semRight = rightValue;
+    } else {
+      rightLabel = 'Үе шат';
+      if (scheduled) {
+        rightValue = 'Товлосон';
+        rightColor = AppColors.ink;
+      } else {
+        rightValue = soft ? 'Сунгалтын шат' : 'Үндсэн хугацаа';
+        rightColor = soft ? AppColors.danger : AppColors.accent;
+      }
+      final b = StringBuffer();
+      if (live && a.softCloseSec > 0 && a.extendSec > 0) {
+        b.write('Сүүлийн ${a.softCloseSec}с-д үнэ ирвэл +${a.extendSec}с');
+        if (a.hardCloseAt != null) {
+          b.write(
+              ' · Эцсийн хаалт ${DateFormat('HH:mm').format(a.hardCloseAt!.toLocal())}');
+        }
+      }
+      rightNote = b.toString();
+      semRight = rightValue;
+    }
+
+    final label = waitingFirst
+        ? '$leftLabel: анхны үнэ хүлээж байна, $semRight'
+        : '$leftLabel $countdown, $semRight';
+
     return Semantics(
-      label: waitingFirst
-          ? 'Round ${idx + 1}, анхны үнэ хүлээж байна'
-          : 'Round ${idx + 1}, үлдсэн хугацаа ${formatRemaining(remaining)}',
+      label: label,
       child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Round ${idx + 1} · $dur',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accent)),
-              const SizedBox(height: 6),
-              if (waitingFirst) ...[
-                Text('Анхны үнэ хүлээж байна',
-                    style: TextStyle(
-                        fontSize: 24,
-                        height: 1.2,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink)),
-                const SizedBox(height: 6),
-                Text('Үнэ ирмэгц $dur тоолж эхэлнэ',
-                    style: TextStyle(
-                        fontSize: 13, height: 1.35, color: AppColors.muted)),
-              ] else ...[
-                Text(
-                  formatRemaining(remaining),
-                  style: TextStyle(
-                    fontSize: 40,
-                    height: 1.1,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: tab,
-                    color: urgent ? AppColors.danger : AppColors.ink,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _small(leftLabel),
+                      const SizedBox(height: 4),
+                      leftValue,
+                      if (waitingFirst) ...[
+                        const SizedBox(height: 4),
+                        _small('Анхны үнэ ирмэгц эхэлнэ'),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text('Үнэ ирэх бүрт тухайн round-ын хугацаагаар дахин эхэлнэ',
-                    style: TextStyle(
-                        fontSize: 12, height: 1.35, color: AppColors.muted)),
-              ],
+              ),
+              Container(width: 1, color: AppColors.border),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _small(rightLabel),
+                      const SizedBox(height: 4),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(rightValue,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: hasRounds ? 32 : 22,
+                              height: hasRounds ? 1.15 : 1.5,
+                              fontWeight: FontWeight.w700,
+                              color: rightColor,
+                            )),
+                      ),
+                      if (rightNote.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        _small(rightNote),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

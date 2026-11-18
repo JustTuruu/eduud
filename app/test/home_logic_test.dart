@@ -139,4 +139,9 @@ void main() {
     expect(formatBidTime(DateTime(2026, 11, 17, 23, 59, 1), now),
         '11.17 23:59:01');
   });
+
+  test('formatExactDateTime: yyyy.MM.dd HH:mm', () {
+    expect(formatExactDateTime(DateTime(2026, 11, 18, 14)), '2026.11.18 14:00');
+    expect(formatExactDateTime(DateTime(2026, 1, 5, 9, 7)), '2026.01.05 09:07');
+  });
 }

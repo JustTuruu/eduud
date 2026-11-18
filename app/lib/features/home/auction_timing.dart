@@ -30,6 +30,10 @@ String formatDateTimeLabel(DateTime t, DateTime now) {
   return '${s.month}-р сарын ${s.day} · $time';
 }
 
+/// Яг огноо+цаг (local): "2026.11.18 14:00".
+String formatExactDateTime(DateTime t) =>
+    DateFormat('yyyy.MM.dd HH:mm').format(t.toLocal());
+
 /// Саналын илгээсэн яг цаг (local): өнөөдөр "HH:mm:ss", бусад өдөр "MM.dd HH:mm:ss".
 String formatBidTime(DateTime t, DateTime now) {
   final s = t.toLocal();
