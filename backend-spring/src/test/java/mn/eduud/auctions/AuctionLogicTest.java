@@ -179,4 +179,20 @@ class AuctionLogicTest {
     assertThat(d.get(10).endsAt()).isEqualTo(T0.plusSeconds(3 * 3600 + 7 * 3600 + 3 * 2400));
     AuctionRounds.validate(d);
   }
+
+  @Test
+  void validStepAcceptsNullAndOneToFive() {
+    assertThat(AuctionLogic.validStep(null)).isTrue();
+    for (int i = 1; i <= 5; i++) assertThat(AuctionLogic.validStep(i)).isTrue();
+    assertThat(AuctionLogic.validStep(0)).isFalse();
+    assertThat(AuctionLogic.validStep(6)).isFalse();
+    assertThat(AuctionLogic.validStep(-1)).isFalse();
+  }
+
+  @Test
+  void nextPriceUsesStepOrIncrement() {
+    assertThat(AuctionLogic.nextPrice(1000, 10, null)).isEqualTo(1010);
+    assertThat(AuctionLogic.nextPrice(1000, 10, 3)).isEqualTo(1003);
+    assertThat(AuctionLogic.nextPrice(1000, 10, 5)).isEqualTo(1005);
+  }
 }

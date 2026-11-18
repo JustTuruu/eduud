@@ -132,4 +132,11 @@ void main() {
         }).canCancel,
         false);
   });
+
+  test('formatBidTime: өнөөдөр HH:mm:ss, бусад өдөр MM.dd HH:mm:ss', () {
+    final now = DateTime(2026, 11, 18, 15, 0, 0);
+    expect(formatBidTime(DateTime(2026, 11, 18, 9, 5, 7), now), '09:05:07');
+    expect(formatBidTime(DateTime(2026, 11, 17, 23, 59, 1), now),
+        '11.17 23:59:01');
+  });
 }

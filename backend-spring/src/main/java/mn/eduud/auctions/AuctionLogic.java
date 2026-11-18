@@ -50,6 +50,16 @@ public final class AuctionLogic {
     return null;
   }
 
+  /** Үнийн алхам зөвшөөрөгдөх эсэх: null (auction-ы increment) эсвэл 1..5. */
+  public static boolean validStep(Integer step) {
+    return step == null || (step >= 1 && step <= 5);
+  }
+
+  /** Шинэ үнэ = одоогийн үнэ + (сонгосон алхам, байхгүй бол auction-ы increment). */
+  public static int nextPrice(int currentPrice, int increment, Integer step) {
+    return currentPrice + (step != null ? step : increment);
+  }
+
   /**
    * Soft-close сунгалт: дуусахад softCloseSec-ээс бага хугацаа үлдсэн үед санал ирвэл
    * `now + extendSec` хүртэл сунгана (одоогийн endsAt-ээс богиносгохгүй,

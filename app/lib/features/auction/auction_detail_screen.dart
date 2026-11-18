@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show FontFeature, ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -108,8 +108,11 @@ class AuctionDetailController
     if (st is int) _serverOffsetMs = st - DateTime.now().millisecondsSinceEpoch;
   }
 
-  Future<void> placeBid() async {
-    await ref.read(dioProvider).post('/auctions/$arg/bid');
+  /// [step] — сонгосон үнийн алхам (1..5 ₮); 1 эрх зарцуулж, үнэ зөвхөн step-ээр өснө.
+  Future<void> placeBid({int step = 1}) async {
+    await ref
+        .read(dioProvider)
+        .post('/auctions/$arg/bid', data: {'step': step});
     // Шинэ үнэ/хугацаа socket event-ээр ирнэ; balance-ыг профайлаас сэргээнэ
     unawaited(ref.read(authProvider.notifier).refreshProfile());
   }
@@ -136,6 +139,7 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _bidding = false;
+  int _step = 1; // энэ дуудлагад сүүлд сонгосон алхам (₮)
   String? _bidError; // "Үнэ илгээх" хэсэгт inline харагдах алдаа
   String? _toast;
   Timer? _toastTimer;
@@ -158,10 +162,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       context,
       ref,
       auctionId: widget.auctionId,
-      increment: ref
-          .read(auctionDetailProvider(widget.auctionId))
-          .valueOrNull
-          ?.increment,
     );
     if (!ok || !mounted) return;
     setState(() {
@@ -171,7 +171,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     try {
       await ref
           .read(auctionDetailProvider(widget.auctionId).notifier)
-          .placeBid();
+          .placeBid(step: _step);
       // Бодит шинэчлэлт socket event-ээр ирнэ — энд зөвхөн товч баталгаажуулна.
       unawaited(HapticFeedback.mediumImpact());
       _showToast('Таны үнэ илгээгдлээ');
@@ -214,11 +214,13 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     Widget? bottomBar;
     if (a != null) {
       final bid = a.status == 'live'
-          ? _BidControl(
+          ? BidControl(
               meId: me?.id,
               balance: me?.balance ?? 0,
               error: _bidError,
               busy: _bidding,
+              step: _step,
+              onStep: (v) => setState(() => _step = v),
               onBid: _bid,
               onLogin: _requireLogin,
               onTopUp: () => context.push('/wallet'),
@@ -328,7 +330,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       ],
       if (a.bids.isNotEmpty) ...[
         const _SectionTitle('Сүүлийн саналууд'),
-        _BidHistory(bids: a.bids),
+        BidHistory(bids: a.bids),
       ],
     ];
 
@@ -1001,8 +1003,9 @@ class _RoundRow extends StatelessWidget {
 }
 
 /// "Үнэ илгээх" хэсэг — зөвхөн товч (нэвтрээгүй / эрхгүй үед тохирох үйлдэл) + алдааны мөр.
-class _BidControl extends StatelessWidget {
-  const _BidControl({
+@visibleForTesting
+class BidControl extends StatelessWidget {
+  const BidControl({
     required this.meId,
     required this.balance,
     required this.error,
@@ -1010,6 +1013,8 @@ class _BidControl extends StatelessWidget {
     required this.onBid,
     required this.onLogin,
     required this.onTopUp,
+    this.step = 1,
+    this.onStep,
   });
 
   final String? meId;
@@ -1019,6 +1024,8 @@ class _BidControl extends StatelessWidget {
   final VoidCallback onBid;
   final VoidCallback onLogin;
   final VoidCallback onTopUp;
+  final int step;
+  final ValueChanged<int>? onStep;
 
   @override
   Widget build(BuildContext context) {
@@ -1034,14 +1041,23 @@ class _BidControl extends StatelessWidget {
       label = 'Эрх цэнэглэх';
       action = onTopUp;
     } else {
-      label = 'Үнэ илгээх';
+      label = 'Үнэ илгээх · +$step₮';
       action = onBid;
     }
+    final showSteps = !guest && !noBalance;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (showSteps) ...[
+          BidStepSelector(
+            value: step,
+            enabled: !busy,
+            onChanged: (v) => onStep?.call(v),
+          ),
+          const SizedBox(height: 10),
+        ],
         PrimaryButton(
           label: label,
           loading: busy,
@@ -1060,58 +1076,149 @@ class _BidControl extends StatelessWidget {
   }
 }
 
-String _timeAgo(DateTime t) {
-  final s = DateTime.now().difference(t).inSeconds;
-  if (s < 10) return 'дөнгөж сая';
-  if (s < 60) return '$s секундын өмнө';
-  if (s < 3600) return '${s ~/ 60} минутын өмнө';
-  if (s < 86400) return '${s ~/ 3600} цагийн өмнө';
-  return '${s ~/ 86400} өдрийн өмнө';
+/// Үнийн алхам сонгогч: +1..+5 ₮ — iOS segmented control маяг, сонгосон хэсэг accent өнгөтэй.
+@visibleForTesting
+class BidStepSelector extends StatelessWidget {
+  const BidStepSelector({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  static const steps = [1, 2, 3, 4, 5];
+
+  final int value;
+  final bool enabled;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'Үнийн алхам сонгох',
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: AppColors.fill,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            for (final v in steps)
+              Expanded(
+                child: _StepSegment(
+                  step: v,
+                  selected: v == value,
+                  onTap: enabled && v != value
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          onChanged(v);
+                        }
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-/// Саналын түүх — grouped inset жагсаалт. "Хэдийн өмнө" шошго 15с тутам шинэчлэгдэнэ.
-class _BidHistory extends StatefulWidget {
-  const _BidHistory({required this.bids});
+class _StepSegment extends StatelessWidget {
+  const _StepSegment({
+    required this.step,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final int step;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '+$step₮',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: ExcludeSemantics(
+            child: Text(
+              '+$step',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: selected ? AppColors.ctaInk : AppColors.ink,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Саналын түүх — тогтмол дээд өндөртэй grouped карт, дотроо гүйлгэгдэнэ.
+/// Жагсаалт богино бол хайрцаг агуулгаараа багтана.
+@visibleForTesting
+class BidHistory extends StatefulWidget {
+  const BidHistory({super.key, required this.bids});
+
+  static const rowHeight = 52.0;
+  // ~10.5 мөр — сүүлийн мөр хагас харагдаж гүйлгэх боломжийг сануулна
+  static const maxHeight = rowHeight * 10.5;
 
   final List<BidItem> bids;
 
   @override
-  State<_BidHistory> createState() => _BidHistoryState();
+  State<BidHistory> createState() => _BidHistoryState();
 }
 
-class _BidHistoryState extends State<_BidHistory> {
-  Timer? _t;
-
-  @override
-  void initState() {
-    super.initState();
-    _t = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (mounted) setState(() {});
-    });
-  }
+class _BidHistoryState extends State<BidHistory> {
+  final _scroll = ScrollController();
 
   @override
   void dispose() {
-    _t?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bids = widget.bids;
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.card),
       child: ColoredBox(
         color: AppColors.surface,
-        child: Column(
-          children: [
-            for (var i = 0; i < widget.bids.length; i++)
-              _BidRow(
-                key: ValueKey(widget.bids[i].id),
-                bid: widget.bids[i],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: BidHistory.maxHeight),
+          child: Scrollbar(
+            controller: _scroll,
+            child: ListView.builder(
+              controller: _scroll,
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const ClampingScrollPhysics(),
+              itemCount: bids.length,
+              itemBuilder: (_, i) => _BidRow(
+                key: ValueKey(bids[i].id),
+                bid: bids[i],
                 isTop: i == 0,
-                last: i == widget.bids.length - 1,
+                last: i == bids.length - 1,
               ),
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -1129,8 +1236,8 @@ class _BidRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      constraints: const BoxConstraints(minHeight: BidHistory.rowHeight),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Row(children: [
         AppAvatar(name: bid.user.name, avatarUrl: bid.user.avatarUrl, size: 36),
         const SizedBox(width: 12),
@@ -1148,8 +1255,12 @@ class _BidRow extends StatelessWidget {
                     color: AppColors.ink),
               ),
               Text(
-                _timeAgo(bid.createdAt),
-                style: TextStyle(fontSize: 13, color: AppColors.muted),
+                formatBidTime(bid.createdAt, DateTime.now()),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.muted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ],
           ),

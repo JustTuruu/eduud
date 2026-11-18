@@ -90,7 +90,7 @@ public class AuctionsService {
                 "SELECT b.id, b.price, b.created_at,"
                     + " json_build_object('id', u.id, 'name', u.name, 'avatarUrl', u.avatar_url) AS user"
                     + " FROM bids b JOIN users u ON u.id = b.user_id WHERE b.auction_id = ?"
-                    + " ORDER BY b.created_at DESC, b.price DESC LIMIT 20")
+                    + " ORDER BY b.created_at DESC, b.price DESC LIMIT 50")
             .param(id)
             .query(rows.camel())
             .list();

@@ -170,7 +170,7 @@ public class BidProcessor {
       String previous = a.lastBidderId;
       Instant newEndsAt = AuctionLogic.computeNewEndsAt(a, receivedAt);
       boolean extended = !newEndsAt.equals(a.endsAt);
-      a.currentPrice += a.increment;
+      a.currentPrice = AuctionLogic.nextPrice(a.currentPrice, a.increment, c.step());
       a.endsAt = newEndsAt;
       a.lastBidderId = c.userId();
       a.bidCount += 1;

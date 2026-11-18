@@ -57,9 +57,11 @@ public class BidService {
     this.cfg = props.bid();
   }
 
-  public ResponseEntity<Map<String, Object>> placeBid(String auctionId, String userId) {
+  public ResponseEntity<Map<String, Object>> placeBid(String auctionId, String userId, Integer step) {
+    if (!AuctionLogic.validStep(step)) throw ApiException.badRequest("Алхам 1–5 ₮ байх ёстой");
     BidCommand cmd =
-        new BidCommand(Ids.uuid(), auctionId, userId, System.currentTimeMillis(), BidCommand.SCHEMA_VERSION);
+        new BidCommand(
+            Ids.uuid(), auctionId, userId, System.currentTimeMillis(), BidCommand.SCHEMA_VERSION, step);
     return cfg.isKafka() ? enqueue(cmd) : direct(cmd);
   }
 

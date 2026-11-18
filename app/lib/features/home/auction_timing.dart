@@ -30,6 +30,14 @@ String formatDateTimeLabel(DateTime t, DateTime now) {
   return '${s.month}-р сарын ${s.day} · $time';
 }
 
+/// Саналын илгээсэн яг цаг (local): өнөөдөр "HH:mm:ss", бусад өдөр "MM.dd HH:mm:ss".
+String formatBidTime(DateTime t, DateTime now) {
+  final s = t.toLocal();
+  final n = now.toLocal();
+  final sameDay = s.year == n.year && s.month == n.month && s.day == n.day;
+  return DateFormat(sameDay ? 'HH:mm:ss' : 'MM.dd HH:mm:ss').format(s);
+}
+
 /// Эхлэх цагийн шошго: "Өнөөдөр 20:00", "Маргааш 20:00", бусад үед
 /// "11-р сарын 20 · 20:00".
 String formatStartLabel(DateTime start, DateTime now) =>

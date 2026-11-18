@@ -34,7 +34,6 @@ Future<bool> ensureAuctionConsent(
   BuildContext context,
   WidgetRef ref, {
   required String auctionId,
-  int? increment,
 }) async {
   final userId = ref.read(authProvider).valueOrNull?.id;
   if (userId == null) return true; // нэвтрээгүй бол өөр урсгал барина
@@ -42,7 +41,7 @@ Future<bool> ensureAuctionConsent(
   if (!context.mounted) return false;
   final ok = await showAppSheet<bool>(
     context,
-    builder: (_) => ConsentSheet(increment: increment),
+    builder: (_) => const ConsentSheet(),
   );
   if (ok != true) return false;
   await rememberAuctionConsent(userId, auctionId);
@@ -51,9 +50,7 @@ Future<bool> ensureAuctionConsent(
 
 /// "Оролцохын өмнө" дүрмийн sheet. Зөвшөөрөл тэмдэглэтэл "Оролцох" идэвхгүй.
 class ConsentSheet extends StatefulWidget {
-  const ConsentSheet({super.key, this.increment});
-
-  final int? increment;
+  const ConsentSheet({super.key});
 
   @override
   State<ConsentSheet> createState() => _ConsentSheetState();
@@ -64,14 +61,18 @@ class _ConsentSheetState extends State<ConsentSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final inc = widget.increment;
-    final priceRule = inc == null
-        ? 'Үнэ илгээх бүрт үнэ өснө, хугацаа сунгагдаж болно.'
-        : 'Үнэ илгээх бүрт үнэ ${formatMnt(inc)}-өөр өснө, хугацаа сунгагдаж болно.';
+    const priceRule =
+        'Үнэ илгээх бүрт таны сонгосон дүнгээр (+1…+5₮) үнэ өснө, хугацаа сунгагдаж болно.';
     final rules = <(IconData, String)>[
-      (LucideIcons.ticket, 'Үнэ илгээх бүрт 1 эрх зарцуулагдана. Буцаагдахгүй.'),
+      (
+        LucideIcons.ticket,
+        'Үнэ илгээх бүрт 1 эрх зарцуулагдана. Буцаагдахгүй.'
+      ),
       (LucideIcons.trendingUp, priceRule),
-      (LucideIcons.clock, 'Хугацаа дуусахад хамгийн сүүлд үнэ илгээсэн хүн ялна.'),
+      (
+        LucideIcons.clock,
+        'Хугацаа дуусахад хамгийн сүүлд үнэ илгээсэн хүн ялна.'
+      ),
       (
         LucideIcons.wallet,
         'Ялвал $payDeadlineHours цагийн дотор эцсийн үнийг төлнө, '
@@ -107,7 +108,9 @@ class _ConsentSheetState extends State<ConsentSheet> {
                     Expanded(
                       child: Text(r.$2,
                           style: TextStyle(
-                              fontSize: 16, height: 1.35, color: AppColors.ink)),
+                              fontSize: 16,
+                              height: 1.35,
+                              color: AppColors.ink)),
                     ),
                   ],
                 ),

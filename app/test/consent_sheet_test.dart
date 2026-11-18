@@ -15,7 +15,7 @@ void main() {
               result = await showModalBottomSheet<bool>(
                 context: context,
                 isScrollControlled: true,
-                builder: (_) => const ConsentSheet(increment: 100),
+                builder: (_) => const ConsentSheet(),
               );
             },
             child: const Text('open'),
@@ -27,7 +27,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Оролцохын өмнө'), findsOneWidget);
-    expect(find.textContaining('Үнэ илгээх бүрт 1 эрх зарцуулагдана'), findsOneWidget);
+    expect(find.textContaining('Үнэ илгээх бүрт 1 эрх зарцуулагдана'),
+        findsOneWidget);
+    expect(find.textContaining('+1…+5₮'), findsOneWidget);
     // Идэвхгүй үед товч дарагдахгүй
     await tester.tap(find.text('Оролцох'));
     await tester.pumpAndSettle();
