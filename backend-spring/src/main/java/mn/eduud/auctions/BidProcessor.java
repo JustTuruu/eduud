@@ -116,7 +116,7 @@ public class BidProcessor {
     Map<String, Snapshot> auctions = new HashMap<>();
     db.sql(
             "SELECT id, status, starts_at, ends_at, current_price, increment, soft_close_sec, extend_sec,"
-                + " hard_close_at, last_bidder_id, bid_count FROM auctions WHERE id = ANY(?) ORDER BY id FOR UPDATE")
+                + " hard_close_at, last_bidder_id, bid_count, rounds::text AS rounds FROM auctions WHERE id = ANY(?) ORDER BY id FOR UPDATE")
         .param(auctionIds)
         .query(rows.camel())
         .list()

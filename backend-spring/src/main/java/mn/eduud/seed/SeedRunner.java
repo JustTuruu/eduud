@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import mn.eduud.auctions.AuctionRounds;
 import mn.eduud.common.Ids;
 import mn.eduud.common.Rows;
 import mn.eduud.common.auth.PasswordHasher;
@@ -135,17 +136,21 @@ public class SeedRunner implements ApplicationRunner {
     List<String> ids = new ArrayList<>();
     for (int k = 0; k < auctions; k++) {
       String id = Ids.uuid();
+      // Анхдагч раундын хуваарь: ends_at = сүүлийн раундын төгсгөл
+      Instant start = now.minusSeconds(60);
+      List<AuctionRounds.Round> schedule = AuctionRounds.defaultSchedule(start);
       db.sql(
               "INSERT INTO auctions (id, title, description, images, start_price, increment, soft_close_sec, extend_sec,"
-                  + " starts_at, ends_at, current_price, status, created_by, updated_at)"
+                  + " starts_at, ends_at, current_price, status, created_by, updated_at, rounds)"
                   + " VALUES (?, ?, 'Зэрэгцээ саналын атомик байдлын туршилт', '{}', 1000, 10, 30, 30, ?, ?, 1000,"
-                  + " 'live', ?, now())")
+                  + " 'live', ?, now(), CAST(? AS jsonb))")
           .params(
               id,
               "Load test auction " + (k + 1) + " " + now,
-              Rows.ts(now.minusSeconds(60)),
-              Rows.ts(now.plusSeconds(3600)),
-              adminId)
+              Rows.ts(start),
+              Rows.ts(schedule.get(schedule.size() - 1).endsAt()),
+              adminId,
+              AuctionRounds.toJson(schedule))
           .update();
       ids.add(id);
     }

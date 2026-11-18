@@ -1,7 +1,9 @@
 package mn.eduud.auctions;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import mn.eduud.auctions.AuctionRounds.Round;
 
 /**
  * Auction-ы цэвэр логик — DB-ээс хараат бус (NestJS-ийн auction.logic.ts-ийн хуулбар).
@@ -21,6 +23,8 @@ public final class AuctionLogic {
     public Instant hardCloseAt;
     public String lastBidderId;
     public int bidCount;
+    /** Раундын хуваарь; null бол soft-close дүрэм. */
+    public List<Round> rounds;
   }
 
   public enum Rejection {
@@ -52,6 +56,13 @@ public final class AuctionLogic {
    * hardCloseAt-ээс хэтрүүлэхгүй).
    */
   public static Instant computeNewEndsAt(Snapshot a, Instant now) {
+    if (a.rounds != null && !a.rounds.isEmpty()) {
+      // Раундтай: тоолуур одоогийн раундын хугацаагаар шинээр эхэлнэ (өмнөхөөс эрт байж болно)
+      Round r = AuctionRounds.roundAt(a.rounds, now);
+      Instant next = now.plusSeconds(r.durationSec());
+      if (a.hardCloseAt != null && next.isAfter(a.hardCloseAt)) next = a.hardCloseAt;
+      return next;
+    }
     long msLeft = a.endsAt.toEpochMilli() - now.toEpochMilli();
     if (msLeft > a.softCloseSec * 1000L) return a.endsAt;
     Instant extended = now.plusSeconds(a.extendSec);
@@ -72,6 +83,7 @@ public final class AuctionLogic {
     s.hardCloseAt = (Instant) r.get("hardCloseAt");
     s.lastBidderId = (String) r.get("lastBidderId");
     s.bidCount = intOf(r.get("bidCount"));
+    s.rounds = AuctionRounds.parse((String) r.get("rounds"));
     return s;
   }
 

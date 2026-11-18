@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import mn.eduud.auctions.AuctionRounds;
 import mn.eduud.auctions.AuctionsService;
 import mn.eduud.common.ApiException;
 import mn.eduud.common.Ids;
@@ -42,7 +43,7 @@ public class AdminController {
   private static final String ADMIN_AUCTION_SELECT =
       "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
           + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
-          + " a.created_by AS created_by_id, a.created_at, a.updated_at,"
+          + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds,"
           + " CASE WHEN lb.id IS NULL THEN NULL ELSE json_build_object('id', lb.id, 'name', lb.name) END AS last_bidder,"
           + " CASE WHEN o.id IS NULL THEN NULL ELSE json_build_object('id', o.id, 'auctionId', o.auction_id,"
           + "   'winnerId', o.winner_id, 'finalPrice', o.final_price,"
@@ -79,7 +80,8 @@ public class AdminController {
       @NotNull @Min(0) @Max(3600) Integer extendSec,
       Instant hardCloseAt,
       @NotNull Instant startsAt,
-      @NotNull Instant endsAt) {}
+      @NotNull Instant endsAt,
+      List<AuctionRounds.Round> rounds) {}
 
   public record UpdateAuctionDto(
       @Size(min = 3, max = 120) String title,
@@ -91,7 +93,8 @@ public class AdminController {
       @Min(0) @Max(3600) Integer extendSec,
       Instant hardCloseAt,
       Instant startsAt,
-      Instant endsAt) {}
+      Instant endsAt,
+      List<AuctionRounds.Round> rounds) {}
 
   public record UpsertPackageDto(@NotNull @Min(1) Integer tokens, @NotNull @Min(100) Integer priceMnt, Boolean active, Integer sortOrder) {}
 
@@ -115,14 +118,24 @@ public class AdminController {
   @PostMapping("/auctions")
   @ResponseStatus(HttpStatus.CREATED)
   public Map<String, Object> createAuction(@CurrentUser AuthUser user, @Valid @RequestBody CreateAuctionDto dto) {
-    if (!dto.endsAt().isAfter(dto.startsAt())) {
+    Instant startsAt = dto.startsAt();
+    Instant endsAt = dto.endsAt();
+    String roundsJson = null;
+    if (dto.rounds() != null) {
+      // Раундтай бол эхлэх/дуусах хугацаа хуваарьаас гарна
+      AuctionRounds.validate(dto.rounds());
+      roundsJson = AuctionRounds.toJson(dto.rounds());
+      startsAt = dto.rounds().get(0).startsAt();
+      endsAt = dto.rounds().get(dto.rounds().size() - 1).endsAt();
+    }
+    if (!endsAt.isAfter(startsAt)) {
       throw ApiException.badRequest("Дуусах хугацаа эхлэхээс хойш байх ёстой.");
     }
     String id = Ids.uuid();
     db.sql(
             "INSERT INTO auctions (id, title, description, images, start_price, increment, soft_close_sec, extend_sec,"
-                + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now())")
+                + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now(), CAST(? AS jsonb))")
         .params(
             id,
             dto.title(),
@@ -133,10 +146,11 @@ public class AdminController {
             dto.softCloseSec(),
             dto.extendSec(),
             Rows.ts(dto.hardCloseAt()),
-            Rows.ts(dto.startsAt()),
-            Rows.ts(dto.endsAt()),
+            Rows.ts(startsAt),
+            Rows.ts(endsAt),
             dto.startPrice(),
-            user.id())
+            user.id(),
+            roundsJson)
         .update();
     return auctionRow(id);
   }
@@ -162,8 +176,17 @@ public class AdminController {
     set(sets, params, "soft_close_sec", dto.softCloseSec());
     set(sets, params, "extend_sec", dto.extendSec());
     set(sets, params, "hard_close_at", Rows.ts(dto.hardCloseAt()));
-    set(sets, params, "starts_at", Rows.ts(dto.startsAt()));
-    set(sets, params, "ends_at", Rows.ts(dto.endsAt()));
+    if (dto.rounds() != null) {
+      // Зөвхөн draft үед (дээрх guard) — хуваарь эхлэх/дуусах хугацааг тодорхойлно
+      AuctionRounds.validate(dto.rounds());
+      sets.add("rounds = CAST(? AS jsonb)");
+      params.add(AuctionRounds.toJson(dto.rounds()));
+      set(sets, params, "starts_at", Rows.ts(dto.rounds().get(0).startsAt()));
+      set(sets, params, "ends_at", Rows.ts(dto.rounds().get(dto.rounds().size() - 1).endsAt()));
+    } else {
+      set(sets, params, "starts_at", Rows.ts(dto.startsAt()));
+      set(sets, params, "ends_at", Rows.ts(dto.endsAt()));
+    }
     sets.add("updated_at = now()");
     params.add(id.toString());
     db.sql("UPDATE auctions SET " + String.join(", ", sets) + " WHERE id = ?").params(params).update();
@@ -180,7 +203,7 @@ public class AdminController {
     return db.sql(
             "SELECT id, title, description, images, start_price, increment, soft_close_sec, extend_sec, hard_close_at,"
                 + " starts_at, ends_at, current_price, bid_count, last_bidder_id, status, created_by AS created_by_id,"
-                + " created_at, updated_at FROM auctions WHERE id = ?")
+                + " created_at, updated_at, rounds FROM auctions WHERE id = ?")
         .param(id)
         .query(rows.camel())
         .single();

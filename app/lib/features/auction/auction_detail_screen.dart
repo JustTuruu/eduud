@@ -295,7 +295,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           child: AnimatedPrice(amount: a.currentPrice, fontSize: 34),
         ),
       const SizedBox(height: 16),
-      _TimingCard(
+      TimingCard(
         auction: a,
         offsetMs: controller.serverOffsetMs,
         onFinished: () => Future.delayed(const Duration(seconds: 2), () {
@@ -626,8 +626,9 @@ class _StatusLine extends StatelessWidget {
 /// Хугацааны бүлэг (iOS inset-grouped): эхэлсэн/дуусах цаг, одоогийн шатны
 /// тоолуур, сунгалтын дүрэм, саналын тоо. Секунд тутам зөвхөн энэ widget дахин
 /// бүтнэ; endsAt (auction_extended-ээр шинэчлэгдэнэ) өөрчлөгдвөл onFinished дахин зэвсэглэнэ.
-class _TimingCard extends StatefulWidget {
-  const _TimingCard({
+class TimingCard extends StatefulWidget {
+  const TimingCard({
+    super.key,
     required this.auction,
     required this.offsetMs,
     required this.onFinished,
@@ -638,10 +639,10 @@ class _TimingCard extends StatefulWidget {
   final VoidCallback onFinished;
 
   @override
-  State<_TimingCard> createState() => _TimingCardState();
+  State<TimingCard> createState() => TimingCardState();
 }
 
-class _TimingCardState extends State<_TimingCard> {
+class TimingCardState extends State<TimingCard> {
   Timer? _ticker;
   late DateTime _now = _clock();
   bool _fired = false;
@@ -661,9 +662,9 @@ class _TimingCardState extends State<_TimingCard> {
   }
 
   @override
-  void didUpdateWidget(covariant _TimingCard old) {
-    super.didUpdateWidget(old);
-    if (old.auction.endsAt != widget.auction.endsAt) _fired = false;
+  void didUpdateWidget(covariant TimingCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.auction.endsAt != widget.auction.endsAt) _fired = false;
     _now = _clock();
     if (_running && _ticker == null) {
       _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
@@ -698,10 +699,15 @@ class _TimingCardState extends State<_TimingCard> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(children: [
         Text(title, style: TextStyle(fontSize: 15, color: AppColors.muted)),
-        const Spacer(),
-        Text(value,
-            style: TextStyle(
-                fontSize: 15, fontFeatures: tab, color: AppColors.ink)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 15, fontFeatures: tab, color: AppColors.ink)),
+        ),
       ]),
     );
   }
@@ -714,14 +720,26 @@ class _TimingCardState extends State<_TimingCard> {
     final ended = a.status == 'ended' || a.status == 'settled';
     const tab = [FontFeature.tabularFigures()];
 
+    final rounds = a.rounds;
+    final hasRounds = rounds != null && rounds.isNotEmpty;
+    final waitingFirst = hasRounds && live && a.bidCount == 0;
+
     final rows = <Widget>[
       _valueRow(scheduled ? 'Эхлэх' : 'Эхэлсэн',
           formatDateTimeLabel(a.startsAt, _now)),
       _valueRow(
-          ended ? 'Дууссан' : 'Дуусах', formatDateTimeLabel(a.endsAt, _now)),
+          ended
+              ? 'Дууссан'
+              : waitingFirst
+                  ? 'Хамгийн оройдоо'
+                  : 'Дуусах',
+          formatDateTimeLabel(
+              waitingFirst ? _lastEnd(rounds) : a.endsAt, _now)),
     ];
 
-    if (live || scheduled) {
+    if (hasRounds && live) {
+      rows.add(_roundHeader(a, rounds, waitingFirst));
+    } else if (live || scheduled) {
       final target = scheduled ? a.startsAt : a.endsAt;
       final remaining = target.difference(_now);
       final urgent =
@@ -781,7 +799,204 @@ class _TimingCardState extends State<_TimingCard> {
       ));
     }
 
-    return GroupSection(children: rows);
+    final card = GroupSection(children: rows);
+    if (!hasRounds || ended) return card;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        card,
+        const SizedBox(height: 20),
+        RoundsList(
+          rounds: rounds,
+          currentIndex: live ? roundIndexAt(rounds, _now) : null,
+        ),
+      ],
+    );
+  }
+
+  DateTime _lastEnd(List<AuctionRound> r) => r.last.endsAt;
+
+  /// Round-той үеийн толгой: "Round N · урт" + тоолуур / хүлээлтийн мөр.
+  Widget _roundHeader(
+      AuctionDetail a, List<AuctionRound> rounds, bool waitingFirst) {
+    const tab = [FontFeature.tabularFigures()];
+    final idx = roundIndexAt(rounds, _now) ?? 0;
+    final round = rounds[idx];
+    final dur = formatRoundDuration(round.durationSec);
+    final remaining = a.endsAt.difference(_now);
+    final urgent = !waitingFirst &&
+        remaining.inMilliseconds > 0 &&
+        remaining.inSeconds < 10;
+    return Semantics(
+      label: waitingFirst
+          ? 'Round ${idx + 1}, анхны үнэ хүлээж байна'
+          : 'Round ${idx + 1}, үлдсэн хугацаа ${formatRemaining(remaining)}',
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Round ${idx + 1} · $dur',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent)),
+              const SizedBox(height: 6),
+              if (waitingFirst) ...[
+                Text('Анхны үнэ хүлээж байна',
+                    style: TextStyle(
+                        fontSize: 24,
+                        height: 1.2,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink)),
+                const SizedBox(height: 6),
+                Text('Үнэ ирмэгц $dur тоолж эхэлнэ',
+                    style: TextStyle(
+                        fontSize: 13, height: 1.35, color: AppColors.muted)),
+              ] else ...[
+                Text(
+                  formatRemaining(remaining),
+                  style: TextStyle(
+                    fontSize: 40,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: tab,
+                    color: urgent ? AppColors.danger : AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text('Үнэ ирэх бүрт тухайн round-ын хугацаагаар дахин эхэлнэ',
+                    style: TextStyle(
+                        fontSize: 12, height: 1.35, color: AppColors.muted)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Round-уудын жагсаалт (grouped card): нэг мөр = шат. Одоогийн шат тодорно,
+/// өнгөрсөн нь бүдэг. Мөрийн зураас нь шатны уртыг (хамгийн урт шатад харьцуулан)
+/// статикаар харуулна — секунд тутам шинэчлэгдэхгүй.
+class RoundsList extends StatelessWidget {
+  const RoundsList({super.key, required this.rounds, this.currentIndex});
+
+  final List<AuctionRound> rounds;
+  final int? currentIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxSec =
+        rounds.fold<int>(1, (m, r) => r.durationSec > m ? r.durationSec : m);
+    return GroupSection(
+      title: 'Round-ууд',
+      dividerInset: 16,
+      children: [
+        for (var i = 0; i < rounds.length; i++)
+          _RoundRow(
+            key: ValueKey('round-$i'),
+            index: i,
+            round: rounds[i],
+            fraction: rounds[i].durationSec / maxSec,
+            current: i == currentIndex,
+            past: currentIndex != null && i < currentIndex!,
+          ),
+      ],
+    );
+  }
+}
+
+class _RoundRow extends StatelessWidget {
+  const _RoundRow({
+    super.key,
+    required this.index,
+    required this.round,
+    required this.fraction,
+    required this.current,
+    required this.past,
+  });
+
+  final int index;
+  final AuctionRound round;
+  final double fraction;
+  final bool current;
+  final bool past;
+
+  @override
+  Widget build(BuildContext context) {
+    const tab = [FontFeature.tabularFigures()];
+    final dur = formatRoundDuration(round.durationSec);
+    final range = formatTimeRange(round.startsAt, round.endsAt);
+    final row = Container(
+      color: current ? AppColors.accent.withValues(alpha: 0.13) : null,
+      constraints: const BoxConstraints(minHeight: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Round ${index + 1}',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: current ? FontWeight.w700 : FontWeight.w400,
+                    color: AppColors.ink)),
+            const SizedBox(height: 2),
+            Text(range,
+                style: TextStyle(
+                    fontSize: 15, fontFeatures: tab, color: AppColors.muted)),
+          ],
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: LayoutBuilder(builder: (context, c) {
+              final w = (c.maxWidth * fraction).clamp(8.0, c.maxWidth);
+              return Container(
+                height: 8,
+                alignment: Alignment.centerLeft,
+                decoration: BoxDecoration(
+                  color: AppColors.fill,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Container(
+                  width: w,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: current
+                        ? AppColors.accent
+                        : AppColors.muted.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        SizedBox(
+          width: 78,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(dur,
+                maxLines: 1,
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: current ? FontWeight.w600 : FontWeight.w400,
+                    color: current ? AppColors.ink : AppColors.muted)),
+          ),
+        ),
+      ]),
+    );
+    return Semantics(
+      label: 'Round ${index + 1}, $range, $dur',
+      child: ExcludeSemantics(
+        child: past ? Opacity(opacity: 0.5, child: row) : row,
+      ),
+    );
   }
 }
 

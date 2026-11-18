@@ -86,4 +86,97 @@ class AuctionLogicTest {
     Snapshot s = live(T0.plusSeconds(10), T0.plusSeconds(15));
     assertThat(AuctionLogic.computeNewEndsAt(s, T0)).isEqualTo(T0.plusSeconds(15));
   }
+
+  // ---------- Раундтай ----------
+
+  private static Instant at(int min) {
+    return T0.plusSeconds(min * 60L);
+  }
+
+  /** R1 [0,180) 3600с, R2 [180,240) 45м=2700с, [завсар 240-300], R3 [300,310) 30с. */
+  private static java.util.List<AuctionRounds.Round> sample() {
+    return java.util.List.of(
+        new AuctionRounds.Round(at(0), at(180), 3600),
+        new AuctionRounds.Round(at(180), at(240), 2700),
+        new AuctionRounds.Round(at(300), at(310), 30));
+  }
+
+  @Test
+  void roundAtInsideBoundaryBeforeGapAfter() {
+    var r = sample();
+    assertThat(AuctionRounds.roundAt(r, at(10))).isEqualTo(r.get(0));
+    assertThat(AuctionRounds.roundAt(r, at(180))).isEqualTo(r.get(1)); // хил: endsAt орохгүй
+    assertThat(AuctionRounds.roundAt(r, at(0))).isEqualTo(r.get(0));
+    assertThat(AuctionRounds.roundAt(r, at(-5))).isEqualTo(r.get(0)); // эхнээс өмнө
+    assertThat(AuctionRounds.roundAt(r, at(270))).isEqualTo(r.get(1)); // завсар
+    assertThat(AuctionRounds.roundAt(r, at(400))).isEqualTo(r.get(2)); // сүүлээс хойш
+  }
+
+  @Test
+  void roundsFirstBidShortensFromLastRoundEnd() {
+    Snapshot s = live(at(310), null);
+    s.rounds = sample();
+    assertThat(AuctionLogic.computeNewEndsAt(s, at(5))).isEqualTo(at(5).plusSeconds(3600));
+  }
+
+  @Test
+  void roundsResetUsesCurrentRoundDurationAndMayBeEarlier() {
+    Snapshot s = live(at(65), null);
+    s.rounds = sample();
+    Instant now = at(200);
+    assertThat(AuctionLogic.computeNewEndsAt(s, now)).isEqualTo(now.plusSeconds(2700));
+    Instant late = at(305);
+    s.endsAt = late.plusSeconds(3000);
+    assertThat(AuctionLogic.computeNewEndsAt(s, late)).isEqualTo(late.plusSeconds(30));
+  }
+
+  @Test
+  void roundsRespectHardCloseCap() {
+    Snapshot s = live(at(310), at(20));
+    s.rounds = sample();
+    assertThat(AuctionLogic.computeNewEndsAt(s, at(5))).isEqualTo(at(20));
+  }
+
+  @Test
+  void softCloseUnchangedWhenRoundsNull() {
+    Snapshot s = live(T0.plusSeconds(10), null);
+    assertThat(s.rounds).isNull();
+    assertThat(AuctionLogic.computeNewEndsAt(s, T0)).isEqualTo(T0.plusSeconds(20));
+  }
+
+  @Test
+  void validatesRounds() {
+    org.assertj.core.api.Assertions.assertThatCode(() -> AuctionRounds.validate(sample())).doesNotThrowAnyException();
+    var bad = java.util.List.of(new AuctionRounds.Round(at(10), at(5), 10));
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> AuctionRounds.validate(bad))
+        .isInstanceOf(mn.eduud.common.ApiException.class);
+    var zero = java.util.List.of(new AuctionRounds.Round(at(0), at(5), 0));
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> AuctionRounds.validate(zero))
+        .isInstanceOf(mn.eduud.common.ApiException.class);
+    var overlap =
+        java.util.List.of(new AuctionRounds.Round(at(0), at(10), 5), new AuctionRounds.Round(at(5), at(20), 5));
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> AuctionRounds.validate(overlap))
+        .isInstanceOf(mn.eduud.common.ApiException.class);
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> AuctionRounds.validate(java.util.List.of()))
+        .isInstanceOf(mn.eduud.common.ApiException.class);
+  }
+
+  @Test
+  void parseAndToJsonRoundTrip() {
+    var r = sample();
+    assertThat(AuctionRounds.parse(AuctionRounds.toJson(r))).isEqualTo(r);
+    assertThat(AuctionRounds.parse(null)).isNull();
+  }
+
+  @Test
+  void defaultScheduleTemplate() {
+    var d = AuctionRounds.defaultSchedule(T0);
+    assertThat(d).hasSize(11);
+    assertThat(d.get(0).endsAt()).isEqualTo(T0.plusSeconds(3 * 3600));
+    assertThat(d.get(0).durationSec()).isEqualTo(3600);
+    assertThat(d.stream().map(AuctionRounds.Round::durationSec).toList())
+        .containsExactly(3600, 2700, 1800, 1200, 600, 300, 180, 60, 30, 10, 5);
+    assertThat(d.get(10).endsAt()).isEqualTo(T0.plusSeconds(3 * 3600 + 7 * 3600 + 3 * 2400));
+    AuctionRounds.validate(d);
+  }
 }

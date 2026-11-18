@@ -27,7 +27,7 @@ public class AuctionsService {
   static final String AUCTION_COLUMNS =
       "a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
           + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
-          + " a.created_by AS created_by_id, a.created_at, a.updated_at";
+          + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds";
 
   private final JdbcClient db;
   private final Rows rows;
@@ -61,7 +61,7 @@ public class AuctionsService {
     }
     var q =
         db.sql(
-            "SELECT a.id, a.title, a.images, a.increment, a.current_price, a.bid_count, a.starts_at, a.ends_at, a.status, "
+            "SELECT a.id, a.title, a.images, a.increment, a.current_price, a.bid_count, a.starts_at, a.ends_at, a.status, a.rounds, "
                 + LAST_BIDDER_JSON
                 + " AS last_bidder FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id WHERE "
                 + where

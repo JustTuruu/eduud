@@ -569,23 +569,33 @@ class _TimerRowState extends State<_TimerRow> {
     final remaining = a.endsAt.difference(_now);
     final urgent = remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
     const tab = [FontFeature.tabularFigures()];
+    final rounds = a.rounds;
+    final hasRounds = rounds != null && rounds.isNotEmpty;
+    final waiting = hasRounds && a.bidCount == 0;
+    final roundLabel = hasRounds
+        ? 'Round ${(roundIndexAt(rounds, _now) ?? 0) + 1}'
+        : 'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}';
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              formatRemaining(remaining),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFeatures: tab,
-                color: urgent ? AppColors.danger : AppColors.ink,
+            Flexible(
+              child: Text(
+                waiting ? 'Анхны үнэ хүлээж байна' : formatRemaining(remaining),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: tab,
+                  color: urgent && !waiting ? AppColors.danger : AppColors.ink,
+                ),
               ),
             ),
-            Flexible(
-                child: Text(
-              'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}',
+            const SizedBox(width: 8),
+            Text(
+              roundLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -593,7 +603,7 @@ class _TimerRowState extends State<_TimerRow> {
                 fontFeatures: tab,
                 color: AppColors.muted,
               ),
-            )),
+            ),
           ],
         ),
       ],

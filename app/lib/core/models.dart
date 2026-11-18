@@ -43,6 +43,37 @@ class Bidder {
       );
 }
 
+/// Дуудлага худалдааны нэг шат (round): [startsAt, endsAt) ба тоолуурын урт.
+class AuctionRound {
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final int durationSec;
+
+  const AuctionRound({
+    required this.startsAt,
+    required this.endsAt,
+    required this.durationSec,
+  });
+
+  factory AuctionRound.fromJson(Map<String, dynamic> j) => AuctionRound(
+        startsAt: DateTime.parse(j['startsAt'] as String),
+        endsAt: DateTime.parse(j['endsAt'] as String),
+        durationSec: ((j['durationSec'] ?? 0) as num).toInt(),
+      );
+}
+
+/// `rounds` талбарыг аюулгүй задлана: null/буруу бол null.
+List<AuctionRound>? parseRounds(dynamic raw) {
+  if (raw is! List) return null;
+  try {
+    return raw
+        .map((e) => AuctionRound.fromJson(e as Map<String, dynamic>))
+        .toList();
+  } catch (_) {
+    return null;
+  }
+}
+
 class AuctionSummary {
   final String id;
   final String title;
@@ -57,6 +88,9 @@ class AuctionSummary {
   /// Нэг санал бүрээр өсөх үнэ (жагсаалтад ирэхгүй байж болно).
   final int? increment;
 
+  /// Шатуудын хуваарь (байхгүй бол null — хуучин soft-close дүрэм).
+  final List<AuctionRound>? rounds;
+
   AuctionSummary({
     required this.id,
     required this.title,
@@ -68,6 +102,7 @@ class AuctionSummary {
     required this.status,
     this.lastBidder,
     this.increment,
+    this.rounds,
   });
 
   factory AuctionSummary.fromJson(Map<String, dynamic> j) => AuctionSummary(
@@ -83,6 +118,7 @@ class AuctionSummary {
             ? null
             : Bidder.fromJson(j['lastBidder'] as Map<String, dynamic>),
         increment: j['increment'] as int?,
+        rounds: parseRounds(j['rounds']),
       );
 
   /// Realtime event ирэхэд өөрчлөгдөх талбаруудыг л шинэчилнэ.
@@ -104,6 +140,7 @@ class AuctionSummary {
         status: status ?? this.status,
         lastBidder: lastBidder ?? this.lastBidder,
         increment: increment,
+        rounds: rounds,
       );
 }
 
@@ -147,6 +184,9 @@ class AuctionDetail {
   final int extendSec;
   final DateTime? hardCloseAt;
 
+  /// Шатуудын хуваарь (байхгүй бол null — хуучин soft-close дүрэм).
+  final List<AuctionRound>? rounds;
+
   AuctionDetail({
     required this.id,
     required this.title,
@@ -164,6 +204,7 @@ class AuctionDetail {
     this.softCloseSec = 0,
     this.extendSec = 0,
     this.hardCloseAt,
+    this.rounds,
   });
 
   factory AuctionDetail.fromJson(Map<String, dynamic> j) => AuctionDetail(
@@ -190,6 +231,7 @@ class AuctionDetail {
         hardCloseAt: j['hardCloseAt'] == null
             ? null
             : DateTime.parse(j['hardCloseAt'] as String),
+        rounds: parseRounds(j['rounds']),
       );
 
   AuctionDetail copyWith({
@@ -217,6 +259,7 @@ class AuctionDetail {
         softCloseSec: softCloseSec,
         extendSec: extendSec,
         hardCloseAt: hardCloseAt,
+        rounds: rounds,
       );
 }
 

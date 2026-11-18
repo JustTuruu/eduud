@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../home/auction_tiles.dart';
+import '../home/auction_timing.dart';
 import '../home/home_screen.dart' show auctionListProvider;
 
 /// Landing — нэвтрээгүй хэрэглэгчийн анхны дэлгэц (web дээр `/`).
@@ -185,6 +186,7 @@ class _LiveCard extends StatelessWidget {
       radius: 20,
     );
 
+    final hasRounds = a.rounds != null && a.rounds!.isNotEmpty;
     final info = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -211,18 +213,27 @@ class _LiveCard extends StatelessWidget {
             style: AppTheme.price(size: wide ? 40 : 32, color: AppColors.ink)),
         const SizedBox(height: 14),
         Row(children: [
-          CountdownText(
-            endsAt: a.endsAt,
-            style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-                fontFeatures: const [FontFeature.tabularFigures()]),
-          ),
+          if (hasRounds && a.bidCount == 0)
+            Text('Анхны үнэ хүлээж байна',
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink))
+          else
+            CountdownText(
+              endsAt: a.endsAt,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                  fontFeatures: const [FontFeature.tabularFigures()]),
+            ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-                'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}',
+                hasRounds
+                    ? 'Round ${(roundIndexAt(a.rounds!, DateTime.now()) ?? 0) + 1}'
+                    : 'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: AppColors.muted)),

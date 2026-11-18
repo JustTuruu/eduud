@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../../core/models.dart';
+
 /// Дуудлага худалдааны хугацааны цэвэр (UI-аас хараат бус) туслахууд.
 
 /// Үлдсэн хугацааг `mm:ss`, нэг цагаас дээш бол `h:mm:ss` болгоно.
@@ -39,3 +41,31 @@ bool inSoftClose(Duration remaining, int softCloseSec) =>
     softCloseSec > 0 &&
     remaining.inMilliseconds > 0 &&
     remaining.inMilliseconds < softCloseSec * 1000;
+
+/// `t` цагт хамаарах шатны индекс: startsAt <= t < endsAt. Эхний шатнаас өмнө
+/// бол эхний шат; завсар/сүүлийн шатнаас хойш бол startsAt <= t байх сүүлийн шат.
+int? roundIndexAt(List<AuctionRound> rounds, DateTime t) {
+  if (rounds.isEmpty) return null;
+  if (t.isBefore(rounds.first.startsAt)) return 0;
+  var idx = 0;
+  for (var i = 0; i < rounds.length; i++) {
+    if (!rounds[i].startsAt.isAfter(t)) idx = i;
+  }
+  return idx;
+}
+
+/// Шатны урт: "1 цаг", "1 цаг 30 мин", "45 мин", "1 мин 30 сек", "30 сек".
+String formatRoundDuration(int sec) {
+  final h = sec ~/ 3600;
+  final m = (sec % 3600) ~/ 60;
+  final s = sec % 60;
+  if (h > 0) return m > 0 ? '$h цаг $m мин' : '$h цаг';
+  if (m > 0) return s > 0 ? '$m мин $s сек' : '$m мин';
+  return '$s сек';
+}
+
+/// "10:10–13:10" (local цаг, en dash).
+String formatTimeRange(DateTime a, DateTime b) {
+  final f = DateFormat('HH:mm');
+  return '${f.format(a.toLocal())}–${f.format(b.toLocal())}';
+}
