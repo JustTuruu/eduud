@@ -1257,58 +1257,32 @@ class BidControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final guest = meId == null;
     final noBalance = !guest && balance <= 0;
-
-    final String label;
-    final VoidCallback? action;
-    if (guest) {
-      label = 'Нэвтэрч оролцох';
-      action = onLogin;
-    } else if (noBalance) {
-      label = 'Эрх цэнэглэх';
-      action = onTopUp;
-    } else {
-      label = 'Үнэ илгээх · ${formatMnt(currentPrice + step)}';
-      action = onBid;
-    }
     final showSteps = !guest && !noBalance;
 
-    final button = PrimaryButton(
-      label: label,
-      loading: busy,
-      onPressed: action,
-      radius:
-          showSteps ? bidControlRadius - bidControlPadding : bidControlRadius,
-      minHeight: 52,
-    );
+    final Widget control;
+    if (showSteps) {
+      control = _FusedBidControl(
+        step: step,
+        label: 'Үнэ илгээх · ${formatMnt(currentPrice + step)}',
+        busy: busy,
+        onStep: (v) => onStep?.call(v),
+        onBid: onBid,
+      );
+    } else {
+      control = PrimaryButton(
+        label: guest ? 'Нэвтэрч оролцох' : 'Эрх цэнэглэх',
+        loading: busy,
+        onPressed: guest ? onLogin : onTopUp,
+        radius: bidControlRadius,
+        minHeight: 52,
+      );
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showSteps)
-          // Алхам сонгогч + илгээх товч нэг хайрцагт — нэг физик control
-          Container(
-            padding: const EdgeInsets.all(bidControlPadding),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(bidControlRadius),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                BidStepSelector(
-                  value: step,
-                  enabled: !busy,
-                  onChanged: (v) => onStep?.call(v),
-                ),
-                const SizedBox(height: 4),
-                button,
-              ],
-            ),
-          )
-        else
-          button,
+        control,
         if (error != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -1326,80 +1300,152 @@ class BidControl extends StatelessWidget {
 const double bidControlRadius = 28;
 const double bidControlPadding = 4;
 
-/// Үнийн алхам сонгогч: +1..+5 ₮ — товчтой ижил accent өнгөний гэр бүл,
-/// сонгосон хэсэг дээр гулсдаг thumb.
-@visibleForTesting
-class BidStepSelector extends StatelessWidget {
-  const BidStepSelector({
-    super.key,
-    required this.value,
-    required this.onChanged,
-    this.enabled = true,
+const double _tabHeight = 44;
+const double _sendHeight = 52;
+const double _sendRadius = bidControlRadius - bidControlPadding;
+const double _tabRadius = 20;
+const double _filletRadius = 10;
+
+/// Алхам сонгогч + илгээх товч — сонгосон "+N" нь товчтой нэг ногоон дүрс
+/// болж (folder tab шиг) товчноос ургана: "энэ дүн → энэ товч".
+class _FusedBidControl extends StatelessWidget {
+  const _FusedBidControl({
+    required this.step,
+    required this.label,
+    required this.busy,
+    required this.onStep,
+    required this.onBid,
   });
 
   static const steps = [1, 2, 3, 4, 5];
 
-  final int value;
-  final bool enabled;
-  final ValueChanged<int> onChanged;
+  final int step;
+  final String label;
+  final bool busy;
+  final ValueChanged<int> onStep;
+  final VoidCallback onBid;
 
   @override
   Widget build(BuildContext context) {
     final reduce = reducedMotion(context);
-    final index = steps.indexOf(value).clamp(0, steps.length - 1);
-    final dur = reduce ? Duration.zero : const Duration(milliseconds: 180);
-    return Semantics(
-      container: true,
-      label: 'Үнийн алхам сонгох',
-      child: AnimatedOpacity(
-        opacity: enabled ? 1 : 0.5,
-        duration: dur,
-        child: SizedBox(
-          height: 44,
-          child: Stack(
-            children: [
-              AnimatedAlign(
-                duration: dur,
-                curve: Curves.easeOutCubic,
-                alignment: Alignment(-1 + 2 * index / (steps.length - 1), 0),
-                child: FractionallySizedBox(
-                  widthFactor: 1 / steps.length,
-                  heightFactor: 1,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(
-                          bidControlRadius - bidControlPadding),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: AppColors.isDark ? 0.4 : 0.12),
-                          blurRadius: 6,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+    final index = steps.indexOf(step).clamp(0, steps.length - 1);
+    return Container(
+      padding: const EdgeInsets.all(bidControlPadding),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(bidControlRadius),
+      ),
+      child: Semantics(
+        container: true,
+        label: 'Үнийн алхам сонгох',
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: index.toDouble()),
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          builder: (context, pos, _) {
+            return CustomPaint(
+              painter: _FusedShapePainter(
+                position: pos,
+                count: steps.length,
+                color: AppColors.accent,
               ),
-              Row(
-                children: [
-                  for (final v in steps)
-                    Expanded(
-                      child: _StepSegment(
-                        step: v,
-                        selected: v == value,
-                        onTap: enabled && v != value
-                            ? () {
-                                HapticFeedback.selectionClick();
-                                onChanged(v);
-                              }
-                            : null,
+              child: SizedBox(
+                height: _tabHeight + _sendHeight,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: _tabHeight,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < steps.length; i++)
+                            Expanded(
+                              child: _StepSegment(
+                                step: steps[i],
+                                // 0..1 — tab-ийн доор байх хэмжээ
+                                weight: (1 - (pos - i).abs()).clamp(0.0, 1.0),
+                                dimmed: busy,
+                                onTap: !busy && steps[i] != step
+                                    ? () {
+                                        HapticFeedback.selectionClick();
+                                        onStep(steps[i]);
+                                      }
+                                    : null,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                ],
+                    Expanded(
+                        child:
+                            _SendArea(label: label, busy: busy, onBid: onBid)),
+                  ],
+                ),
               ),
-            ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Ногоон дүрсийн дээрх "Үнэ илгээх" хэсэг (өнгийг painter зурна).
+class _SendArea extends StatefulWidget {
+  const _SendArea(
+      {required this.label, required this.busy, required this.onBid});
+
+  final String label;
+  final bool busy;
+  final VoidCallback onBid;
+
+  @override
+  State<_SendArea> createState() => _SendAreaState();
+}
+
+class _SendAreaState extends State<_SendArea> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = !widget.busy;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: enabled
+            ? (_) {
+                setState(() => _pressed = false);
+                HapticFeedback.lightImpact();
+                widget.onBid();
+              }
+            : null,
+        child: AnimatedOpacity(
+          opacity: _pressed ? 0.8 : 1,
+          duration: AppMotion.fast,
+          child: Center(
+            child: widget.busy
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.4, color: AppColors.ctaInk),
+                  )
+                : ExcludeSemantics(
+                    child: Text(
+                      widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ctaInk,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ),
@@ -1407,36 +1453,136 @@ class BidStepSelector extends StatelessWidget {
   }
 }
 
+/// Товч (доод) ба сонгосон сегментийн tab (дээд)-ийг нэг Path болгож зурна.
+/// Tab-ийн хажуу ба товчны дээд ирмэгийн уулзвар нь гүдгэр биш (concave) fillet;
+/// tab зах руу очвол тэр талын булан/fillet нь шугаман багасч шулуун ирмэг болно.
+class _FusedShapePainter extends CustomPainter {
+  _FusedShapePainter({
+    required this.position,
+    required this.count,
+    required this.color,
+  });
+
+  final double position;
+  final int count;
+  final Color color;
+
+  @visibleForTesting
+  static Path buildPath(Size size, double position, int count) {
+    final w = size.width;
+    final h = size.height;
+    final by = _tabHeight; // товчны дээд ирмэг
+    final sw = w / count;
+    final left = position * sw;
+    final right = left + sw;
+
+    // Хажуугийн зай < булан + fillet бол пропорциональ багасгана
+    const need = _sendRadius + _filletRadius;
+    final kl = (left / need).clamp(0.0, 1.0);
+    final kr = ((w - right) / need).clamp(0.0, 1.0);
+    final rl = _sendRadius * kl, fl = _filletRadius * kl;
+    final rr = _sendRadius * kr, fr = _filletRadius * kr;
+    const rt = _tabRadius;
+    const pi = 3.141592653589793;
+
+    final p = Path()..moveTo(rl, by);
+    p.lineTo(left - fl, by);
+    if (fl > 0.01) {
+      p.arcTo(Rect.fromCircle(center: Offset(left - fl, by - fl), radius: fl),
+          pi / 2, -pi / 2, false);
+    }
+    p.lineTo(left, rt);
+    p.arcTo(Rect.fromCircle(center: Offset(left + rt, rt), radius: rt), pi,
+        pi / 2, false);
+    p.lineTo(right - rt, 0);
+    p.arcTo(Rect.fromCircle(center: Offset(right - rt, rt), radius: rt),
+        -pi / 2, pi / 2, false);
+    p.lineTo(right, by - fr);
+    if (fr > 0.01) {
+      p.arcTo(Rect.fromCircle(center: Offset(right + fr, by - fr), radius: fr),
+          pi, -pi / 2, false);
+    }
+    p.lineTo(w - rr, by);
+    if (rr > 0.01) {
+      p.arcTo(Rect.fromCircle(center: Offset(w - rr, by + rr), radius: rr),
+          -pi / 2, pi / 2, false);
+    }
+    p.lineTo(w, h - _sendRadius);
+    p.arcTo(
+        Rect.fromCircle(
+            center: Offset(w - _sendRadius, h - _sendRadius),
+            radius: _sendRadius),
+        0,
+        pi / 2,
+        false);
+    p.lineTo(_sendRadius, h);
+    p.arcTo(
+        Rect.fromCircle(
+            center: Offset(_sendRadius, h - _sendRadius), radius: _sendRadius),
+        pi / 2,
+        pi / 2,
+        false);
+    p.lineTo(0, by + rl);
+    if (rl > 0.01) {
+      p.arcTo(Rect.fromCircle(center: Offset(rl, by + rl), radius: rl), pi,
+          pi / 2, false);
+    }
+    p.close();
+    return p;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      buildPath(size, position, count),
+      Paint()
+        ..color = color
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FusedShapePainter old) =>
+      old.position != position || old.count != count || old.color != color;
+}
+
 class _StepSegment extends StatelessWidget {
   const _StepSegment({
     required this.step,
-    required this.selected,
+    required this.weight,
+    required this.dimmed,
     required this.onTap,
   });
 
   final int step;
-  final bool selected;
+
+  /// 0 = сонгогдоогүй (accent), 1 = tab-ийн яг дээр (ctaInk).
+  final double weight;
+  final bool dimmed;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final color = Color.lerp(AppColors.accent, AppColors.ctaInk, weight)!;
     return Semantics(
       button: true,
-      selected: selected,
+      selected: weight > 0.5,
       label: '+$step₮',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Center(
           child: ExcludeSemantics(
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 180),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color: AppColors.accent,
+            child: Opacity(
+              opacity: dimmed ? 0.5 : 1,
+              child: Text(
+                '+$step',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: weight > 0.5 ? FontWeight.w700 : FontWeight.w600,
+                  color: color,
+                ),
               ),
-              child: Text('+$step'),
             ),
           ),
         ),
