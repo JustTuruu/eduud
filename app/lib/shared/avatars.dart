@@ -24,7 +24,9 @@ class AvatarPreset {
   /// Нэрийн эхний үсгийн өнгө — цайвар өнгөн дээр бараан, бараан дээр цагаан.
   Color get foreground {
     final avg = Color.lerp(colors.first, colors.last, 0.5)!;
-    return avg.computeLuminance() > 0.38 ? const Color(0xFF1C1C1E) : Colors.white;
+    return avg.computeLuminance() > 0.38
+        ? const Color(0xFF1C1C1E)
+        : Colors.white;
   }
 }
 
@@ -101,8 +103,7 @@ class AppAvatar extends StatelessWidget {
 }
 
 class _Initial extends StatelessWidget {
-  const _Initial(
-      {required this.name, required this.size, required this.color});
+  const _Initial({required this.name, required this.size, required this.color});
 
   final String name;
   final double size;
@@ -177,7 +178,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
           const SizedBox(height: 26),
           PrimaryButton(
             label: 'Хадгалах',
-                        onPressed: _selected == null || _selected == widget.current
+            onPressed: _selected == null || _selected == widget.current
                 ? null
                 : () => Navigator.pop(context, _selected),
           ),
@@ -208,7 +209,8 @@ class _AvatarPickerState extends State<AvatarPicker> {
             ),
           ),
           child: DecoratedBox(
-            decoration: BoxDecoration(shape: BoxShape.circle, gradient: p.gradient),
+            decoration:
+                BoxDecoration(shape: BoxShape.circle, gradient: p.gradient),
             child: on
                 ? Icon(LucideIcons.check, size: 18, color: p.foreground)
                 : null,

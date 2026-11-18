@@ -106,7 +106,8 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(LucideIcons.imageOff, size: 30, color: Color(0xFF8E8E93)),
+                const Icon(LucideIcons.imageOff,
+                    size: 30, color: Color(0xFF8E8E93)),
                 const SizedBox(height: 10),
                 Text('QR харагдсангүй. Дахин нээнэ үү.',
                     textAlign: TextAlign.center,
@@ -168,8 +169,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           Text(formatMnt(inv.amountMnt),
-              textAlign: TextAlign.center,
-              style: AppTheme.price(size: 40)),
+              textAlign: TextAlign.center, style: AppTheme.price(size: 40)),
           const SizedBox(height: 4),
           Text('Төлөх дүн',
               textAlign: TextAlign.center,
@@ -197,10 +197,10 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
                   ScaffoldMessenger.of(context)
                       .showSnackBar(const SnackBar(content: Text('Хууллаа')));
                 },
-                icon: Icon(LucideIcons.copy,
-                    size: 15, color: AppColors.inkSoft),
-                label: Text('Хуулах',
-                    style: TextStyle(color: AppColors.inkSoft)),
+                icon:
+                    Icon(LucideIcons.copy, size: 15, color: AppColors.inkSoft),
+                label:
+                    Text('Хуулах', style: TextStyle(color: AppColors.inkSoft)),
               ),
             ),
           ],
@@ -210,7 +210,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
           const SizedBox(height: 22),
           PrimaryButton(
             label: 'Төлсөн, шалгах',
-                        loading: _checking,
+            loading: _checking,
             onPressed: _checking ? null : _check,
           ),
           const SizedBox(height: 10),
@@ -227,7 +227,8 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
               decoration: BoxDecoration(
                 color: AppColors.warnBg,
                 borderRadius: BorderRadius.circular(AppRadius.control),
-                border: Border.all(color: AppColors.warn.withValues(alpha: 0.4)),
+                border:
+                    Border.all(color: AppColors.warn.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
@@ -324,6 +325,6 @@ Future<bool?> showInvoiceSheet(
 }) =>
     showGlassSheet<bool>(
       context,
-      builder: (_) => PaymentInvoiceSheet(invoice: invoice, checkPath: checkPath),
+      builder: (_) =>
+          PaymentInvoiceSheet(invoice: invoice, checkPath: checkPath),
     );
-

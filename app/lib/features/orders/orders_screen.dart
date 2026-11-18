@@ -196,9 +196,7 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
             const SizedBox(width: 8),
             Text(_statusLabels[o.status] ?? o.status,
                 style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color)),
+                    fontSize: 13, fontWeight: FontWeight.w600, color: color)),
           ]),
           if (pending) ...[
             const SizedBox(height: 12),

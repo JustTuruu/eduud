@@ -21,7 +21,8 @@ class _LoggedIn extends AuthController {
 
 void main() {
   for (final size in const [Size(390, 844), Size(1200, 900)]) {
-    testWidgets('Профайл ${size.width.toInt()}px: tile, жагсаалт, гарах', (tester) async {
+    testWidgets('Профайл ${size.width.toInt()}px: tile, жагсаалт, гарах',
+        (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);

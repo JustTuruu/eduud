@@ -182,9 +182,7 @@ class AppField extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               counterText: '',
               filled: true,
-              fillColor: hasError
-                  ? AppColors.dangerBg
-                  : AppColors.fill,
+              fillColor: hasError ? AppColors.dangerBg : AppColors.fill,
               prefixIcon: icon == null
                   ? null
                   : Icon(icon,
@@ -563,9 +561,8 @@ class _OtpInputState extends State<OtpInput> {
                     curve: AppMotion.enter,
                     height: 68,
                     decoration: BoxDecoration(
-                      color: widget.hasError
-                          ? AppColors.dangerBg
-                          : AppColors.fill,
+                      color:
+                          widget.hasError ? AppColors.dangerBg : AppColors.fill,
                       borderRadius: BorderRadius.circular(AppRadius.chip),
                       border: Border.all(
                           color: isNext || widget.hasError
@@ -756,8 +753,7 @@ class TestModeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.flaskConical,
-                  size: 15, color: AppColors.warn),
+              Icon(LucideIcons.flaskConical, size: 15, color: AppColors.warn),
               const SizedBox(width: 8),
               Text(
                 'Тест орчин',
@@ -796,8 +792,8 @@ class TestModeCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               description!,
-              style: TextStyle(
-                  fontSize: 12, height: 1.45, color: AppColors.muted),
+              style:
+                  TextStyle(fontSize: 12, height: 1.45, color: AppColors.muted),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[

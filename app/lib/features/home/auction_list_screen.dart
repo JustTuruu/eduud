@@ -99,9 +99,8 @@ class _Grid extends StatelessWidget {
     return LayoutBuilder(builder: (context, box) {
       const pad = 20.0;
       const gap = 16.0;
-      final cols = ((box.maxWidth - pad * 2 + gap) / (170 + gap))
-          .floor()
-          .clamp(2, 6);
+      final cols =
+          ((box.maxWidth - pad * 2 + gap) / (170 + gap)).floor().clamp(2, 6);
       final w = (box.maxWidth - pad * 2 - gap * (cols - 1)) / cols;
       return GridView.builder(
         physics: builder == null

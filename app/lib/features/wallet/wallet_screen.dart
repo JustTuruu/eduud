@@ -333,8 +333,7 @@ class _Retry extends StatelessWidget {
         TextButton(
           onPressed: onRetry,
           child: Text('Дахин оролдох',
-              style: TextStyle(
-                  color: _greenText, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: _greenText, fontWeight: FontWeight.w600)),
         ),
       ]),
     );

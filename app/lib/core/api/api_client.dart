@@ -60,7 +60,8 @@ final dioProvider = Provider<Dio>((ref) {
             final res = await Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl))
                 .post('/auth/refresh', data: {'refreshToken': refresh});
             final data = res.data as Map<String, dynamic>;
-            await store.save(data['accessToken'] as String, data['refreshToken'] as String);
+            await store.save(
+                data['accessToken'] as String, data['refreshToken'] as String);
             final opts = err.requestOptions;
             opts.extra['retried'] = true;
             opts.headers['Authorization'] = 'Bearer ${data['accessToken']}';

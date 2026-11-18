@@ -87,7 +87,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
   Future<void> _submit() async {
     final typeError = _type == null ? 'Юу тухай бичихээ сонгоно уу' : null;
-    final categoryError = _category == null ? 'Аль хэсэгт хамаарахыг сонгоно уу' : null;
+    final categoryError =
+        _category == null ? 'Аль хэсэгт хамаарахыг сонгоно уу' : null;
     final messageError = Validators.feedbackMessage(_message.text);
 
     setState(() {
@@ -126,7 +127,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         _message.clear();
       });
       _messageFocus.unfocus();
-      await showAppDialog<void>(context, builder: (ctx) => const _ThanksDialog());
+      await showAppDialog<void>(context,
+          builder: (ctx) => const _ThanksDialog());
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -288,7 +290,9 @@ typedef _Option = (String, String, IconData?);
 /// Сонголтын chip-үүд. Сонгосон нь ногоон 14% дүүргэлт + ногоон хүрээтэй.
 class _Choices extends StatelessWidget {
   const _Choices(
-      {required this.options, required this.selected, required this.onSelected});
+      {required this.options,
+      required this.selected,
+      required this.onSelected});
 
   final List<_Option> options;
   final String? selected;
@@ -337,8 +341,9 @@ class _Choices extends StatelessWidget {
                   Text(o.$2,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight:
-                            o.$1 == selected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: o.$1 == selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         color: AppColors.ink,
                       )),
                 ]),
@@ -396,8 +401,8 @@ class _FeedbackRow extends StatelessWidget {
           Text(item.message,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 15, height: 1.4, color: AppColors.ink)),
+              style:
+                  TextStyle(fontSize: 15, height: 1.4, color: AppColors.ink)),
           if (item.adminNote != null) ...[
             const SizedBox(height: 10),
             Container(
@@ -409,8 +414,7 @@ class _FeedbackRow extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(LucideIcons.reply,
-                      size: 15, color: AppColors.accent),
+                  Icon(LucideIcons.reply, size: 15, color: AppColors.accent),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(item.adminNote!,
@@ -460,8 +464,8 @@ class _ThanksDialog extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: AppColors.successBg,
                 ),
-                child: Icon(LucideIcons.check,
-                    size: 30, color: AppColors.success),
+                child:
+                    Icon(LucideIcons.check, size: 30, color: AppColors.success),
               ),
             ),
           ),
@@ -476,7 +480,8 @@ class _ThanksDialog extends StatelessWidget {
           Text(
             'Санал чинь хүрлээ. Хариуг доорх жагсаалтаас харна.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
+            style:
+                TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
           ),
           const SizedBox(height: 22),
           PrimaryButton(

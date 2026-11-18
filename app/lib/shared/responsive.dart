@@ -15,7 +15,8 @@ abstract class Breakpoints {
   /// 3 багана.
   static const threeColumns = 1080.0;
 
-  static bool isWide(BuildContext context) => MediaQuery.sizeOf(context).width >= wide;
+  static bool isWide(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= wide;
 
   static int gridColumns(double width) {
     if (width >= threeColumns) return 3;

@@ -64,14 +64,14 @@ Future<void> _setSize(WidgetTester tester, Size size) async {
 }
 
 void main() {
-  setUpAll(() {
-  });
+  setUpAll(() {});
 
   for (final (label, size) in [
     ('утас', const Size(390, 844)),
     ('web өргөн', const Size(1400, 1000)),
   ]) {
-    testWidgets('Landing ($label): нэвтрээгүй үед / дээр overflow-гүй', (tester) async {
+    testWidgets('Landing ($label): нэвтрээгүй үед / дээр overflow-гүй',
+        (tester) async {
       await _setSize(tester, size);
       await tester.pumpWidget(_app(_LoggedOut.new));
       await tester.pump(const Duration(milliseconds: 100));

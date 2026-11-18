@@ -62,8 +62,9 @@ class AuthShell extends StatelessWidget {
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             Icon(CupertinoIcons.chevron_back,
                                 size: 22,
-                                color:
-                                    enabled ? AppColors.accent : AppColors.muted),
+                                color: enabled
+                                    ? AppColors.accent
+                                    : AppColors.muted),
                             Text('Буцах',
                                 style: TextStyle(
                                     fontSize: 17,

@@ -18,8 +18,8 @@ class ArtPlaceholder extends StatelessWidget {
     return ColoredBox(
       color: AppColors.fill,
       child: Center(
-        child: Icon(LucideIcons.package,
-            size: iconSize, color: AppColors.muted),
+        child:
+            Icon(LucideIcons.package, size: iconSize, color: AppColors.muted),
       ),
     );
   }

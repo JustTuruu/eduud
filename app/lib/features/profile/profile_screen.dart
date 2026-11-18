@@ -245,8 +245,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Болих',
-                  style: TextStyle(color: AppColors.inkSoft)),
+              child: Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
             ),
           ],
         ),
@@ -280,7 +279,8 @@ class _Header extends StatelessWidget {
       GroupRow(
         minHeight: 84,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: AppAvatar(name: user.name, avatarUrl: user.avatarUrl, size: 60),
+        leading:
+            AppAvatar(name: user.name, avatarUrl: user.avatarUrl, size: 60),
         title: user.name,
         subtitle: user.isAdmin ? '${user.phone} · Админ' : user.phone,
         onTap: onTap,
@@ -401,8 +401,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           const SizedBox(height: 6),
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
-            child:
-                Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
+            child: Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
       ),
@@ -548,8 +547,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           const SizedBox(height: 6),
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
-            child:
-                Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
+            child: Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
       ),

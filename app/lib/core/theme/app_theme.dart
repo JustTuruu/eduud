@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -126,8 +125,7 @@ abstract class AppColors {
       LinearGradient(colors: [danger, danger]);
   static LinearGradient get ctaGradient =>
       LinearGradient(colors: [accent, accent]);
-  static LinearGradient get winGradient =>
-      LinearGradient(colors: [gold, gold]);
+  static LinearGradient get winGradient => LinearGradient(colors: [gold, gold]);
   static LinearGradient get cardGradient =>
       LinearGradient(colors: [surface, surface]);
   static LinearGradient get balGradient =>
@@ -181,8 +179,9 @@ abstract class AppTheme {
     // Web дээр системийн фонтын жагсаалт; iOS/Android-д платформын default.
     final fallback =
         kIsWeb ? const ['system-ui', '-apple-system', 'Roboto'] : null;
-    final scheme = (isDark ? const ColorScheme.dark() : const ColorScheme.light())
-        .copyWith(
+    final scheme =
+        (isDark ? const ColorScheme.dark() : const ColorScheme.light())
+            .copyWith(
       primary: p.accent,
       onPrimary: Colors.white,
       secondary: p.accent,
@@ -227,10 +226,13 @@ abstract class AppTheme {
         // 34/700 — iOS large title (том тоо, countdown)
         displayLarge: w(body.displayLarge, 34, FontWeight.w700, spacing: -0.4)
             ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-        displayMedium: w(body.displayMedium, 22, FontWeight.w700, spacing: -0.3),
+        displayMedium:
+            w(body.displayMedium, 22, FontWeight.w700, spacing: -0.3),
         displaySmall: w(body.displaySmall, 17, FontWeight.w600),
-        headlineMedium: w(body.headlineMedium, 34, FontWeight.w700, spacing: -0.4),
-        headlineSmall: w(body.headlineSmall, 28, FontWeight.w700, spacing: -0.3),
+        headlineMedium:
+            w(body.headlineMedium, 34, FontWeight.w700, spacing: -0.4),
+        headlineSmall:
+            w(body.headlineSmall, 28, FontWeight.w700, spacing: -0.3),
         titleLarge: w(body.titleLarge, 22, FontWeight.w700, height: 1.25),
         titleMedium: w(body.titleMedium, 17, FontWeight.w600),
         titleSmall: w(body.titleSmall, 15, FontWeight.w600),
@@ -304,7 +306,8 @@ abstract class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
-      dividerTheme: DividerThemeData(color: p.border, thickness: 0.5, space: 0.5),
+      dividerTheme:
+          DividerThemeData(color: p.border, thickness: 0.5, space: 0.5),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: p.accent),
       tabBarTheme: base.tabBarTheme.copyWith(dividerColor: Colors.transparent),
     );
