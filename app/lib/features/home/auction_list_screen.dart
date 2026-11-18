@@ -17,7 +17,11 @@ class AuctionListScreen extends ConsumerWidget {
 
   final String status;
 
-  String get _title => status == 'scheduled' ? 'Удахгүй эхлэх' : 'Дууссан';
+  String get _title => switch (status) {
+        'scheduled' => 'Удахгүй эхлэх',
+        'live' => 'Явагдаж буй',
+        _ => 'Дууссан',
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,9 +64,11 @@ class AuctionListScreen extends ConsumerWidget {
             if (items.isEmpty) {
               return EmptyState(
                 icon: LucideIcons.gavel,
-                title: status == 'scheduled'
-                    ? 'Удахгүй эхлэх дуудлага алга'
-                    : 'Дууссан дуудлага алга',
+                title: switch (status) {
+                  'scheduled' => 'Удахгүй эхлэх дуудлага алга',
+                  'live' => 'Явагдаж буй дуудлага алга',
+                  _ => 'Дууссан дуудлага алга',
+                },
               );
             }
             return RefreshIndicator(
@@ -109,7 +115,7 @@ class _Grid extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(pad, 8, pad, 40),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: cols,
-          mainAxisExtent: w + 76 * scale,
+          mainAxisExtent: w + 8 + 86 * scale,
           crossAxisSpacing: gap,
           mainAxisSpacing: 20,
         ),

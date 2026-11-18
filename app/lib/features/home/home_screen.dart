@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter, FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // iOS large title + эрхийн үлдэгдэл
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                     child: Row(
                       children: [
                         Expanded(
@@ -215,12 +216,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                       ],
                     ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                    child: Text('Одоо явагдаж буй', style: text.displayMedium),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -248,7 +243,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onOpen: _open,
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 SliverToBoxAdapter(
                   child: _AuctionRow(
                     title: 'Удахгүй эхлэх',
@@ -256,7 +250,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onOpen: _open,
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 SliverToBoxAdapter(
                   child: _AuctionRow(
                     title: 'Дууссан',
@@ -314,19 +307,9 @@ class _Hero extends StatelessWidget {
   }
 }
 
-/// Карт доторх босоо зайн тогтмол хэмжээ — PageView-д тогтмол өндөр хэрэгтэй.
-abstract class LiveCardMetrics {
-  static const pad = 14.0;
-
-  static double narrowHeight(double cardW, double textScale) {
-    final side = cardW - pad * 2;
-    // Зураг + хоорондын зай/progress/товч (тогтмол) + текстийн мөрүүд (томорно).
-    return side + pad * 2 + 138 + 90 * textScale + 6;
-  }
-}
-
-/// Нэг явагдаж буй дуудлагын цэвэр карт. Шинэ санал орохад бага зэрэг (1.02)
-/// томорч буцна.
+/// Нэг явагдаж буй дуудлагын цэвэр карт: хүрээгүй, зураг нь бүтэн өргөнтэй,
+/// мэдээлэл нь шууд хуудасны дэвсгэр дээр. Шинэ санал орохад бага зэрэг (1.02)
+/// томорч буцна. Карт бүхлээрээ дарагдана.
 class _LiveCard extends StatefulWidget {
   const _LiveCard({
     super.key,
@@ -379,13 +362,16 @@ class _LiveCardState extends State<_LiveCard>
   @override
   Widget build(BuildContext context) {
     final a = widget.auction;
-    final art = GestureDetector(
-      onTap: widget.onOpen,
-      child: AuctionArt(
-        auctionId: a.id,
-        url: a.images.isEmpty ? null : a.images.first,
-        radius: 16,
-      ),
+    final art = Stack(
+      children: [
+        AuctionArt(
+          auctionId: a.id,
+          url: a.images.isEmpty ? null : a.images.first,
+          radius: 22,
+          aspect: widget.wide ? 1 : 1.2,
+        ),
+        const Positioned(top: 12, left: 12, child: _LiveBadge()),
+      ],
     );
     final info = _LiveInfo(
       auction: a,
@@ -396,36 +382,127 @@ class _LiveCardState extends State<_LiveCard>
 
     return ScaleTransition(
       scale: _beat.drive(_curve),
-      child: Container(
-        padding: const EdgeInsets.all(LiveCardMetrics.pad),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sheet),
-        ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onOpen,
         child: widget.wide
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(width: 340, child: art),
-                  const SizedBox(width: 28),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 14),
-                      child: info,
-                    ),
-                  ),
+                  SizedBox(width: 380, child: art),
+                  const SizedBox(width: 32),
+                  Expanded(child: info),
                 ],
               )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [art, const SizedBox(height: 12), info],
+                children: [art, const SizedBox(height: 16), info],
               ),
       ),
     );
   }
 }
 
-/// Нэр, тэргүүлэгч, үнэ, хугацаа, "Дуудлага худалдаанд оролцох" товч
+/// Зураг дээрх шилэн (glass) "Явагдаж буй" шошго: зөөлөн лугшдаг цэгтэй.
+class _LiveBadge extends StatelessWidget {
+  const _LiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+          color: Colors.black.withValues(alpha: 0.42),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _PulseDot(),
+              SizedBox(width: 7),
+              Text(
+                'Явагдаж буй',
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.1,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Лугших ногоон цэг (reducedMotion үед хөдөлгөөнгүй).
+class _PulseDot extends StatefulWidget {
+  const _PulseDot();
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1400));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (reducedMotion(context)) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
+          final t = _c.value;
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Opacity(
+                opacity: (1 - t) * 0.55,
+                child: Container(
+                  width: 8 + 6 * t,
+                  height: 8 + 6 * t,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: AppColors.accent),
+                ),
+              ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle, color: AppColors.accent),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Нэр, тэргүүлэгч, үнэ + хугацаа, "Дуудлага худалдаанд оролцох" товч
 /// (товч нь үнэ илгээхгүй — дэлгэрэнгүй дэлгэц рүү нээнэ).
 class _LiveInfo extends StatelessWidget {
   const _LiveInfo({
@@ -447,18 +524,16 @@ class _LiveInfo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: onOpen,
-          child: Text(
-            a.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: big ? 22 : 17,
-              height: big ? 1.25 : 1.25,
-              fontWeight: big ? FontWeight.w700 : FontWeight.w600,
-              color: AppColors.ink,
-            ),
+        Text(
+          a.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: big ? 26 : 20,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
+            color: AppColors.ink,
           ),
         ),
         const SizedBox(height: 2),
@@ -470,16 +545,64 @@ class _LiveInfo extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 15, height: 1.3, color: AppColors.muted),
         ),
-        SizedBox(height: big ? 16 : 8),
-        _RollingPrice(amount: a.currentPrice, size: big ? 34 : 28),
-        SizedBox(height: big ? 20 : 12),
-        _TimerRow(auction: a, offsetMs: offsetMs),
-        SizedBox(height: big ? 24 : 14),
-        PrimaryButton(
-          label: 'Дуудлага худалдаанд оролцох',
-          onPressed: onOpen,
+        SizedBox(height: big ? 24 : 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: _RollingPrice(amount: a.currentPrice, size: big ? 40 : 32),
+            ),
+            const SizedBox(width: 12),
+            _TimerRow(auction: a, offsetMs: offsetMs),
+          ],
         ),
+        SizedBox(height: big ? 28 : 18),
+        _EnterButton(onPressed: onOpen),
       ],
+    );
+  }
+}
+
+/// Хөнгөн (tinted) capsule товч — дэлгэрэнгүй рүү нээнэ.
+class _EnterButton extends StatelessWidget {
+  const _EnterButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    // Light горимд ногоон текст бүдэг тул бага зэрэг бараанаар авна.
+    final fg = AppColors.isDark
+        ? AppColors.accent
+        : Color.lerp(AppColors.accent, Colors.black, 0.32)!;
+    return AnimatedPressable(
+      onPressed: onPressed,
+      scale: 0.98,
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.accent
+              .withValues(alpha: AppColors.isDark ? 0.18 : 0.16),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                'Дуудлага худалдаанд оролцох',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600, color: fg),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(LucideIcons.chevronRight, size: 18, color: fg),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -524,8 +647,9 @@ class _RollingPrice extends StatelessWidget {
   }
 }
 
-/// Үлдсэн хугацаа + "Дуусах HH:mm" + санал. Секунд тутам л шинэчлэгддэг тул
-/// зөвхөн энэ жижиг widget дахин бүтнэ. Сүүлийн 10с улаан.
+/// Үлдсэн хугацааны хураангуй pill + дээр нь "Round N" / "Дуусах HH:mm".
+/// Секунд тутам л шинэчлэгддэг тул зөвхөн энэ жижиг widget дахин бүтнэ.
+/// Сүүлийн 10с улаан.
 class _TimerRow extends StatefulWidget {
   const _TimerRow({required this.auction, required this.offsetMs});
 
@@ -575,36 +699,45 @@ class _TimerRowState extends State<_TimerRow> {
     final roundLabel = hasRounds
         ? 'Round ${(roundIndexAt(rounds, _now) ?? 0) + 1}'
         : 'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}';
+    final hot = urgent && !waiting;
+    final fg = hot ? AppColors.danger : AppColors.ink;
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                waiting ? 'Анхны үнэ хүлээж байна' : formatRemaining(remaining),
+        Text(
+          roundLabel,
+          maxLines: 1,
+          style: TextStyle(
+              fontSize: 13, fontFeatures: tab, color: AppColors.muted),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: hot ? AppColors.dangerBg : AppColors.fill,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!waiting) ...[
+                Icon(LucideIcons.clock, size: 15, color: fg),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                waiting ? 'Хүлээж байна' : formatRemaining(remaining),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 17,
+                  height: 1.2,
                   fontWeight: FontWeight.w600,
                   fontFeatures: tab,
-                  color: urgent && !waiting ? AppColors.danger : AppColors.ink,
+                  color: waiting ? AppColors.muted : fg,
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              roundLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontFeatures: tab,
-                color: AppColors.muted,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -628,6 +761,49 @@ class SliverListenable extends StatelessWidget {
       ListenableBuilder(listenable: listenable, builder: (c, _) => builder(c));
 }
 
+/// "Бусад явагдаж буй" хэсэгт харуулах дээд хэмжээ (бүтэн мөрөөр тасална).
+const _maxShown = 6;
+
+/// Хавтангийн зургийн доорх текстийн өндөр (гарчиг 2 мөр + үнэ + хугацаа).
+const _tileTextH = 86.0;
+
+/// Бүх хэсгийн нэг ижил гарчиг: 22/700 + баруун талд "Бүгд ›".
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.onAll});
+
+  final String title;
+  final VoidCallback? onAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 32, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child:
+                Text(title, style: Theme.of(context).textTheme.displayMedium),
+          ),
+          if (onAll != null)
+            AnimatedPressable(
+              onPressed: onAll,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Бүгд',
+                      style: TextStyle(fontSize: 17, color: AppColors.accent)),
+                  const SizedBox(width: 2),
+                  Icon(LucideIcons.chevronRight,
+                      size: 18, color: AppColors.accent),
+                ]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _OtherLive extends StatelessWidget {
   const _OtherLive({required this.store, required this.onOpen});
 
@@ -636,18 +812,17 @@ class _OtherLive extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rest = store.items.skip(1).toList();
-    if (rest.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final all = store.items.skip(1).toList();
+    if (all.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6);
-    const gapX = 14.0;
-    const gapY = 18.0;
+    const gapX = 16.0;
+    const gapY = 24.0;
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
-            child: Text('Бусад явагдаж буй',
-                style: Theme.of(context).textTheme.displayMedium),
+          child: _SectionHeader(
+            title: 'Бусад явагдаж буй',
+            onAll: all.length > 2 ? () => context.push('/lists/live') : null,
           ),
         ),
         SliverLayoutBuilder(builder: (context, constraints) {
@@ -656,8 +831,13 @@ class _OtherLive extends StatelessWidget {
               ? 2
               : (constraints.crossAxisExtent >= 1000 ? 4 : 3);
           final tileW = (inner - gapX * (cols - 1)) / cols;
+          // Сүүлийн мөрөнд ганц хавтан үлдэхгүйн тулд бүтэн мөрөөр хязгаарлана.
+          final limit = cols * (_maxShown ~/ cols);
+          var n = all.length > limit ? limit : all.length;
+          if (n > cols) n -= n % cols;
+          final rest = all.take(n).toList();
           // Зураг + гарчиг (2 мөр) + үнэ + хугацаа
-          final tileH = tileW + 8 + 92 * scale;
+          final tileH = tileW + 8 + _tileTextH * scale;
           return SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverGrid(
@@ -733,7 +913,7 @@ class _LiveGridTileState extends State<_LiveGridTile> {
           AuctionArt(
             auctionId: a.id,
             url: a.images.isEmpty ? null : a.images.first,
-            radius: 14,
+            radius: 16,
           ),
           const SizedBox(height: 8),
           Text(
@@ -780,25 +960,19 @@ class _HeroSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, box) {
       final cardW = (box.maxWidth - 40).clamp(0.0, 420.0);
-      final side = cardW - LiveCardMetrics.pad * 2;
       return Center(
-        child: Container(
+        child: SizedBox(
           width: cardW,
-          padding: const EdgeInsets.all(LiveCardMetrics.pad),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.sheet),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Skeleton(height: side.clamp(120.0, 320.0), radius: 16),
-              const SizedBox(height: 12),
-              const Skeleton(height: 18, width: 180),
+              Skeleton(height: cardW / 1.2, radius: 22),
+              const SizedBox(height: 16),
+              const Skeleton(height: 22, width: 200),
               const SizedBox(height: 10),
-              const Skeleton(height: 28, width: 140),
-              const SizedBox(height: 14),
-              const Skeleton(height: 4),
+              const Skeleton(height: 32, width: 140),
+              const SizedBox(height: 18),
+              const Skeleton(height: 48, radius: 24),
             ],
           ),
         ),
@@ -940,11 +1114,11 @@ class _AuctionRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(auctionListProvider(status));
-    const cardW = 150.0;
-    const gap = 14.0;
+    const cardW = 156.0;
+    const gap = 16.0;
     // Картын өндөр = зураг + 2 мөр нэр + дэд мэдээлэл (текстийн томруулалттай).
     final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6);
-    final cardH = cardW + 12 + 58 * scale;
+    final cardH = cardW + 8 + _tileTextH * scale;
 
     final Widget body = async.when(
       loading: () => SizedBox(
@@ -960,7 +1134,7 @@ class _AuctionRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Skeleton(height: cardW, width: cardW, radius: 14),
+                Skeleton(height: cardW, width: cardW, radius: 16),
                 SizedBox(height: 10),
                 Skeleton(height: 14, width: 100),
                 SizedBox(height: 8),
@@ -1013,31 +1187,9 @@ class _AuctionRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(title,
-                    style: Theme.of(context).textTheme.displayMedium),
-              ),
-              AnimatedPressable(
-                onPressed: () => context.push('/lists/$status'),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text('Бүгд',
-                        style:
-                            TextStyle(fontSize: 17, color: AppColors.accent)),
-                    const SizedBox(width: 2),
-                    Icon(LucideIcons.chevronRight,
-                        size: 18, color: AppColors.accent),
-                  ]),
-                ),
-              ),
-            ],
-          ),
+        _SectionHeader(
+          title: title,
+          onAll: () => context.push('/lists/$status'),
         ),
         body,
       ],

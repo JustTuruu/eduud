@@ -399,7 +399,7 @@ class _Upcoming extends StatelessWidget {
                 color: AppColors.ink)),
         const SizedBox(height: 16),
         SizedBox(
-          height: tileW + 64,
+          height: tileW + 92,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,

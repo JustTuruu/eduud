@@ -100,7 +100,6 @@ void main() {
         expect(find.text(label), findsWidgets);
       }
       expect(find.text('Данс'), findsNothing);
-      expect(find.text('Одоо явагдаж буй'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

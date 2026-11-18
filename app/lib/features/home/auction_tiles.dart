@@ -25,15 +25,22 @@ class ArtPlaceholder extends StatelessWidget {
   }
 }
 
-/// Дөрвөлжин зураг: ачаалж байхад / алдаатай үед placeholder,
+/// Зураг (default дөрвөлжин): ачаалж байхад / алдаатай үед placeholder,
 /// ачаалагдахад зөөлөн гарч ирнэ.
 class AuctionArt extends StatelessWidget {
   const AuctionArt(
-      {super.key, required this.auctionId, this.url, this.radius = 16});
+      {super.key,
+      required this.auctionId,
+      this.url,
+      this.radius = 16,
+      this.aspect = 1});
 
   final String auctionId;
   final String? url;
   final double radius;
+
+  /// width / height (default дөрвөлжин).
+  final double aspect;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +48,7 @@ class AuctionArt extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: aspect,
         child: url == null || url!.isEmpty
             ? placeholder
             : Image.network(
@@ -77,14 +84,26 @@ class AuctionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = auction;
     final ended = a.status == 'ended' || a.status == 'settled';
-    final String foot;
+    final live = a.status == 'live';
+    // Дууссан/явагдаж буй: үнэ тод + дэд мөр. Удахгүй эхлэх: зөвхөн эхлэх цаг.
+    String? price;
+    String foot;
+    var footColor = AppColors.muted;
     if (ended) {
-      foot = a.lastBidder != null
-          ? '${a.lastBidder!.name} · ${formatMnt(a.currentPrice)}'
-          : 'Ялагчгүй';
+      if (a.lastBidder != null) {
+        price = formatMnt(a.currentPrice);
+        foot = 'Ялагч: ${a.lastBidder!.name}';
+      } else {
+        foot = 'Санал ирээгүй';
+      }
+    } else if (live) {
+      price = formatMnt(a.currentPrice);
+      foot = 'Явагдаж буй';
+      footColor = AppColors.accent;
     } else {
       foot = formatStartLabel(a.startsAt, DateTime.now());
     }
+    const tab = [FontFeature.tabularFigures()];
     return AnimatedPressable(
       onPressed: onTap,
       scale: 0.97,
@@ -95,30 +114,44 @@ class AuctionTile extends StatelessWidget {
           AuctionArt(
             auctionId: a.id,
             url: a.images.isEmpty ? null : a.images.first,
-            radius: 14,
+            radius: 16,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             a.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 15,
-              height: 1.2,
+              height: 1.25,
               fontWeight: FontWeight.w600,
               color: AppColors.ink,
             ),
           ),
-          const SizedBox(height: 1),
+          if (price != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              price,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                fontFeatures: tab,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+          const SizedBox(height: 2),
           Text(
             foot,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
-              height: 1.15,
-              color: AppColors.muted,
-              fontFeatures: const [FontFeature.tabularFigures()],
+              height: 1.25,
+              color: footColor,
+              fontFeatures: tab,
             ),
           ),
         ],
