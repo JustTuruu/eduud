@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import mn.eduud.auctions.AuctionRounds;
 import mn.eduud.auctions.AuctionsService;
+import mn.eduud.categories.CategoriesService;
 import mn.eduud.common.ApiException;
 import mn.eduud.common.Ids;
 import mn.eduud.common.Rows;
@@ -43,7 +44,7 @@ public class AdminController {
   private static final String ADMIN_AUCTION_SELECT =
       "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
           + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
-          + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds,"
+          + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds, a.category_id, c.name AS category_name,"
           + " CASE WHEN lb.id IS NULL THEN NULL ELSE json_build_object('id', lb.id, 'name', lb.name) END AS last_bidder,"
           + " CASE WHEN o.id IS NULL THEN NULL ELSE json_build_object('id', o.id, 'auctionId', o.auction_id,"
           + "   'winnerId', o.winner_id, 'finalPrice', o.final_price,"
@@ -51,21 +52,29 @@ public class AdminController {
           + "   'deliveryInfo', o.delivery_info,"
           + "   'createdAt', to_char(o.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"'),"
           + "   'updatedAt', to_char(o.updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) END AS \"order\""
-          + " FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id LEFT JOIN orders o ON o.auction_id = a.id";
+          + " FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id LEFT JOIN orders o ON o.auction_id = a.id"
+          + " LEFT JOIN categories c ON c.id = a.category_id";
 
   private final JdbcClient db;
   private final Rows rows;
   private final TransactionTemplate tx;
   private final AuctionsService auctions;
   private final RealtimeGateway realtime;
+  private final CategoriesService categories;
 
   public AdminController(
-      JdbcClient db, Rows rows, TransactionTemplate tx, AuctionsService auctions, RealtimeGateway realtime) {
+      JdbcClient db,
+      Rows rows,
+      TransactionTemplate tx,
+      AuctionsService auctions,
+      RealtimeGateway realtime,
+      CategoriesService categories) {
     this.db = db;
     this.rows = rows;
     this.tx = tx;
     this.auctions = auctions;
     this.realtime = realtime;
+    this.categories = categories;
   }
 
   // ---------- DTOs ----------
@@ -81,7 +90,8 @@ public class AdminController {
       Instant hardCloseAt,
       @NotNull Instant startsAt,
       @NotNull Instant endsAt,
-      List<AuctionRounds.Round> rounds) {}
+      List<AuctionRounds.Round> rounds,
+      String categoryId) {}
 
   public record UpdateAuctionDto(
       @Size(min = 3, max = 120) String title,
@@ -94,7 +104,8 @@ public class AdminController {
       Instant hardCloseAt,
       Instant startsAt,
       Instant endsAt,
-      List<AuctionRounds.Round> rounds) {}
+      List<AuctionRounds.Round> rounds,
+      String categoryId) {}
 
   public record UpsertPackageDto(@NotNull @Min(1) Integer tokens, @NotNull @Min(100) Integer priceMnt, Boolean active, Integer sortOrder) {}
 
@@ -131,11 +142,13 @@ public class AdminController {
     if (!endsAt.isAfter(startsAt)) {
       throw ApiException.badRequest("Дуусах хугацаа эхлэхээс хойш байх ёстой.");
     }
+    String categoryId = blankToNull(dto.categoryId());
+    categories.requireExists(categoryId);
     String id = Ids.uuid();
     db.sql(
             "INSERT INTO auctions (id, title, description, images, start_price, increment, soft_close_sec, extend_sec,"
-                + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now(), CAST(? AS jsonb))")
+                + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds, category_id)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now(), CAST(? AS jsonb), ?)")
         .params(
             id,
             dto.title(),
@@ -150,7 +163,8 @@ public class AdminController {
             Rows.ts(endsAt),
             dto.startPrice(),
             user.id(),
-            roundsJson)
+            roundsJson,
+            categoryId)
         .update();
     return auctionRow(id);
   }
@@ -187,10 +201,21 @@ public class AdminController {
       set(sets, params, "starts_at", Rows.ts(dto.startsAt()));
       set(sets, params, "ends_at", Rows.ts(dto.endsAt()));
     }
+    if (dto.categoryId() != null) {
+      // Хоосон string = ангилалгүй болгох
+      String categoryId = blankToNull(dto.categoryId());
+      categories.requireExists(categoryId);
+      sets.add("category_id = ?");
+      params.add(categoryId);
+    }
     sets.add("updated_at = now()");
     params.add(id.toString());
     db.sql("UPDATE auctions SET " + String.join(", ", sets) + " WHERE id = ?").params(params).update();
     return auctionRow(id.toString());
+  }
+
+  private static String blankToNull(String v) {
+    return v == null || v.isBlank() ? null : v;
   }
 
   private static void set(List<String> sets, List<Object> params, String column, Object value) {
@@ -201,9 +226,11 @@ public class AdminController {
 
   private Map<String, Object> auctionRow(String id) {
     return db.sql(
-            "SELECT id, title, description, images, start_price, increment, soft_close_sec, extend_sec, hard_close_at,"
-                + " starts_at, ends_at, current_price, bid_count, last_bidder_id, status, created_by AS created_by_id,"
-                + " created_at, updated_at, rounds FROM auctions WHERE id = ?")
+            "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
+                + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
+                + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds, a.category_id,"
+                + " c.name AS category_name FROM auctions a LEFT JOIN categories c ON c.id = a.category_id"
+                + " WHERE a.id = ?")
         .param(id)
         .query(rows.camel())
         .single();
