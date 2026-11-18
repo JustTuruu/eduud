@@ -1056,12 +1056,14 @@ class BidControl extends StatelessWidget {
             enabled: !busy,
             onChanged: (v) => onStep?.call(v),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
         ],
         PrimaryButton(
           label: label,
           loading: busy,
           onPressed: action,
+          radius: bidControlRadius,
+          minHeight: 52,
         ),
         if (error != null) ...[
           const SizedBox(height: 8),
@@ -1076,7 +1078,11 @@ class BidControl extends StatelessWidget {
   }
 }
 
-/// Үнийн алхам сонгогч: +1..+5 ₮ — iOS segmented control маяг, сонгосон хэсэг accent өнгөтэй.
+/// Үнэ илгээх товч ба алхам сонгогчийн нийтлэг булан (capsule).
+const double bidControlRadius = 26;
+
+/// Үнийн алхам сонгогч: +1..+5 ₮ — товчтой ижил accent өнгөний гэр бүл,
+/// сонгосон хэсэг дээр гулсдаг thumb.
 @visibleForTesting
 class BidStepSelector extends StatelessWidget {
   const BidStepSelector({
@@ -1094,32 +1100,58 @@ class BidStepSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = reducedMotion(context);
+    final index = steps.indexOf(value).clamp(0, steps.length - 1);
+    final dur = reduce ? Duration.zero : const Duration(milliseconds: 180);
     return Semantics(
       container: true,
       label: 'Үнийн алхам сонгох',
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: AppColors.fill,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          children: [
-            for (final v in steps)
-              Expanded(
-                child: _StepSegment(
-                  step: v,
-                  selected: v == value,
-                  onTap: enabled && v != value
-                      ? () {
-                          HapticFeedback.selectionClick();
-                          onChanged(v);
-                        }
-                      : null,
+      child: AnimatedOpacity(
+        opacity: enabled ? 1 : 0.5,
+        duration: dur,
+        child: Container(
+          height: 46,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(bidControlRadius),
+          ),
+          child: Stack(
+            children: [
+              AnimatedAlign(
+                duration: dur,
+                curve: Curves.easeOutCubic,
+                alignment: Alignment(-1 + 2 * index / (steps.length - 1), 0),
+                child: FractionallySizedBox(
+                  widthFactor: 1 / steps.length,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(bidControlRadius),
+                    ),
+                  ),
                 ),
               ),
-          ],
+              Row(
+                children: [
+                  for (final v in steps)
+                    Expanded(
+                      child: _StepSegment(
+                        step: v,
+                        selected: v == value,
+                        onTap: enabled && v != value
+                            ? () {
+                                HapticFeedback.selectionClick();
+                                onChanged(v);
+                              }
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1146,21 +1178,16 @@ class _StepSegment extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accent : Colors.transparent,
-            borderRadius: BorderRadius.circular(22),
-          ),
+        child: Center(
           child: ExcludeSemantics(
-            child: Text(
-              '+$step',
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 180),
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: selected ? AppColors.ctaInk : AppColors.ink,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? AppColors.ctaInk : AppColors.accent,
               ),
+              child: Text('+$step'),
             ),
           ),
         ),

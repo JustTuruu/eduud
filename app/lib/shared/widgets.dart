@@ -328,7 +328,13 @@ class PrimaryButton extends StatefulWidget {
     this.loading = false,
     this.gradient,
     this.foreground,
+    this.radius,
+    this.minHeight = 50,
   });
+
+  /// Булангийн радиус (default [AppRadius.control]).
+  final double? radius;
+  final double minHeight;
 
   final String label;
   final String? sublabel;
@@ -386,82 +392,83 @@ class _PrimaryButtonState extends State<PrimaryButton>
           child: AnimatedContainer(
             duration: AppMotion.base,
             curve: AppMotion.enter,
-            constraints: const BoxConstraints(minHeight: 50),
+            constraints: BoxConstraints(minHeight: widget.minHeight),
             decoration: BoxDecoration(
               // gradient өгсөн бол (жиш. danger) эхний өнгийг хавтгайгаар авна.
               color: enabled
                   ? (widget.gradient?.colors.first ?? AppColors.accent)
                   : AppColors.fill,
-              borderRadius: BorderRadius.circular(AppRadius.control),
+              borderRadius:
+                  BorderRadius.circular(widget.radius ?? AppRadius.control),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.control),
+              borderRadius:
+                  BorderRadius.circular(widget.radius ?? AppRadius.control),
               child: Center(
-                  child: widget.loading
-                      ? SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.4, color: fg),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.icon != null) ...[
-                              AnimatedBuilder(
-                                animation: _strike,
-                                builder: (context, child) {
-                                  // Алхны цохилт: эргээд elastic-ээр буцна
-                                  final t = _strike.value;
-                                  final angle = t < 0.4
-                                      ? -0.55 *
-                                          Curves.easeOut.transform(t / 0.4)
-                                      : -0.55 *
-                                          (1 -
-                                              Curves.elasticOut
-                                                  .transform((t - 0.4) / 0.6));
-                                  return Transform.rotate(
-                                      angle: angle, child: child);
-                                },
-                                child: Icon(widget.icon,
-                                    size: 20,
-                                    color: enabled ? fg : AppColors.muted),
-                              ),
-                              const SizedBox(width: 10),
-                            ],
-                            // Flexible: нарийн товч (web grid, landing CTA) дээр
-                            // урт шошго overflow хийхгүй, ellipsis болно.
-                            Flexible(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                child: widget.loading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2.4, color: fg),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.icon != null) ...[
+                            AnimatedBuilder(
+                              animation: _strike,
+                              builder: (context, child) {
+                                // Алхны цохилт: эргээд elastic-ээр буцна
+                                final t = _strike.value;
+                                final angle = t < 0.4
+                                    ? -0.55 * Curves.easeOut.transform(t / 0.4)
+                                    : -0.55 *
+                                        (1 -
+                                            Curves.elasticOut
+                                                .transform((t - 0.4) / 0.6));
+                                return Transform.rotate(
+                                    angle: angle, child: child);
+                              },
+                              child: Icon(widget.icon,
+                                  size: 20,
+                                  color: enabled ? fg : AppColors.muted),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                          // Flexible: нарийн товч (web grid, landing CTA) дээр
+                          // урт шошго overflow хийхгүй, ellipsis болно.
+                          Flexible(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: enabled ? fg : AppColors.muted,
+                                  ),
+                                ),
+                                if (widget.sublabel != null)
                                   Text(
-                                    widget.label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    widget.sublabel!,
                                     style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: enabled ? fg : AppColors.muted,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: (enabled ? fg : AppColors.muted)
+                                          .withValues(alpha: 0.75),
                                     ),
                                   ),
-                                  if (widget.sublabel != null)
-                                    Text(
-                                      widget.sublabel!,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: (enabled ? fg : AppColors.muted)
-                                            .withValues(alpha: 0.75),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),
@@ -508,7 +515,8 @@ class SecondaryButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 20, color: enabled ? color : AppColors.muted),
+                  Icon(icon,
+                      size: 20, color: enabled ? color : AppColors.muted),
                   const SizedBox(width: 8),
                 ],
                 Flexible(
@@ -759,7 +767,8 @@ class AuctionImage extends StatelessWidget {
             height: height,
             color: AppColors.fill,
             child: Center(
-              child: Icon(LucideIcons.package, size: 40, color: AppColors.muted),
+              child:
+                  Icon(LucideIcons.package, size: 40, color: AppColors.muted),
             ),
           )
         : Image.network(
