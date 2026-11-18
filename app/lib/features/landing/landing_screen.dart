@@ -2,13 +2,13 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../home/auction_tiles.dart';
-import '../home/auction_timing.dart';
 import '../home/home_screen.dart' show auctionListProvider;
 
 /// Landing — нэвтрээгүй хэрэглэгчийн анхны дэлгэц (web дээр `/`).
@@ -138,9 +138,7 @@ class _Hero extends StatelessWidget {
             'Хамгийн сүүлд оролцсон хүн барааг эцсийн үнээр авна.',
             textAlign: ta,
             style: TextStyle(
-                fontSize: wide ? 21 : 17,
-                height: 1.4,
-                color: AppColors.muted),
+                fontSize: wide ? 21 : 17, height: 1.4, color: AppColors.muted),
           ),
         ),
         const SizedBox(height: 28),
@@ -178,9 +176,6 @@ class _LiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = auction;
-    final now = DateTime.now();
-    final fraction =
-        remainingFraction(startsAt: a.startsAt, endsAt: a.endsAt, now: now);
     final leader =
         a.lastBidder != null ? 'Тэргүүлж байна: ${a.lastBidder!.name}' : null;
 
@@ -215,16 +210,6 @@ class _LiveCard extends StatelessWidget {
         Text(formatMnt(a.currentPrice),
             style: AppTheme.price(size: wide ? 40 : 32, color: AppColors.ink)),
         const SizedBox(height: 14),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: fraction,
-            minHeight: 4,
-            backgroundColor: AppColors.fill,
-            valueColor: AlwaysStoppedAnimation(AppColors.accent),
-          ),
-        ),
-        const SizedBox(height: 8),
         Row(children: [
           CountdownText(
             endsAt: a.endsAt,
@@ -234,7 +219,14 @@ class _LiveCard extends StatelessWidget {
                 color: AppColors.ink,
                 fontFeatures: const [FontFeature.tabularFigures()]),
           ),
-          const Spacer(),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+                'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          ),
           Text('${a.bidCount} санал',
               style: TextStyle(fontSize: 15, color: AppColors.muted)),
         ]),
@@ -292,7 +284,11 @@ class _HowItWorks extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       for (var i = 0; i < _steps.length; i++)
-        _Step(n: i + 1, icon: _steps[i].$1, title: _steps[i].$2, body: _steps[i].$3),
+        _Step(
+            n: i + 1,
+            icon: _steps[i].$1,
+            title: _steps[i].$2,
+            body: _steps[i].$3),
     ];
     return Column(
       crossAxisAlignment:

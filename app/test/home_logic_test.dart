@@ -4,32 +4,6 @@ import 'package:eduud/features/requests/request_validators.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('remainingFraction', () {
-    final start = DateTime(2026, 1, 1, 10);
-    final end = DateTime(2026, 1, 1, 11);
-
-    test('эхэнд 1, дундаа 0.5, төгсгөлд 0', () {
-      expect(remainingFraction(startsAt: start, endsAt: end, now: start), 1);
-      expect(
-          remainingFraction(
-              startsAt: start, endsAt: end, now: DateTime(2026, 1, 1, 10, 30)),
-          0.5);
-      expect(remainingFraction(startsAt: start, endsAt: end, now: end), 0);
-    });
-
-    test('хязгаараас хэтрэхгүй, нийт хугацаа 0 бол 0', () {
-      expect(
-          remainingFraction(
-              startsAt: start, endsAt: end, now: DateTime(2026, 1, 1, 9)),
-          1);
-      expect(
-          remainingFraction(
-              startsAt: start, endsAt: end, now: DateTime(2026, 1, 1, 12)),
-          0);
-      expect(remainingFraction(startsAt: end, endsAt: end, now: start), 0);
-    });
-  });
-
   test('formatRemaining', () {
     expect(formatRemaining(const Duration(seconds: 65)), '01:05');
     expect(formatRemaining(const Duration(hours: 1, minutes: 2, seconds: 3)),
@@ -43,6 +17,27 @@ void main() {
     expect(formatStartLabel(DateTime(2026, 11, 18, 20), now), 'Маргааш 20:00');
     expect(formatStartLabel(DateTime(2026, 11, 25, 8, 5), now),
         '11-р сарын 25 · 08:05');
+  });
+
+  test('formatDateTimeLabel', () {
+    final now = DateTime(2026, 11, 17, 9);
+    expect(
+        formatDateTimeLabel(DateTime(2026, 11, 16, 14), now), 'Өчигдөр 14:00');
+    expect(
+        formatDateTimeLabel(DateTime(2026, 11, 17, 14), now), 'Өнөөдөр 14:00');
+    expect(
+        formatDateTimeLabel(DateTime(2026, 11, 18, 14), now), 'Маргааш 14:00');
+    expect(formatDateTimeLabel(DateTime(2026, 11, 25, 8, 5), now),
+        '11-р сарын 25 · 08:05');
+  });
+
+  test('inSoftClose', () {
+    expect(inSoftClose(const Duration(seconds: 29), 30), true);
+    expect(inSoftClose(const Duration(seconds: 30), 30), false);
+    expect(inSoftClose(const Duration(seconds: 60), 30), false);
+    expect(inSoftClose(Duration.zero, 30), false);
+    expect(inSoftClose(const Duration(seconds: -1), 30), false);
+    expect(inSoftClose(const Duration(seconds: 5), 0), false);
   });
 
   group('RequestValidators', () {

@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -19,6 +20,7 @@ import '../auth/auth_controller.dart';
 import '../home/auction_tiles.dart' show ArtPlaceholder;
 import 'consent_sheet.dart';
 import '../home/auction_timing.dart';
+import '../wallet/sub_page.dart' show GroupSection;
 
 /// Auction-ы дэлгэрэнгүй + realtime төлөв.
 /// REST-ээр эхний байдлыг татаад Socket.IO room-д нэгдэж event-ээр шинэчилнэ.
@@ -122,7 +124,6 @@ final auctionDetailProvider = AsyncNotifierProvider.autoDispose
     .family<AuctionDetailController, AuctionDetail, String>(
         AuctionDetailController.new);
 
-
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   const AuctionDetailScreen({super.key, required this.auctionId});
 
@@ -157,8 +158,10 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       context,
       ref,
       auctionId: widget.auctionId,
-      increment:
-          ref.read(auctionDetailProvider(widget.auctionId)).valueOrNull?.increment,
+      increment: ref
+          .read(auctionDetailProvider(widget.auctionId))
+          .valueOrNull
+          ?.increment,
     );
     if (!ok || !mounted) return;
     setState(() {
@@ -278,7 +281,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   Widget _buildData(AuctionDetail a, String? meId, bool wide, Widget? bid) {
     final controller =
         ref.read(auctionDetailProvider(widget.auctionId).notifier);
-    final live = a.status == 'live';
     final ended = a.status == 'ended' || a.status == 'settled';
     final iWon = ended && meId != null && a.lastBidder?.id == meId;
     final text = Theme.of(context).textTheme;
@@ -294,22 +296,13 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           child: AnimatedPrice(amount: a.currentPrice, fontSize: 34),
         ),
       const SizedBox(height: 16),
-      if (live)
-        _DetailTimer(
-          startsAt: a.startsAt,
-          endsAt: a.endsAt,
-          bidCount: a.bidCount,
-          offsetMs: controller.serverOffsetMs,
-          onFinished: () => Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) unawaited(controller.reload());
-          }),
-        )
-      else if (ended)
-        Text('${a.bidCount} санал',
-            style: TextStyle(
-                fontSize: 15,
-                color: AppColors.muted,
-                fontFeatures: const [FontFeature.tabularFigures()])),
+      _TimingCard(
+        auction: a,
+        offsetMs: controller.serverOffsetMs,
+        onFinished: () => Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) unawaited(controller.reload());
+        }),
+      ),
       if (ended && iWon) ...[
         const SizedBox(height: 20),
         PrimaryButton(
@@ -560,8 +553,7 @@ class _GalleryState extends State<_Gallery> {
                   height: 6,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color:
-                        i == _index ? AppColors.accent : AppColors.borderHi,
+                    color: i == _index ? AppColors.accent : AppColors.borderHi,
                   ),
                 ),
             ],
@@ -632,28 +624,25 @@ class _StatusLine extends StatelessWidget {
   }
 }
 
-/// Үлдсэн хугацааны нимгэн (4px) зураас: урт = үлдсэн / нийт. Сүүлийн 10 секунд
-/// улаан. Секунд тутам зөвхөн энэ жижиг widget дахин бүтнэ.
-class _DetailTimer extends StatefulWidget {
-  const _DetailTimer({
-    required this.startsAt,
-    required this.endsAt,
-    required this.bidCount,
+/// Хугацааны бүлэг (iOS inset-grouped): эхэлсэн/дуусах цаг, одоогийн шатны
+/// тоолуур, сунгалтын дүрэм, саналын тоо. Секунд тутам зөвхөн энэ widget дахин
+/// бүтнэ; endsAt (auction_extended-ээр шинэчлэгдэнэ) өөрчлөгдвөл onFinished дахин зэвсэглэнэ.
+class _TimingCard extends StatefulWidget {
+  const _TimingCard({
+    required this.auction,
     required this.offsetMs,
     required this.onFinished,
   });
 
-  final DateTime startsAt;
-  final DateTime endsAt;
-  final int bidCount;
+  final AuctionDetail auction;
   final int offsetMs;
   final VoidCallback onFinished;
 
   @override
-  State<_DetailTimer> createState() => _DetailTimerState();
+  State<_TimingCard> createState() => _TimingCardState();
 }
 
-class _DetailTimerState extends State<_DetailTimer> {
+class _TimingCardState extends State<_TimingCard> {
   Timer? _ticker;
   late DateTime _now = _clock();
   bool _fired = false;
@@ -661,23 +650,37 @@ class _DetailTimerState extends State<_DetailTimer> {
   DateTime _clock() =>
       DateTime.now().add(Duration(milliseconds: widget.offsetMs));
 
+  bool get _running =>
+      widget.auction.status == 'live' || widget.auction.status == 'scheduled';
+
   @override
   void initState() {
     super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    if (_running) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    }
   }
 
   @override
-  void didUpdateWidget(covariant _DetailTimer old) {
+  void didUpdateWidget(covariant _TimingCard old) {
     super.didUpdateWidget(old);
-    if (old.endsAt != widget.endsAt) _fired = false;
+    if (old.auction.endsAt != widget.auction.endsAt) _fired = false;
     _now = _clock();
+    if (_running && _ticker == null) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    } else if (!_running) {
+      _ticker?.cancel();
+      _ticker = null;
+    }
   }
 
   void _tick() {
     if (!mounted) return;
     setState(() => _now = _clock());
-    if (!_fired && widget.endsAt.difference(_now).inMilliseconds <= 0) {
+    final a = widget.auction;
+    if (a.status == 'live' &&
+        !_fired &&
+        a.endsAt.difference(_now).inMilliseconds <= 0) {
       _fired = true;
       widget.onFinished();
     }
@@ -689,76 +692,107 @@ class _DetailTimerState extends State<_DetailTimer> {
     super.dispose();
   }
 
+  Widget _valueRow(String title, String value) {
+    const tab = [FontFeature.tabularFigures()];
+    return Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(children: [
+        Text(title, style: TextStyle(fontSize: 15, color: AppColors.muted)),
+        const Spacer(),
+        Text(value,
+            style: TextStyle(
+                fontSize: 15, fontFeatures: tab, color: AppColors.ink)),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final remaining = widget.endsAt.difference(_now);
-    final urgent = remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
-    final frac = remainingFraction(
-        startsAt: widget.startsAt, endsAt: widget.endsAt, now: _now);
+    final a = widget.auction;
+    final live = a.status == 'live';
+    final scheduled = a.status == 'scheduled';
+    final ended = a.status == 'ended' || a.status == 'settled';
     const tab = [FontFeature.tabularFigures()];
-    return Semantics(
-      label: 'Үлдсэн хугацаа ${formatRemaining(remaining)}',
-      child: ExcludeSemantics(
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: SizedBox(
-                height: 4,
-                child: LayoutBuilder(builder: (context, box) {
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(end: frac),
-                    duration: reducedMotion(context)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 1000),
-                    curve: Curves.linear,
-                    builder: (context, v, _) => Stack(
-                      children: [
-                        Positioned.fill(
-                            child: ColoredBox(color: AppColors.fill)),
-                        Positioned(
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: (box.maxWidth * v).clamp(0.0, box.maxWidth),
-                          child: ColoredBox(
-                              color: urgent
-                                  ? AppColors.danger
-                                  : AppColors.accent),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+    final rows = <Widget>[
+      _valueRow(scheduled ? 'Эхлэх' : 'Эхэлсэн',
+          formatDateTimeLabel(a.startsAt, _now)),
+      _valueRow(
+          ended ? 'Дууссан' : 'Дуусах', formatDateTimeLabel(a.endsAt, _now)),
+    ];
+
+    if (live || scheduled) {
+      final target = scheduled ? a.startsAt : a.endsAt;
+      final remaining = target.difference(_now);
+      final urgent =
+          live && remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
+      final soft = live && inSoftClose(remaining, a.softCloseSec);
+      final phase = scheduled
+          ? 'Эхлэх хүртэл'
+          : soft
+              ? 'Сунгалтын шат'
+              : 'Үндсэн хугацаа';
+      final phaseColor = soft ? AppColors.danger : AppColors.muted;
+      final rule = StringBuffer();
+      if (live && a.softCloseSec > 0 && a.extendSec > 0) {
+        rule.write(
+            'Сүүлийн ${a.softCloseSec} секундэд үнэ ирвэл хугацаа ${a.extendSec} секундээр сунгагдана');
+        if (a.hardCloseAt != null) {
+          rule.write(
+              ' · Эцсийн хаалт ${DateFormat('HH:mm').format(a.hardCloseAt!.toLocal())}');
+        }
+      }
+      rows.add(Semantics(
+        label: scheduled
+            ? 'Эхлэх хүртэл ${formatRemaining(remaining)}'
+            : 'Үлдсэн хугацаа ${formatRemaining(remaining)}',
+        child: ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(children: [
+                  Text(phase,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: phaseColor)),
+                  const Spacer(),
+                  Text('${a.bidCount} санал',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontFeatures: tab,
+                          color: AppColors.muted)),
+                ]),
+                const SizedBox(height: 4),
                 Text(
                   formatRemaining(remaining),
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 40,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
                     fontFeatures: tab,
                     color: urgent ? AppColors.danger : AppColors.ink,
                   ),
                 ),
-                Text(
-                  '${widget.bidCount} санал',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontFeatures: tab,
-                    color: AppColors.muted,
-                  ),
-                ),
+                if (rule.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(rule.toString(),
+                      style: TextStyle(
+                          fontSize: 12, height: 1.35, color: AppColors.muted)),
+                ],
               ],
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      ));
+    } else {
+      rows.add(_valueRow('Санал', '${a.bidCount}'));
+    }
+
+    return GroupSection(children: rows);
   }
 }
 
@@ -1032,7 +1066,11 @@ class _DetailSkeleton extends StatelessWidget {
           if (wide) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [art, const SizedBox(width: 48), Expanded(child: lines)],
+              children: [
+                art,
+                const SizedBox(width: 48),
+                Expanded(child: lines)
+              ],
             );
           }
           return Column(

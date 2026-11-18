@@ -141,6 +141,11 @@ class AuctionDetail {
   final Bidder? lastBidder;
   final List<BidItem> bids;
   final int serverTime;
+  // Soft-close тохиргоо: сүүлийн softCloseSec секундэд үнэ ирвэл endsAt-г
+  // extendSec секундээр сунгана (hardCloseAt-аас хэтрэхгүй).
+  final int softCloseSec;
+  final int extendSec;
+  final DateTime? hardCloseAt;
 
   AuctionDetail({
     required this.id,
@@ -156,6 +161,9 @@ class AuctionDetail {
     this.lastBidder,
     required this.bids,
     required this.serverTime,
+    this.softCloseSec = 0,
+    this.extendSec = 0,
+    this.hardCloseAt,
   });
 
   factory AuctionDetail.fromJson(Map<String, dynamic> j) => AuctionDetail(
@@ -177,6 +185,11 @@ class AuctionDetail {
             .toList(),
         serverTime:
             (j['serverTime'] ?? DateTime.now().millisecondsSinceEpoch) as int,
+        softCloseSec: (j['softCloseSec'] ?? 0) as int,
+        extendSec: (j['extendSec'] ?? 0) as int,
+        hardCloseAt: j['hardCloseAt'] == null
+            ? null
+            : DateTime.parse(j['hardCloseAt'] as String),
       );
 
   AuctionDetail copyWith({
@@ -201,6 +214,9 @@ class AuctionDetail {
         lastBidder: lastBidder ?? this.lastBidder,
         bids: bids ?? this.bids,
         serverTime: serverTime,
+        softCloseSec: softCloseSec,
+        extendSec: extendSec,
+        hardCloseAt: hardCloseAt,
       );
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
@@ -177,7 +178,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(auctionListProvider('live').future);
   }
 
-
   @override
   Widget build(BuildContext context) {
     final wide = Breakpoints.isWide(context);
@@ -205,7 +205,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                     child: Row(
                       children: [
-                        Expanded(child: Text('Нүүр', style: text.headlineMedium)),
+                        Expanded(
+                            child: Text('Нүүр', style: text.headlineMedium)),
                         // Өргөн дэлгэц дээр chip дээд навигацид байдаг.
                         if (!wide && user != null)
                           TokenBalanceChip(
@@ -472,7 +473,7 @@ class _LiveInfo extends StatelessWidget {
         SizedBox(height: big ? 16 : 8),
         _RollingPrice(amount: a.currentPrice, size: big ? 34 : 28),
         SizedBox(height: big ? 20 : 12),
-        _TimerBar(auction: a, offsetMs: offsetMs),
+        _TimerRow(auction: a, offsetMs: offsetMs),
         SizedBox(height: big ? 24 : 14),
         PrimaryButton(
           label: 'Дуудлага худалдаанд оролцох',
@@ -523,19 +524,19 @@ class _RollingPrice extends StatelessWidget {
   }
 }
 
-/// Нимгэн (4px) progress: урт = үлдсэн хугацаа / нийт хугацаа. Секунд тутам л
-/// шинэчлэгддэг тул зөвхөн энэ жижиг widget дахин бүтнэ. Сүүлийн 10с улаан.
-class _TimerBar extends StatefulWidget {
-  const _TimerBar({required this.auction, required this.offsetMs});
+/// Үлдсэн хугацаа + "Дуусах HH:mm" + санал. Секунд тутам л шинэчлэгддэг тул
+/// зөвхөн энэ жижиг widget дахин бүтнэ. Сүүлийн 10с улаан.
+class _TimerRow extends StatefulWidget {
+  const _TimerRow({required this.auction, required this.offsetMs});
 
   final AuctionSummary auction;
   final int offsetMs;
 
   @override
-  State<_TimerBar> createState() => _TimerBarState();
+  State<_TimerRow> createState() => _TimerRowState();
 }
 
-class _TimerBarState extends State<_TimerBar> {
+class _TimerRowState extends State<_TimerRow> {
   Timer? _ticker;
   late DateTime _now = _clock();
 
@@ -551,7 +552,7 @@ class _TimerBarState extends State<_TimerBar> {
   }
 
   @override
-  void didUpdateWidget(covariant _TimerBar old) {
+  void didUpdateWidget(covariant _TimerRow old) {
     super.didUpdateWidget(old);
     _now = _clock();
   }
@@ -567,40 +568,9 @@ class _TimerBarState extends State<_TimerBar> {
     final a = widget.auction;
     final remaining = a.endsAt.difference(_now);
     final urgent = remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
-    final frac =
-        remainingFraction(startsAt: a.startsAt, endsAt: a.endsAt, now: _now);
     const tab = [FontFeature.tabularFigures()];
-    final color = urgent ? AppColors.danger : AppColors.accent;
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: SizedBox(
-            height: 4,
-            child: LayoutBuilder(builder: (context, box) {
-              return TweenAnimationBuilder<double>(
-                tween: Tween(end: frac),
-                duration: reducedMotion(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 1000),
-                curve: Curves.linear,
-                builder: (context, v, _) => Stack(
-                  children: [
-                    Positioned.fill(child: ColoredBox(color: AppColors.fill)),
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: (box.maxWidth * v).clamp(0.0, box.maxWidth),
-                      child: ColoredBox(color: color),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
-        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -613,6 +583,18 @@ class _TimerBarState extends State<_TimerBar> {
                 color: urgent ? AppColors.danger : AppColors.ink,
               ),
             ),
+            Flexible(
+                child: Text(
+              'Дуусах ${DateFormat('HH:mm').format(a.endsAt.toLocal())}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontFeatures: tab,
+                color: AppColors.muted,
+              ),
+            )),
+            const SizedBox(width: 8),
             Text(
               '${a.bidCount} санал',
               style: TextStyle(
@@ -627,7 +609,6 @@ class _TimerBarState extends State<_TimerBar> {
     );
   }
 }
-
 
 // ---------------------------------------------------------------------------
 // Бусад явагдаж буй дуудлага (тор)
@@ -705,7 +686,10 @@ class _OtherLive extends StatelessWidget {
 /// Тор дахь жижиг хавтан: зураг, нэр, үнэ, үлдсэн хугацаа.
 class _LiveGridTile extends StatefulWidget {
   const _LiveGridTile(
-      {super.key, required this.auction, required this.offsetMs, required this.onTap});
+      {super.key,
+      required this.auction,
+      required this.offsetMs,
+      required this.onTap});
 
   final AuctionSummary auction;
   final int offsetMs;
@@ -1043,9 +1027,8 @@ class _AuctionRow extends ConsumerWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Text('Бүгд',
-                        style: TextStyle(
-                            fontSize: 17,
-                            color: AppColors.accent)),
+                        style:
+                            TextStyle(fontSize: 17, color: AppColors.accent)),
                     const SizedBox(width: 2),
                     Icon(LucideIcons.chevronRight,
                         size: 18, color: AppColors.accent),
