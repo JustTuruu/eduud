@@ -781,23 +781,50 @@ class TimingCardState extends State<TimingCard> {
     super.dispose();
   }
 
-  Widget _valueRow(String title, String value) {
+  Widget _label(String text) => Text(text,
+      style: TextStyle(fontSize: 13, height: 1.3, color: AppColors.muted));
+
+  /// Доод мөрийн нэг нүд: жижиг шошго + нэг мөр утга (багтахгүй бол жижгэрнэ).
+  Widget _dateCell(String title, String value, EdgeInsets pad) {
     const tab = [FontFeature.tabularFigures()];
-    return Container(
-      constraints: const BoxConstraints(minHeight: 44),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(children: [
-        Text(title, style: TextStyle(fontSize: 15, color: AppColors.muted)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(value,
-              textAlign: TextAlign.right,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 15, fontFeatures: tab, color: AppColors.ink)),
+    return Expanded(
+      child: Padding(
+        padding: pad,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _label(title),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value,
+                  maxLines: 1,
+                  style: TextStyle(
+                      fontSize: 15,
+                      height: 1.3,
+                      fontFeatures: tab,
+                      color: AppColors.ink)),
+            ),
+          ],
         ),
-      ]),
+      ),
+    );
+  }
+
+  Widget _datesRow(
+      String startLabel, String startValue, String endLabel, String endValue) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _dateCell(startLabel, startValue,
+              const EdgeInsets.fromLTRB(16, 14, 12, 14)),
+          Container(width: 0.5, color: AppColors.borderHi),
+          _dateCell(
+              endLabel, endValue, const EdgeInsets.fromLTRB(16, 14, 16, 14)),
+        ],
+      ),
     );
   }
 
@@ -811,28 +838,27 @@ class TimingCardState extends State<TimingCard> {
     final hasRounds = rounds != null && rounds.isNotEmpty;
     final waitingFirst = hasRounds && live && a.bidCount == 0;
 
-    final rows = <Widget>[
-      _valueRow(
-          scheduled ? 'Эхлэх' : 'Эхэлсэн', formatExactDateTime(a.startsAt)),
-      _valueRow(
-          ended
-              ? 'Дууссан'
-              : waitingFirst
-                  ? 'Хамгийн оройдоо'
-                  : 'Дуусах',
-          formatExactDateTime(waitingFirst ? _lastEnd(rounds) : a.endsAt)),
-    ];
-
+    final rows = <Widget>[];
     if (live || scheduled) {
       rows.add(_splitBox(a, rounds, hasRounds, waitingFirst));
-      if (hasRounds && live && !waitingFirst) {
-        rows.add(Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-          child: Text('Үнэ ирэх бүрт тухайн round-ын хугацаагаар дахин эхэлнэ',
-              style: TextStyle(
-                  fontSize: 12, height: 1.35, color: AppColors.muted)),
-        ));
-      }
+    }
+    rows.add(_datesRow(
+      scheduled ? 'Эхлэх' : 'Эхэлсэн',
+      formatExactDateTime(a.startsAt),
+      ended
+          ? 'Дууссан'
+          : waitingFirst
+              ? 'Хамгийн оройдоо'
+              : 'Дуусах',
+      formatExactDateTime(waitingFirst ? _lastEnd(rounds) : a.endsAt),
+    ));
+    if ((live || scheduled) && hasRounds && live && !waitingFirst) {
+      rows.add(Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Text('Үнэ ирэх бүрт тухайн round-ын хугацаагаар дахин эхэлнэ',
+            style:
+                TextStyle(fontSize: 12, height: 1.35, color: AppColors.muted)),
+      ));
     }
 
     final card = GroupSection(children: rows);
@@ -859,7 +885,7 @@ class TimingCardState extends State<TimingCard> {
           fontWeight: weight,
           color: color ?? AppColors.muted));
 
-  /// Нэг хайрцаг, хоёр тэнцүү хагас: зүүн — тоолуур, баруун — одоогийн round
+  /// 2×2 картын дээд мөр, хоёр тэнцүү хагас: зүүн — тоолуур, баруун — одоогийн round
   /// (round байхгүй бол сунгалтын шат). Дунд нь нимгэн босоо зураас.
   Widget _splitBox(AuctionDetail a, List<AuctionRound>? rounds, bool hasRounds,
       bool waitingFirst) {
@@ -950,7 +976,7 @@ class TimingCardState extends State<TimingCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _small(leftLabel),
+                      _label(leftLabel),
                       const SizedBox(height: 4),
                       leftValue,
                       if (waitingFirst) ...[
@@ -961,14 +987,14 @@ class TimingCardState extends State<TimingCard> {
                   ),
                 ),
               ),
-              Container(width: 1, color: AppColors.border),
+              Container(width: 0.5, color: AppColors.borderHi),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _small(rightLabel),
+                      _label(rightLabel),
                       const SizedBox(height: 4),
                       FittedBox(
                         fit: BoxFit.scaleDown,

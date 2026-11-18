@@ -139,4 +139,42 @@ void main() {
     expect(find.textContaining('1:23:4'), findsOneWidget);
     expect(find.text(formatExactDateTime(a.startsAt)), findsOneWidget);
   });
+
+  testWidgets('2×2 карт 390px дээр дөрвөн нүдээ overflow-гүй харуулна',
+      (tester) async {
+    final now = DateTime.now();
+    final a = _detail(_rounds(now.subtract(const Duration(seconds: 9100))), 3);
+    await _pump(tester, a);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Эхэлсэн'), findsOneWidget);
+    expect(find.text('Дуусах'), findsOneWidget);
+    expect(find.text('Үлдсэн хугацаа'), findsOneWidget);
+    expect(find.text('Одоогийн round'), findsOneWidget);
+    expect(find.text(formatExactDateTime(a.startsAt)), findsOneWidget);
+    expect(find.text(formatExactDateTime(a.endsAt)), findsOneWidget);
+  });
+
+  testWidgets('дууссан дуудлага: зөвхөн Эхэлсэн | Дууссан', (tester) async {
+    final now = DateTime.now();
+    final a = AuctionDetail(
+      id: 'a3',
+      title: 'Тест',
+      description: '',
+      images: const [],
+      currentPrice: 1000,
+      increment: 50,
+      bidCount: 2,
+      startsAt: now.subtract(const Duration(hours: 2)),
+      endsAt: now.subtract(const Duration(hours: 1)),
+      status: 'ended',
+      bids: const [],
+      serverTime: now.millisecondsSinceEpoch,
+    );
+    await _pump(tester, a);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Эхэлсэн'), findsOneWidget);
+    expect(find.text('Дууссан'), findsOneWidget);
+    expect(find.text('Үлдсэн хугацаа'), findsNothing);
+    expect(find.text('Одоогийн round'), findsNothing);
+  });
 }
