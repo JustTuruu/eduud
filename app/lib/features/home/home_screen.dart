@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,7 +13,6 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/app_nav_bar.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
-import '../auction/consent_sheet.dart';
 import '../auth/auth_controller.dart';
 import 'auction_tiles.dart';
 import 'auction_timing.dart';
@@ -171,21 +169,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mounted && _socket.connected) _joinAll();
   }
 
-  Future<void> _bid(String id) async {
-    final inc = _store.items.where((a) => a.id == id).firstOrNull?.increment;
-    final ok =
-        await ensureAuctionConsent(context, ref, auctionId: id, increment: inc);
-    if (!ok || !mounted) return;
-    try {
-      await ref.read(dioProvider).post('/auctions/$id/bid');
-      unawaited(ref.read(authProvider.notifier).refreshProfile());
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
-    }
-  }
-
   Future<void> _refresh() async {
     ref
       ..invalidate(auctionListProvider('live'))
@@ -252,7 +235,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : _Hero(
                             store: _store,
                             onOpen: _open,
-                            onBid: _bid,
                           ),
                   ),
                 ),
@@ -295,44 +277,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 // Явагдаж буй дуудлагын карт
 // ---------------------------------------------------------------------------
 
-class _Hero extends StatefulWidget {
-  const _Hero({
-    required this.store,
-    required this.onOpen,
-    required this.onBid,
-  });
+class _Hero extends StatelessWidget {
+  const _Hero({required this.store, required this.onOpen});
 
   final _LiveStore store;
   final Future<void> Function(String id) onOpen;
-  final Future<void> Function(String id) onBid;
-
-  @override
-  State<_Hero> createState() => _HeroState();
-}
-
-class _HeroState extends State<_Hero> {
-  final Set<String> _busy = {};
-
-  Future<void> _bid(String id) async {
-    if (_busy.contains(id)) return;
-    setState(() => _busy.add(id));
-    try {
-      await widget.onBid(id);
-    } finally {
-      if (mounted) setState(() => _busy.remove(id));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: widget.store,
+      listenable: store,
       builder: (context, _) {
         // Хамгийн түрүүнд дуусах нь онцлогдоно (store эрэмбэлсэн).
-        final items = widget.store.items;
+        final items = store.items;
         if (items.isEmpty) return const SizedBox.shrink();
         final a = items.first;
-        final offsetMs = widget.store.serverOffsetMs;
+        final offsetMs = store.serverOffsetMs;
         final wide = Breakpoints.isWide(context);
 
         return LayoutBuilder(builder: (context, box) {
@@ -343,10 +303,8 @@ class _HeroState extends State<_Hero> {
               key: ValueKey(a.id),
               auction: a,
               offsetMs: offsetMs,
-              busy: _busy.contains(a.id),
               wide: twoCol,
-              onOpen: () => widget.onOpen(a.id),
-              onBid: () => _bid(a.id),
+              onOpen: () => onOpen(a.id),
             ),
           );
         });
@@ -373,18 +331,14 @@ class _LiveCard extends StatefulWidget {
     super.key,
     required this.auction,
     required this.offsetMs,
-    required this.busy,
     required this.wide,
     required this.onOpen,
-    required this.onBid,
   });
 
   final AuctionSummary auction;
   final int offsetMs;
-  final bool busy;
   final bool wide;
   final VoidCallback onOpen;
-  final VoidCallback onBid;
 
   @override
   State<_LiveCard> createState() => _LiveCardState();
@@ -435,8 +389,6 @@ class _LiveCardState extends State<_LiveCard>
     final info = _LiveInfo(
       auction: a,
       offsetMs: widget.offsetMs,
-      busy: widget.busy,
-      onBid: widget.onBid,
       onOpen: widget.onOpen,
       big: widget.wide,
     );
@@ -472,21 +424,18 @@ class _LiveCardState extends State<_LiveCard>
   }
 }
 
-/// Нэр, тэргүүлэгч, үнэ, хугацаа, "Дуудлага худалдаанд оролцох" товч.
+/// Нэр, тэргүүлэгч, үнэ, хугацаа, "Дуудлага худалдаанд оролцох" товч
+/// (товч нь үнэ илгээхгүй — дэлгэрэнгүй дэлгэц рүү нээнэ).
 class _LiveInfo extends StatelessWidget {
   const _LiveInfo({
     required this.auction,
     required this.offsetMs,
-    required this.busy,
-    required this.onBid,
     required this.onOpen,
     required this.big,
   });
 
   final AuctionSummary auction;
   final int offsetMs;
-  final bool busy;
-  final VoidCallback onBid;
   final VoidCallback onOpen;
   final bool big;
 
@@ -527,11 +476,7 @@ class _LiveInfo extends StatelessWidget {
         SizedBox(height: big ? 24 : 14),
         PrimaryButton(
           label: 'Дуудлага худалдаанд оролцох',
-          loading: busy,
-          onPressed: () {
-            HapticFeedback.mediumImpact();
-            onBid();
-          },
+          onPressed: onOpen,
         ),
       ],
     );

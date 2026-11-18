@@ -135,6 +135,7 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _bidding = false;
+  String? _bidError; // "Үнэ илгээх" хэсэгт inline харагдах алдаа
   String? _toast;
   Timer? _toastTimer;
 
@@ -151,7 +152,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   }
 
   Future<void> _bid() async {
-    // Энэ дуудлагад анх удаа оролцохын өмнө дүрмийн зөвшөөрөл авна.
+    // Энэ дуудлагад анх удаа үнэ илгээхийн өмнө дүрмийн зөвшөөрөл авна.
     final ok = await ensureAuctionConsent(
       context,
       ref,
@@ -160,20 +161,31 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           ref.read(auctionDetailProvider(widget.auctionId)).valueOrNull?.increment,
     );
     if (!ok || !mounted) return;
-    unawaited(HapticFeedback.mediumImpact());
-    setState(() => _bidding = true);
+    setState(() {
+      _bidding = true;
+      _bidError = null;
+    });
     try {
       await ref
           .read(auctionDetailProvider(widget.auctionId).notifier)
           .placeBid();
+      // Бодит шинэчлэлт socket event-ээр ирнэ — энд зөвхөн товч баталгаажуулна.
+      unawaited(HapticFeedback.mediumImpact());
+      _showToast('Таны үнэ илгээгдлээ');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
-      }
+      if (mounted) setState(() => _bidError = apiErrorMessage(e));
     } finally {
       if (mounted) setState(() => _bidding = false);
     }
+  }
+
+  void _showToast(String message) {
+    if (!mounted) return;
+    _toastTimer?.cancel();
+    setState(() => _toast = message);
+    _toastTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _toast = null);
+    });
   }
 
   /// Хугацаа сунгагдсан бол түр мэдэгдэл харуулна.
@@ -184,11 +196,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     if (a == null || b == null || a.id != b.id) return;
     final secs = b.endsAt.difference(a.endsAt).inSeconds;
     if (secs <= 0 || b.status != 'live') return;
-    _toastTimer?.cancel();
-    setState(() => _toast = 'Хугацаа $secs секундээр сунгагдлаа');
-    _toastTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _toast = null);
-    });
+    _showToast('Хугацаа $secs секундээр сунгагдлаа');
   }
 
   @override
@@ -206,9 +214,12 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           ? _BidControl(
               auction: a,
               meId: me?.id,
+              balance: me?.balance ?? 0,
+              error: _bidError,
               busy: _bidding,
               onBid: _bid,
               onLogin: _requireLogin,
+              onTopUp: () => context.push('/wallet'),
             )
           : null;
       body = _buildData(a, me?.id, wide, bid);
@@ -751,45 +762,95 @@ class _DetailTimerState extends State<_DetailTimer> {
   }
 }
 
-/// Дэлгэц дээрх ганц үндсэн үйлдэл — ногоон "Дуудлага худалдаанд оролцох".
+/// "Үнэ илгээх" хэсэг — энд л хэрэглэгч бодитоор үнэ илгээж эрх зарцуулна.
+/// Юу болохыг (таны санал, зарцуулах эрх, үлдэгдэл) товчноос өмнө тодорхой хэлнэ.
 class _BidControl extends StatelessWidget {
   const _BidControl({
     required this.auction,
     required this.meId,
+    required this.balance,
+    required this.error,
     required this.busy,
     required this.onBid,
     required this.onLogin,
+    required this.onTopUp,
   });
 
   final AuctionDetail auction;
   final String? meId;
+  final int balance;
+  final String? error;
   final bool busy;
   final VoidCallback onBid;
   final VoidCallback onLogin;
+  final VoidCallback onTopUp;
 
   @override
   Widget build(BuildContext context) {
     final guest = meId == null;
     final mine = !guest && auction.lastBidder?.id == meId;
-    final label = guest
-        ? 'Нэвтэрч оролцох'
-        : mine
-            ? 'Та тэргүүлж байна'
-            : 'Дуудлага худалдаанд оролцох';
+    final noBalance = !guest && !mine && balance <= 0;
+    final next = auction.currentPrice + auction.increment;
+
+    final String label;
+    final VoidCallback? action;
+    if (guest) {
+      label = 'Нэвтэрч оролцох';
+      action = onLogin;
+    } else if (mine) {
+      label = 'Та тэргүүлж байна';
+      action = null;
+    } else if (noBalance) {
+      label = 'Эрх цэнэглэх';
+      action = onTopUp;
+    } else {
+      label = 'Үнэ илгээх';
+      action = onBid;
+    }
+
+    final String note;
+    if (guest) {
+      note = 'Үнэ илгээхийн тулд нэвтэрнэ үү';
+    } else if (mine) {
+      note = 'Өөр хүн үнэ илгээхийг хүлээнэ үү';
+    } else if (noBalance) {
+      note = 'Үнэ илгээхэд 1 эрх хэрэгтэй · Үлдэгдэл: 0 эрх';
+    } else {
+      note = '1 эрх зарцуулна · Үлдэгдэл: $balance эрх';
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (!mine) ...[
+          Text('Үнэ илгээх',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          const SizedBox(height: 2),
+          Text(
+            'Таны санал: ${formatMnt(next)}',
+            textAlign: TextAlign.center,
+            style: AppTheme.price(size: 24, color: AppColors.ink),
+          ),
+          const SizedBox(height: 10),
+        ],
         PrimaryButton(
           label: label,
           loading: busy,
-          onPressed: mine ? null : (guest ? onLogin : onBid),
+          onPressed: action,
         ),
         const SizedBox(height: 8),
+        if (error != null) ...[
+          Text(
+            error!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.danger),
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
-          mine
-              ? 'Өөр хүн оролцохыг хүлээнэ үү'
-              : '1 эрх зарцуулна · үнэ ${formatMnt(auction.increment)}-өөр өснө',
+          note,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13, color: AppColors.muted),
         ),

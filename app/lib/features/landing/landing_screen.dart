@@ -279,7 +279,7 @@ class _HowItWorks extends StatelessWidget {
     (
       CupertinoIcons.hand_raised_fill,
       'Оролцоно',
-      'Оролцох бүрт 1 эрх зарцуулж, үнийг нэмнэ.'
+      'Үнэ илгээх бүрт 1 эрх зарцуулж, үнийг нэмнэ.'
     ),
     (
       CupertinoIcons.gift_fill,

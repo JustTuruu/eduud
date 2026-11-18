@@ -66,12 +66,12 @@ class _ConsentSheetState extends State<ConsentSheet> {
   Widget build(BuildContext context) {
     final inc = widget.increment;
     final priceRule = inc == null
-        ? 'Оролцох бүрт үнэ өснө, хугацаа сунгагдаж болно.'
-        : 'Оролцох бүрт үнэ ${formatMnt(inc)}-өөр өснө, хугацаа сунгагдаж болно.';
+        ? 'Үнэ илгээх бүрт үнэ өснө, хугацаа сунгагдаж болно.'
+        : 'Үнэ илгээх бүрт үнэ ${formatMnt(inc)}-өөр өснө, хугацаа сунгагдаж болно.';
     final rules = <(IconData, String)>[
-      (LucideIcons.ticket, 'Оролцох бүрт 1 эрх зарцуулагдана. Буцаагдахгүй.'),
+      (LucideIcons.ticket, 'Үнэ илгээх бүрт 1 эрх зарцуулагдана. Буцаагдахгүй.'),
       (LucideIcons.trendingUp, priceRule),
-      (LucideIcons.clock, 'Хугацаа дуусахад хамгийн сүүлд оролцсон хүн ялна.'),
+      (LucideIcons.clock, 'Хугацаа дуусахад хамгийн сүүлд үнэ илгээсэн хүн ялна.'),
       (
         LucideIcons.wallet,
         'Ялвал $payDeadlineHours цагийн дотор эцсийн үнийг төлнө, '

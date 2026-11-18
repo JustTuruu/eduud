@@ -27,6 +27,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Оролцохын өмнө'), findsOneWidget);
+    expect(find.textContaining('Үнэ илгээх бүрт 1 эрх зарцуулагдана'), findsOneWidget);
     // Идэвхгүй үед товч дарагдахгүй
     await tester.tap(find.text('Оролцох'));
     await tester.pumpAndSettle();

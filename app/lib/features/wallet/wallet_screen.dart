@@ -170,7 +170,7 @@ class _Balance extends StatelessWidget {
           const SizedBox(height: 4),
           Text('$balance эрх', style: AppTheme.price(size: 34)),
           const SizedBox(height: 6),
-          Text('Оролцох бүрт 1 эрх зарцуулагдана.',
+          Text('Үнэ илгээх бүрт 1 эрх зарцуулагдана.',
               style: TextStyle(fontSize: 13, color: AppColors.muted)),
         ],
       ),
