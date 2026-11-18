@@ -14,12 +14,12 @@ List<BidItem> _bids(int n) => [
         ),
     ];
 
-Widget _host(int n) => MaterialApp(
+Widget _host(int n, {String? meId}) => MaterialApp(
       theme: AppTheme.light,
       home: Scaffold(
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: BidHistory(bids: _bids(n)),
+          child: BidHistory(bids: _bids(n), meId: meId),
         ),
       ),
     );
@@ -52,5 +52,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byType(BidHistory)).height,
         lessThan(BidHistory.maxHeight / 2));
+  });
+
+  testWidgets('meId өгвөл өөрийн санал "Та" гэж тодорно', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_host(5, meId: 'u2'));
+    await tester.pumpAndSettle();
+    expect(find.text('Та'), findsOneWidget);
+    expect(find.text('Хэрэглэгч 2'), findsNothing);
+    expect(find.text('Хэрэглэгч 1'), findsOneWidget);
+    final me = tester.widget<Text>(find.text('Та'));
+    expect(me.style!.fontWeight, FontWeight.w600);
   });
 }

@@ -64,6 +64,8 @@ void main() {
     await _pump(tester, _detail(_rounds(start), 3));
     expect(tester.takeException(), isNull);
     final list = find.byType(RoundsList);
+    await tester.tap(find.byKey(const ValueKey('rounds-toggle')));
+    await tester.pumpAndSettle();
     for (var i = 1; i <= 11; i++) {
       expect(find.descendant(of: list, matching: find.text('Round $i')),
           findsOneWidget);
@@ -79,6 +81,29 @@ void main() {
     expect(find.text('Round 5'), findsNWidgets(2));
     expect(find.textContaining('10 мин · '), findsOneWidget);
     expect(find.text('Анхны үнэ ирмэгц эхэлнэ'), findsNothing);
+  });
+
+  testWidgets('Round-ууд хураангуйд зөвхөн одоогийн round, header товшвол бүгд',
+      (tester) async {
+    final start = DateTime.now().subtract(const Duration(seconds: 9100));
+    await _pump(tester, _detail(_rounds(start), 3));
+    final list = find.byType(RoundsList);
+    expect(find.descendant(of: list, matching: find.text('Round 5')),
+        findsOneWidget);
+    expect(find.descendant(of: list, matching: find.text('Round 4')),
+        findsNothing);
+    expect(find.text('Бүгд (11)'), findsOneWidget);
+
+    await tester.tap(find.text('Бүгд (11)'));
+    await tester.pumpAndSettle();
+    for (var i = 1; i <= 11; i++) {
+      expect(find.descendant(of: list, matching: find.text('Round $i')),
+          findsOneWidget);
+    }
+    await tester.tap(find.text('Бүгд (11)'));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: list, matching: find.text('Round 4')),
+        findsNothing);
   });
 
   testWidgets('bidCount == 0 үед тоолуургүй', (tester) async {

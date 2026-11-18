@@ -287,9 +287,17 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     final iWon = ended && meId != null && a.lastBidder?.id == meId;
     final text = Theme.of(context).textTheme;
 
-    final info = <Widget>[
+    // Зургийн доор: гарчиг + тайлбар
+    final intro = <Widget>[
       Text(a.title, style: text.titleLarge),
-      const SizedBox(height: 8),
+      if (a.description.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        _Description(text: a.description),
+      ],
+      const SizedBox(height: 12),
+    ];
+
+    final info = <Widget>[
       _StatusLine(auction: a, ended: ended, iWon: iWon),
       const SizedBox(height: 12),
       if (!ended || a.lastBidder != null)
@@ -315,23 +323,9 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     ];
 
     final details = <Widget>[
-      if (a.description.isNotEmpty) ...[
-        const _SectionTitle('Тайлбар'),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-          ),
-          child: Text(a.description,
-              style: TextStyle(
-                  fontSize: 15, height: 1.5, color: AppColors.inkSoft)),
-        ),
-      ],
       if (a.bids.isNotEmpty) ...[
         const _SectionTitle('Сүүлийн саналууд'),
-        BidHistory(bids: a.bids),
+        BidHistory(bids: a.bids, meId: meId),
       ],
     ];
 
@@ -349,7 +343,14 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                 flex: 5,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: gallery,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      gallery,
+                      const SizedBox(height: 20),
+                      ...intro,
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 48),
@@ -373,18 +374,92 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       );
     }
 
+    // Утсан дээр зураг хоёр талдаа ирмэг хүртэл (full-bleed), текст 20px padding-тай.
     return PageFrame(
       maxWidth: 560,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+        padding: const EdgeInsets.only(bottom: 40),
         children: [
-          gallery,
-          const SizedBox(height: 20),
-          ...info,
-          ...details,
+          _Gallery(auctionId: a.id, images: a.images, fullBleed: true),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [...intro, ...info, ...details],
+            ),
+          ),
         ],
       ),
     );
+  }
+}
+
+/// Бүтээгдэхүүний тайлбар — 4 мөрөөс урт бол "Цааш унших"-аар нээгдэнэ.
+class _Description extends StatefulWidget {
+  const _Description({required this.text});
+
+  final String text;
+
+  @override
+  State<_Description> createState() => _DescriptionState();
+}
+
+class _DescriptionState extends State<_Description> {
+  static const _maxLines = 4;
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final style =
+        TextStyle(fontSize: 15.5, height: 1.4, color: AppColors.muted);
+    return LayoutBuilder(builder: (context, c) {
+      final tp = TextPainter(
+        text: TextSpan(text: widget.text, style: style),
+        maxLines: _maxLines,
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout(maxWidth: c.maxWidth);
+      final overflow = tp.didExceedMaxLines;
+      tp.dispose();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedSize(
+            duration: reducedMotion(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: Text(
+              widget.text,
+              style: style,
+              maxLines: _open ? null : _maxLines,
+              overflow: _open ? TextOverflow.visible : TextOverflow.ellipsis,
+            ),
+          ),
+          if (overflow)
+            Semantics(
+              button: true,
+              expanded: _open,
+              child: InkWell(
+                key: const ValueKey('desc-toggle'),
+                onTap: () => setState(() => _open = !_open),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(_open ? 'Хураах' : 'Цааш унших',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.accent)),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    });
   }
 }
 
@@ -502,10 +577,14 @@ class _ExtendedToast extends StatelessWidget {
 
 /// Том зураг (inset, радиус 16). Хэд хэдэн зураг байвал шударч, доор нь цэг гарна.
 class _Gallery extends StatefulWidget {
-  const _Gallery({required this.auctionId, required this.images});
+  const _Gallery(
+      {required this.auctionId, required this.images, this.fullBleed = false});
 
   final String auctionId;
   final List<String> images;
+
+  /// Утсан дээр: ирмэг хүртэл, радиусгүй.
+  final bool fullBleed;
 
   @override
   State<_Gallery> createState() => _GalleryState();
@@ -521,7 +600,9 @@ class _GalleryState extends State<_Gallery> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.card),
+          borderRadius: widget.fullBleed
+              ? BorderRadius.zero
+              : BorderRadius.circular(AppRadius.card),
           child: AspectRatio(
             aspectRatio: 1,
             child: images.isEmpty
@@ -920,29 +1001,108 @@ class TimingCardState extends State<TimingCard> {
 /// Round-уудын жагсаалт (grouped card): нэг мөр = шат. Одоогийн шат тодорно,
 /// өнгөрсөн нь бүдэг. Мөрийн зураас нь шатны уртыг (хамгийн урт шатад харьцуулан)
 /// статикаар харуулна — секунд тутам шинэчлэгдэхгүй.
-class RoundsList extends StatelessWidget {
+class RoundsList extends StatefulWidget {
   const RoundsList({super.key, required this.rounds, this.currentIndex});
 
   final List<AuctionRound> rounds;
   final int? currentIndex;
 
   @override
+  State<RoundsList> createState() => _RoundsListState();
+}
+
+class _RoundsListState extends State<RoundsList> {
+  // Хураангуй (анхдагч): зөвхөн одоогийн round. Төлөв зөвхөн widget-д хадгалагдана.
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final rounds = widget.rounds;
+    final cur = widget.currentIndex;
     final maxSec =
         rounds.fold<int>(1, (m, r) => r.durationSec > m ? r.durationSec : m);
-    return GroupSection(
-      title: 'Round-ууд',
-      dividerInset: 16,
-      children: [
-        for (var i = 0; i < rounds.length; i++)
-          _RoundRow(
-            key: ValueKey('round-$i'),
-            index: i,
-            round: rounds[i],
-            fraction: rounds[i].durationSec / maxSec,
-            current: i == currentIndex,
-            past: currentIndex != null && i < currentIndex!,
+    // Одоогийн round байхгүй бол (эхлээгүй) эхний мөрийг харуулна.
+    final focus = (cur ?? 0).clamp(0, rounds.length - 1);
+    final reduce = reducedMotion(context);
+
+    Widget rowAt(int i) => _RoundRow(
+          key: ValueKey('round-$i'),
+          index: i,
+          round: rounds[i],
+          fraction: rounds[i].durationSec / maxSec,
+          current: i == cur,
+          past: cur != null && i < cur,
+        );
+
+    final visible =
+        _expanded ? [for (var i = 0; i < rounds.length; i++) i] : <int>[focus];
+    final body = Column(children: [
+      for (var k = 0; k < visible.length; k++) ...[
+        if (k > 0)
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Container(height: 0.5, color: AppColors.borderHi),
           ),
+        rowAt(visible[k]),
+      ],
+    ]);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: _expanded,
+          label: 'Round-ууд, бүгд ${rounds.length}',
+          child: ExcludeSemantics(
+            child: InkWell(
+              key: const ValueKey('rounds-toggle'),
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 12, 0),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text('Round-ууд',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted)),
+                    ),
+                    Text('Бүгд (${rounds.length})',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.accent)),
+                    const SizedBox(width: 4),
+                    AnimatedRotation(
+                      turns: _expanded ? 0.5 : 0,
+                      duration: reduce ? Duration.zero : AppMotion.fast,
+                      curve: AppMotion.enter,
+                      child: Icon(LucideIcons.chevronDown,
+                          size: 18, color: AppColors.accent),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: ColoredBox(
+            color: AppColors.surface,
+            child: AnimatedSize(
+              duration:
+                  reduce ? Duration.zero : const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: body,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1237,13 +1397,16 @@ class _StepSegment extends StatelessWidget {
 /// Жагсаалт богино бол хайрцаг агуулгаараа багтана.
 @visibleForTesting
 class BidHistory extends StatefulWidget {
-  const BidHistory({super.key, required this.bids});
+  const BidHistory({super.key, required this.bids, this.meId});
 
   static const rowHeight = 52.0;
   // ~10.5 мөр — сүүлийн мөр хагас харагдаж гүйлгэх боломжийг сануулна
   static const maxHeight = rowHeight * 10.5;
 
   final List<BidItem> bids;
+
+  /// Нэвтэрсэн хэрэглэгчийн id — өөрийн санал "Та" гэж тодрно.
+  final String? meId;
 
   @override
   State<BidHistory> createState() => _BidHistoryState();
@@ -1279,6 +1442,7 @@ class _BidHistoryState extends State<BidHistory> {
                 key: ValueKey(bids[i].id),
                 bid: bids[i],
                 isTop: i == 0,
+                mine: widget.meId != null && bids[i].user.id == widget.meId,
                 last: i == bids.length - 1,
               ),
             ),
@@ -1290,16 +1454,29 @@ class _BidHistoryState extends State<BidHistory> {
 }
 
 class _BidRow extends StatelessWidget {
-  const _BidRow(
-      {super.key, required this.bid, required this.isTop, required this.last});
+  const _BidRow({
+    super.key,
+    required this.bid,
+    required this.isTop,
+    required this.mine,
+    required this.last,
+  });
 
   final BidItem bid;
   final bool isTop;
+  final bool mine;
   final bool last;
 
   @override
   Widget build(BuildContext context) {
+    // Эрэмбэ: тэргүүлэгч (хамгийн тод) > миний санал (бага зэрэг) > бусад.
+    final Color? tint = isTop
+        ? AppColors.accent.withValues(alpha: 0.14)
+        : mine
+            ? AppColors.accent.withValues(alpha: 0.07)
+            : null;
     final row = Container(
+      color: tint,
       constraints: const BoxConstraints(minHeight: BidHistory.rowHeight),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Row(children: [
@@ -1310,13 +1487,17 @@ class _BidRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                bid.user.name,
+                mine ? 'Та' : bid.user.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.ink),
+                    fontWeight: isTop
+                        ? FontWeight.w700
+                        : mine
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                    color: (isTop || mine) ? AppColors.ink : AppColors.inkSoft),
               ),
               Text(
                 formatBidTime(bid.createdAt, DateTime.now()),
