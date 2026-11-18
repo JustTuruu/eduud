@@ -274,20 +274,16 @@ class _AppShellState extends ConsumerState<_AppShell> {
     if (n.metrics.axis != Axis.vertical) return false;
     if (n is! ScrollUpdateNotification) return false;
     final m = n.metrics;
-    if (m.pixels <= m.minScrollExtent + 1) {
-      // Хамгийн дээр — үргэлж бүтэн.
-      _acc = 0;
-      _setCollapsed(false);
-      return false;
-    }
+    // Хүрээнээс гарсан (iOS bounce) гүйлгэлтийг үл тоомсорлоно.
+    if (m.outOfRange) return false;
     final d = n.scrollDelta ?? 0;
-    // Доод захын bounce-ийг үл тоомсорлоно.
-    if (d == 0 || m.outOfRange) return false;
+    if (d == 0) return false;
     if ((d > 0) != (_acc > 0)) _acc = 0;
     _acc += d;
     if (_acc > _threshold) {
       _setCollapsed(true);
     } else if (_acc < -_threshold) {
+      // Зөвхөн дээш гүйлгэх үед л дахин өргөжинө (байрлалаар автоматаар биш).
       _setCollapsed(false);
     }
     return false;
