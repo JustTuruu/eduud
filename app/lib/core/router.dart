@@ -6,6 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons, CupertinoPage;
 
 import '../features/auction/auction_detail_screen.dart';
+import '../features/admin/admin_auctions.dart';
+import '../features/admin/admin_categories.dart';
+import '../features/admin/admin_dashboard.dart';
+import '../features/admin/admin_feedback.dart';
+import '../features/admin/admin_orders.dart';
+import '../features/admin/admin_payments.dart';
+import '../features/admin/admin_requests.dart';
+import '../features/admin/admin_shell.dart';
+import '../features/admin/admin_users.dart';
 import '../features/auth/auth_controller.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/otp_flow_screen.dart';
@@ -62,7 +71,8 @@ enum _AuthStatus { unknown, loggedIn, loggedOut }
 /// дэлгэрэнгүй, контент, тусламж) нээлттэй — web дээр холбоос хуваалцахад,
 /// утас дээр апп татсан хүн бүртгүүлэхээсээ өмнө үзэж танилцахад.
 bool _requiresAuth(String location) {
-  return location.startsWith('/wallet') ||
+  return location.startsWith('/admin') ||
+      location.startsWith('/wallet') ||
       location.startsWith('/orders') ||
       location.startsWith('/profile') ||
       location.startsWith('/requests') ||
@@ -96,6 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     }),
   );
   final loggedIn = status == _AuthStatus.loggedIn;
+  final isAdmin = ref.watch(
+    authProvider.select((s) => s.valueOrNull?.isAdmin ?? false),
+  );
 
   return GoRouter(
     // Web дээр хуудсыг дахин ачаалахад (auth unknown → loggedIn болж router
@@ -113,6 +126,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         final next = state.uri.queryParameters['next'];
         return (next != null && next.startsWith('/')) ? next : '/';
       }
+      // Админ хэсэг зөвхөн admin эрхтэй хэрэглэгчид.
+      if (loggedIn && loc.startsWith('/admin') && !isAdmin) return '/';
       if (!loggedIn && _requiresAuth(loc)) {
         return loginLocation(next: state.uri.toString());
       }
@@ -180,6 +195,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/help',
         pageBuilder: (_, state) => _slidePage(state, const HelpScreen()),
+      ),
+      // Админ самбар — хэрэглэгчийн таб бүрхүүлээс тусдаа (доод нав байхгүй).
+      ShellRoute(
+        builder: (_, state, child) =>
+            AdminShell(location: state.uri.path, child: child),
+        routes: [
+          for (final (path, page) in <(String, Widget)>[
+            ('/admin', const AdminDashboardScreen()),
+            ('/admin/auctions', const AdminAuctionsScreen()),
+            ('/admin/requests', const AdminRequestsScreen()),
+            ('/admin/categories', const AdminCategoriesScreen()),
+            ('/admin/users', const AdminUsersScreen()),
+            ('/admin/orders', const AdminOrdersScreen()),
+            ('/admin/payments', const AdminPaymentsScreen()),
+            ('/admin/feedback', const AdminFeedbackScreen()),
+          ])
+            GoRoute(
+              path: path,
+              pageBuilder: (_, state) =>
+                  NoTransitionPage(key: state.pageKey, child: page),
+            ),
+        ],
       ),
       if (loggedIn)
         StatefulShellRoute.indexedStack(

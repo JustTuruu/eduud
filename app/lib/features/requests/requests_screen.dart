@@ -25,6 +25,20 @@ final myRequestsProvider =
       .toList();
 });
 
+/// Ангилал: backend-ээс (GET /categories), алдаа гарвал доорх жагсаалт.
+final requestCategoriesProvider = FutureProvider<List<String>>((ref) async {
+  try {
+    final res = await ref.watch(dioProvider).get('/categories');
+    final names = [
+      for (final e in res.data as List)
+        if (e is Map && e['name'] != null) e['name'].toString()
+    ];
+    return names.isEmpty ? _categories : names;
+  } catch (_) {
+    return _categories;
+  }
+});
+
 const _categories = [
   'Электроник',
   'Гэр ахуй',
@@ -622,7 +636,11 @@ class _RequestFormPageState extends ConsumerState<_RequestFormPage> {
               _FieldCard(
                 label: 'Ангилал',
                 child: AppChoiceChips<String>(
-                  options: [for (final c in _categories) ChipOption(c, c)],
+                  options: [
+                    for (final c in ref.watch(requestCategoriesProvider).valueOrNull ??
+                        _categories)
+                      ChipOption(c, c)
+                  ],
                   selected: _category,
                   onSelected: (v) {
                     if (_loading) return;

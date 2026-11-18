@@ -98,6 +98,17 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ]),
                 const SizedBox(height: 28),
+                if (user.isAdmin) ...[
+                  GroupSection(title: 'Удирдлага', dividerInset: 57, children: [
+                    GroupRow(
+                      leading: const IconTile(
+                          icon: LucideIcons.layoutDashboard, color: _tileBlue),
+                      title: 'Админ хэсэг',
+                      onTap: () => context.push('/admin'),
+                    ),
+                  ]),
+                  const SizedBox(height: 28),
+                ],
                 GroupSection(title: 'Тусламж', dividerInset: 57, children: [
                   GroupRow(
                     leading: const IconTile(
