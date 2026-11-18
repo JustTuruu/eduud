@@ -227,8 +227,6 @@ class _LiveCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: AppColors.muted)),
           ),
-          Text('${a.bidCount} санал',
-              style: TextStyle(fontSize: 15, color: AppColors.muted)),
         ]),
         const SizedBox(height: 20),
         PrimaryButton(

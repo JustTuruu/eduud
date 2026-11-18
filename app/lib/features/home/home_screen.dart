@@ -594,15 +594,6 @@ class _TimerRowState extends State<_TimerRow> {
                 color: AppColors.muted,
               ),
             )),
-            const SizedBox(width: 8),
-            Text(
-              '${a.bidCount} санал',
-              style: TextStyle(
-                fontSize: 15,
-                fontFeatures: tab,
-                color: AppColors.muted,
-              ),
-            ),
           ],
         ),
       ],

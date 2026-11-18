@@ -753,19 +753,11 @@ class _TimingCardState extends State<_TimingCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Text(phase,
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: phaseColor)),
-                  const Spacer(),
-                  Text('${a.bidCount} санал',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontFeatures: tab,
-                          color: AppColors.muted)),
-                ]),
+                Text(phase,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: phaseColor)),
                 const SizedBox(height: 4),
                 Text(
                   formatRemaining(remaining),
@@ -788,8 +780,6 @@ class _TimingCardState extends State<_TimingCard> {
           ),
         ),
       ));
-    } else {
-      rows.add(_valueRow('Санал', '${a.bidCount}'));
     }
 
     return GroupSection(children: rows);
