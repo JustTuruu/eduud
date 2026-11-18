@@ -221,7 +221,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
               error: _bidError,
               busy: _bidding,
               step: _step,
-              currentPrice: a.currentPrice,
               onStep: (v) => setState(() => _step = v),
               onBid: _bid,
               onLogin: _requireLogin,
@@ -1237,13 +1236,11 @@ class BidControl extends StatelessWidget {
     required this.onBid,
     required this.onLogin,
     required this.onTopUp,
-    this.currentPrice = 0,
     this.step = 1,
     this.onStep,
   });
 
   final String? meId;
-  final int currentPrice;
   final int balance;
   final String? error;
   final bool busy;
@@ -1263,7 +1260,7 @@ class BidControl extends StatelessWidget {
     if (showSteps) {
       control = _FusedBidControl(
         step: step,
-        label: 'Үнэ илгээх · ${formatMnt(currentPrice + step)}',
+        label: 'Үнэ илгээх · +${formatMnt(step)}',
         busy: busy,
         onStep: (v) => onStep?.call(v),
         onBid: onBid,
