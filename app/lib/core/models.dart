@@ -445,6 +445,9 @@ class AuctionRequest {
   bool get canCancel =>
       status == 'draft' || status == 'pending' || status == 'info_requested';
 
+  /// Хэрэглэгч засаж болох төлвүүд (backend: draft, info_requested).
+  bool get canEdit => status == 'draft' || status == 'info_requested';
+
   factory AuctionRequest.fromJson(Map<String, dynamic> j) => AuctionRequest(
         id: j['id'] as String,
         title: j['title'] as String,
