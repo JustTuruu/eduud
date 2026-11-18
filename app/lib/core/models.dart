@@ -54,6 +54,9 @@ class AuctionSummary {
   final String status;
   final Bidder? lastBidder;
 
+  /// Нэг санал бүрээр өсөх үнэ (жагсаалтад ирэхгүй байж болно).
+  final int? increment;
+
   AuctionSummary({
     required this.id,
     required this.title,
@@ -64,6 +67,7 @@ class AuctionSummary {
     required this.endsAt,
     required this.status,
     this.lastBidder,
+    this.increment,
   });
 
   factory AuctionSummary.fromJson(Map<String, dynamic> j) => AuctionSummary(
@@ -78,6 +82,7 @@ class AuctionSummary {
         lastBidder: j['lastBidder'] == null
             ? null
             : Bidder.fromJson(j['lastBidder'] as Map<String, dynamic>),
+        increment: j['increment'] as int?,
       );
 
   /// Realtime event ирэхэд өөрчлөгдөх талбаруудыг л шинэчилнэ.
@@ -98,6 +103,7 @@ class AuctionSummary {
         endsAt: endsAt ?? this.endsAt,
         status: status ?? this.status,
         lastBidder: lastBidder ?? this.lastBidder,
+        increment: increment,
       );
 }
 

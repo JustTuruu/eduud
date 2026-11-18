@@ -61,7 +61,7 @@ public class AuctionsService {
     }
     var q =
         db.sql(
-            "SELECT a.id, a.title, a.images, a.current_price, a.bid_count, a.starts_at, a.ends_at, a.status, "
+            "SELECT a.id, a.title, a.images, a.increment, a.current_price, a.bid_count, a.starts_at, a.ends_at, a.status, "
                 + LAST_BIDDER_JSON
                 + " AS last_bidder FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id WHERE "
                 + where

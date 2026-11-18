@@ -14,6 +14,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/app_nav_bar.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
+import '../auction/consent_sheet.dart';
 import '../auth/auth_controller.dart';
 import 'auction_tiles.dart';
 import 'auction_timing.dart';
@@ -171,6 +172,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _bid(String id) async {
+    final inc = _store.items.where((a) => a.id == id).firstOrNull?.increment;
+    final ok =
+        await ensureAuctionConsent(context, ref, auctionId: id, increment: inc);
+    if (!ok || !mounted) return;
     try {
       await ref.read(dioProvider).post('/auctions/$id/bid');
       unawaited(ref.read(authProvider.notifier).refreshProfile());
@@ -251,6 +256,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                   ),
                 ),
+                // Бусад явагдаж буй — 2 баганатай (өргөн дэлгэц дээр 3–4) тор.
+                if (liveAsync.hasValue)
+                  SliverListenable(
+                    listenable: _store,
+                    builder: (context) => _OtherLive(
+                      store: _store,
+                      onOpen: _open,
+                    ),
+                  ),
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 SliverToBoxAdapter(
                   child: _AuctionRow(
@@ -297,28 +311,7 @@ class _Hero extends StatefulWidget {
 }
 
 class _HeroState extends State<_Hero> {
-  PageController? _pc;
-  int _index = 0;
   final Set<String> _busy = {};
-
-  @override
-  void dispose() {
-    _pc?.dispose();
-    super.dispose();
-  }
-
-  PageController _controller(double fraction) {
-    final current = _pc;
-    if (current != null &&
-        (current.viewportFraction - fraction).abs() < 0.001) {
-      return current;
-    }
-    _pc = PageController(viewportFraction: fraction, initialPage: _index);
-    if (current != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => current.dispose());
-    }
-    return _pc!;
-  }
 
   Future<void> _bid(String id) async {
     if (_busy.contains(id)) return;
@@ -335,78 +328,26 @@ class _HeroState extends State<_Hero> {
     return ListenableBuilder(
       listenable: widget.store,
       builder: (context, _) {
+        // Хамгийн түрүүнд дуусах нь онцлогдоно (store эрэмбэлсэн).
         final items = widget.store.items;
         if (items.isEmpty) return const SizedBox.shrink();
-        final index = _index.clamp(0, items.length - 1);
+        final a = items.first;
         final offsetMs = widget.store.serverOffsetMs;
+        final wide = Breakpoints.isWide(context);
 
         return LayoutBuilder(builder: (context, box) {
-          final w = box.maxWidth;
-
-          // Өргөн дэлгэц: карт бүр хоёр баганатай (зүүн — зураг, баруун — мэдээлэл).
-          if (Breakpoints.isWide(context) && w >= 760) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  for (final a in items)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _LiveCard(
-                        auction: a,
-                        offsetMs: offsetMs,
-                        busy: _busy.contains(a.id),
-                        wide: true,
-                        onOpen: () => widget.onOpen(a.id),
-                        onBid: () => _bid(a.id),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }
-
-          // Утас: хажуу тийш гүйлгэх карт, дараагийнх нь бага зэрэг харагдана.
-          final pageW = (w - 48).clamp(0.0, 420.0);
-          final cardW = pageW - 12;
-          final pc = _controller(pageW / w);
-          final scale =
-              MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6);
-          final height = LiveCardMetrics.narrowHeight(cardW, scale);
-
-          return Column(
-            children: [
-              SizedBox(
-                height: height,
-                child: PageView.builder(
-                  controller: pc,
-                  clipBehavior: Clip.none,
-                  itemCount: items.length,
-                  onPageChanged: (i) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _index = i);
-                  },
-                  itemBuilder: (context, i) {
-                    final a = items[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: _LiveCard(
-                        auction: a,
-                        offsetMs: offsetMs,
-                        busy: _busy.contains(a.id),
-                        wide: false,
-                        onOpen: () => widget.onOpen(a.id),
-                        onBid: () => _bid(a.id),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              if (items.length > 1) ...[
-                const SizedBox(height: 12),
-                _Dots(count: items.length, index: index),
-              ],
-            ],
+          final twoCol = wide && box.maxWidth >= 760;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: _LiveCard(
+              key: ValueKey(a.id),
+              auction: a,
+              offsetMs: offsetMs,
+              busy: _busy.contains(a.id),
+              wide: twoCol,
+              onOpen: () => widget.onOpen(a.id),
+              onBid: () => _bid(a.id),
+            ),
           );
         });
       },
@@ -425,37 +366,11 @@ abstract class LiveCardMetrics {
   }
 }
 
-class _Dots extends StatelessWidget {
-  const _Dots({required this.count, required this.index});
-
-  final int count;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: AppMotion.fast,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: i == index ? AppColors.accent : AppColors.borderHi,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 /// Нэг явагдаж буй дуудлагын цэвэр карт. Шинэ санал орохад бага зэрэг (1.02)
 /// томорч буцна.
 class _LiveCard extends StatefulWidget {
   const _LiveCard({
+    super.key,
     required this.auction,
     required this.offsetMs,
     required this.busy,
@@ -764,6 +679,166 @@ class _TimerBarState extends State<_TimerBar> {
           ],
         ),
       ],
+    );
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Бусад явагдаж буй дуудлага (тор)
+// ---------------------------------------------------------------------------
+
+/// Store өөрчлөгдөх бүрт sliver-ээ дахин бүтээнэ.
+class SliverListenable extends StatelessWidget {
+  const SliverListenable(
+      {super.key, required this.listenable, required this.builder});
+
+  final Listenable listenable;
+  final Widget Function(BuildContext context) builder;
+
+  @override
+  Widget build(BuildContext context) =>
+      ListenableBuilder(listenable: listenable, builder: (c, _) => builder(c));
+}
+
+class _OtherLive extends StatelessWidget {
+  const _OtherLive({required this.store, required this.onOpen});
+
+  final _LiveStore store;
+  final Future<void> Function(String id) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final rest = store.items.skip(1).toList();
+    if (rest.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6);
+    const gapX = 14.0;
+    const gapY = 18.0;
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+            child: Text('Бусад явагдаж буй',
+                style: Theme.of(context).textTheme.displayMedium),
+          ),
+        ),
+        SliverLayoutBuilder(builder: (context, constraints) {
+          final inner = constraints.crossAxisExtent - 40;
+          final cols = !Breakpoints.isWide(context)
+              ? 2
+              : (constraints.crossAxisExtent >= 1000 ? 4 : 3);
+          final tileW = (inner - gapX * (cols - 1)) / cols;
+          // Зураг + гарчиг (2 мөр) + үнэ + хугацаа
+          final tileH = tileW + 8 + 92 * scale;
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                crossAxisSpacing: gapX,
+                mainAxisSpacing: gapY,
+                mainAxisExtent: tileH,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, i) => _LiveGridTile(
+                  key: ValueKey(rest[i].id),
+                  auction: rest[i],
+                  offsetMs: store.serverOffsetMs,
+                  onTap: () => onOpen(rest[i].id),
+                ),
+                childCount: rest.length,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+/// Тор дахь жижиг хавтан: зураг, нэр, үнэ, үлдсэн хугацаа.
+class _LiveGridTile extends StatefulWidget {
+  const _LiveGridTile(
+      {super.key, required this.auction, required this.offsetMs, required this.onTap});
+
+  final AuctionSummary auction;
+  final int offsetMs;
+  final VoidCallback onTap;
+
+  @override
+  State<_LiveGridTile> createState() => _LiveGridTileState();
+}
+
+class _LiveGridTileState extends State<_LiveGridTile> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.auction;
+    final now = DateTime.now().add(Duration(milliseconds: widget.offsetMs));
+    final remaining = a.endsAt.difference(now);
+    final urgent = remaining.inMilliseconds > 0 && remaining.inSeconds < 60;
+    const tab = [FontFeature.tabularFigures()];
+    final timeColor = urgent ? AppColors.danger : AppColors.muted;
+    return AnimatedPressable(
+      onPressed: widget.onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AuctionArt(
+            auctionId: a.id,
+            url: a.images.isEmpty ? null : a.images.first,
+            radius: 14,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            a.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                fontSize: 15,
+                height: 1.25,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            formatMnt(a.currentPrice),
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                fontFeatures: tab,
+                color: AppColors.ink),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Icon(LucideIcons.clock, size: 13, color: timeColor),
+              const SizedBox(width: 4),
+              Text(
+                formatRemaining(remaining),
+                style: TextStyle(
+                    fontSize: 13, fontFeatures: tab, color: timeColor),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -17,6 +17,7 @@ import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 import '../home/auction_tiles.dart' show ArtPlaceholder;
+import 'consent_sheet.dart';
 import '../home/auction_timing.dart';
 
 /// Auction-ы дэлгэрэнгүй + realtime төлөв.
@@ -150,6 +151,15 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   }
 
   Future<void> _bid() async {
+    // Энэ дуудлагад анх удаа оролцохын өмнө дүрмийн зөвшөөрөл авна.
+    final ok = await ensureAuctionConsent(
+      context,
+      ref,
+      auctionId: widget.auctionId,
+      increment:
+          ref.read(auctionDetailProvider(widget.auctionId)).valueOrNull?.increment,
+    );
+    if (!ok || !mounted) return;
     unawaited(HapticFeedback.mediumImpact());
     setState(() => _bidding = true);
     try {
