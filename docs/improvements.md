@@ -74,7 +74,7 @@ Serial хэсгийг жижигрүүлэх:
 - Bid бүрт 3 INSERT (`bids`, `token_transactions`, `bid_requests`) → accepted-ийг `bids`-ийн
   unique `bid_id`-аар хамгаалж, `bid_requests`-д зөвхөн rejected бичих.
 - Hot auction-д custom partitioner-ээр тусдаа partition (noisy neighbor арилгах).
-- Хэрэглэгч бүрт rate limit (ж: 300мс-д 1 bid) — одоо зөвхөн `ALREADY_LAST_BIDDER`.
+- Хэрэглэгч бүрт rate limit (ж: 300мс-д 1 bid) — тэргүүлж буй хэрэглэгч дахин санал өгөх боломжтой болсон (`ALREADY_LAST_BIDDER` дүрэм хасагдсан) тул хязгаарлалт байхгүй.
 
 ---
 

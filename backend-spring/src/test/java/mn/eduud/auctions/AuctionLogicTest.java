@@ -48,11 +48,18 @@ class AuctionLogicTest {
   }
 
   @Test
-  void rejectsConsecutiveBidBySameUser() {
+  void acceptsConsecutiveBidBySameUser() {
+    // Arrange
     Snapshot s = live(T0.plusSeconds(600), null);
     s.lastBidderId = "u1";
-    assertThat(AuctionLogic.validateBid(s, "u1", T0)).isEqualTo(Rejection.ALREADY_LAST_BIDDER);
-    assertThat(AuctionLogic.validateBid(s, "u2", T0)).isNull();
+
+    // Act
+    Rejection same = AuctionLogic.validateBid(s, "u1", T0);
+    Rejection other = AuctionLogic.validateBid(s, "u2", T0);
+
+    // Assert
+    assertThat(same).isNull();
+    assertThat(other).isNull();
   }
 
   @Test

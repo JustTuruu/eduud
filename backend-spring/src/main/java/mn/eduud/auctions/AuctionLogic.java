@@ -27,7 +27,6 @@ public final class AuctionLogic {
     NOT_LIVE("Дуудлага худалдаа идэвхгүй байна."),
     NOT_STARTED("Дуудлага худалдаа хараахан эхлээгүй байна."),
     ALREADY_ENDED("Дуудлага худалдаа дууссан байна."),
-    ALREADY_LAST_BIDDER("Та хамгийн сүүлийн санал өгсөн хүн байна."),
     NO_TOKENS("Token хүрэлцэхгүй байна. Дансаа цэнэглэнэ үү."),
     NOT_FOUND("Дуудлага худалдаа олдсонгүй");
 
@@ -43,7 +42,7 @@ public final class AuctionLogic {
     if (!"live".equals(a.status)) return Rejection.NOT_LIVE;
     if (now.isBefore(a.startsAt)) return Rejection.NOT_STARTED;
     if (!now.isBefore(a.endsAt)) return Rejection.ALREADY_ENDED;
-    if (userId.equals(a.lastBidderId)) return Rejection.ALREADY_LAST_BIDDER;
+    // Тэргүүлж буй хэрэглэгч дахин санал илгээж болно (1 эрх зарцуулна).
     return null;
   }
 

@@ -789,7 +789,7 @@ class _BidControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final guest = meId == null;
     final mine = !guest && auction.lastBidder?.id == meId;
-    final noBalance = !guest && !mine && balance <= 0;
+    final noBalance = !guest && balance <= 0;
     final next = auction.currentPrice + auction.increment;
 
     final String label;
@@ -797,9 +797,6 @@ class _BidControl extends StatelessWidget {
     if (guest) {
       label = 'Нэвтэрч оролцох';
       action = onLogin;
-    } else if (mine) {
-      label = 'Та тэргүүлж байна';
-      action = null;
     } else if (noBalance) {
       label = 'Эрх цэнэглэх';
       action = onTopUp;
@@ -811,8 +808,6 @@ class _BidControl extends StatelessWidget {
     final String note;
     if (guest) {
       note = 'Үнэ илгээхийн тулд нэвтэрнэ үү';
-    } else if (mine) {
-      note = 'Өөр хүн үнэ илгээхийг хүлээнэ үү';
     } else if (noBalance) {
       note = 'Үнэ илгээхэд 1 эрх хэрэгтэй · Үлдэгдэл: 0 эрх';
     } else {
@@ -823,18 +818,36 @@ class _BidControl extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!mine) ...[
-          Text('Үнэ илгээх',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.muted)),
-          const SizedBox(height: 2),
-          Text(
-            'Таны санал: ${formatMnt(next)}',
-            textAlign: TextAlign.center,
-            style: AppTheme.price(size: 24, color: AppColors.ink),
+        if (mine) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(LucideIcons.circleCheck,
+                    size: 16, color: AppColors.success),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Та тэргүүлж байна. Дахин илгээвэл үнэ ${formatMnt(next)} болж, 1 эрх зарцуулна.',
+                  style: TextStyle(fontSize: 13, color: AppColors.ink),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
         ],
+        Text('Үнэ илгээх',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.muted)),
+        const SizedBox(height: 2),
+        Text(
+          'Таны санал: ${formatMnt(next)}',
+          textAlign: TextAlign.center,
+          style: AppTheme.price(size: 24, color: AppColors.ink),
+        ),
+        const SizedBox(height: 10),
         PrimaryButton(
           label: label,
           loading: busy,

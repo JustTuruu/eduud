@@ -278,7 +278,8 @@ public class BidProcessor {
           if (a.extended()) {
             realtime.emitToAuction(auctionId, "auction_extended", Map.of("auctionId", auctionId, "endsAt", a.endsAt().toString()));
           }
-          if (a.previousBidderId() != null) {
+          // Өөрийн дараалсан саналд outbid мэдэгдэл илгээхгүй
+          if (a.previousBidderId() != null && !a.previousBidderId().equals(a.cmd().userId())) {
             realtime.emitToUser(a.previousBidderId(), "outbid", Map.of("auctionId", auctionId, "price", a.price()));
           }
           finalBalances.put(a.cmd().userId(), a.newBalance());
