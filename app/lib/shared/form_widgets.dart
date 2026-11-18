@@ -121,10 +121,13 @@ class AppField extends StatelessWidget {
   final int shakeToken;
   final TextCapitalization textCapitalization;
 
+  /// iOS маяг: хүрээгүй (width 0 → transparent), фокуст accent 1.5px.
   static OutlineInputBorder _border(Color color, double width) =>
       OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: BorderSide(color: color, width: width),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        borderSide: width == 0
+            ? BorderSide.none
+            : BorderSide(color: color, width: width),
       );
 
   @override
@@ -164,14 +167,14 @@ class AppField extends StatelessWidget {
             autofillHints: autofillHints,
             textInputAction: textInputAction,
             textCapitalization: textCapitalization,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: AppColors.ink),
             cursorColor: accent,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: AppColors.muted),
@@ -181,20 +184,17 @@ class AppField extends StatelessWidget {
               filled: true,
               fillColor: hasError
                   ? AppColors.dangerBg
-                  : AppColors.surface.withValues(alpha: 0.7),
+                  : AppColors.fill,
               prefixIcon: icon == null
                   ? null
                   : Icon(icon,
                       size: 20,
                       color: hasError ? AppColors.dangerSoft : AppColors.muted),
               suffixIcon: suffix,
-              enabledBorder: _border(
-                  hasError ? AppColors.danger : AppColors.border,
-                  hasError ? 1.4 : 1),
-              focusedBorder: _border(accent, hasError ? 1.8 : 1.6),
-              border:
-                  _border(hasError ? AppColors.danger : AppColors.border, 1),
-              disabledBorder: _border(AppColors.border, 1),
+              enabledBorder: _border(AppColors.danger, hasError ? 1.2 : 0),
+              focusedBorder: _border(accent, 1.5),
+              border: _border(AppColors.danger, hasError ? 1.2 : 0),
+              disabledBorder: _border(AppColors.border, 0),
             ),
           ),
         ),
@@ -388,7 +388,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                             s.hint,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12.5, color: AppColors.inkSoft),
                           ),
                         ),
@@ -434,13 +434,13 @@ class ErrorBanner extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(LucideIcons.triangleAlert,
+                      Icon(LucideIcons.triangleAlert,
                           size: 16, color: AppColors.dangerSoft),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           message!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13.5,
                             height: 1.4,
                             fontWeight: FontWeight.w600,
@@ -565,13 +565,13 @@ class _OtpInputState extends State<OtpInput> {
                     decoration: BoxDecoration(
                       color: widget.hasError
                           ? AppColors.dangerBg
-                          : filled
-                              ? AppColors.surfaceHi.withValues(alpha: 0.8)
-                              : AppColors.surface.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(AppRadius.control),
+                          : AppColors.fill,
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                       border: Border.all(
-                          color: borderColor,
-                          width: isNext || widget.hasError ? 1.6 : 1),
+                          color: isNext || widget.hasError
+                              ? borderColor
+                              : Colors.transparent,
+                          width: 1.5),
                     ),
                     alignment: Alignment.center,
                     child: filled
@@ -586,7 +586,7 @@ class _OtpInputState extends State<OtpInput> {
                                 Transform.scale(scale: s, child: child),
                             child: Text(
                               value[i],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.ink,
@@ -682,13 +682,12 @@ class AppChoiceChips<T> extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.coral.withValues(alpha: 0.16)
-                    : AppColors.surface.withValues(alpha: 0.78),
-                borderRadius: BorderRadius.circular(AppRadius.control),
+                    ? AppColors.accent.withValues(alpha: 0.14)
+                    : AppColors.fill,
+                borderRadius: BorderRadius.circular(AppRadius.chip),
                 border: Border.all(
-                    color: isSelected
-                        ? AppColors.coral.withValues(alpha: 0.5)
-                        : AppColors.border),
+                    color: isSelected ? AppColors.accent : Colors.transparent,
+                    width: 1.5),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -757,7 +756,7 @@ class TestModeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.flaskConical,
+              Icon(LucideIcons.flaskConical,
                   size: 15, color: AppColors.warn),
               const SizedBox(width: 8),
               Text(
@@ -773,7 +772,7 @@ class TestModeCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               height: 1.45,
               fontWeight: FontWeight.w600,
@@ -784,7 +783,7 @@ class TestModeCard extends StatelessWidget {
             const SizedBox(height: 10),
             SelectableText(
               value!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 8,
@@ -797,7 +796,7 @@ class TestModeCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               description!,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12, height: 1.45, color: AppColors.muted),
             ),
           ],
@@ -816,7 +815,7 @@ class TestModeCard extends StatelessWidget {
                       Border.all(color: AppColors.warn.withValues(alpha: 0.5)),
                 ),
                 child: loading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
@@ -824,7 +823,7 @@ class TestModeCard extends StatelessWidget {
                       )
                     : Text(
                         actionLabel!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.warn,

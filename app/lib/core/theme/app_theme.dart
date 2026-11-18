@@ -1,79 +1,137 @@
+
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Now Playing — "Одоо тоглож буй" дизайн систем.
-///
-/// Гүн чавга (plum) дэвсгэр, цөцгий (cream) текст, шүрэн (coral) accent:
-/// bid товч, progress, идэвхтэй таб. Барааны зургаас гаргасан өнгө дэлгэцийн
-/// ambient талбар болж тархана (AmbientBackdrop). Манропе — үнэ 800 tabular.
+/// Нэг горимын (light/dark) өнгөний багц — iOS system colors.
+class AppPalette {
+  const AppPalette({
+    required this.brightness,
+    required this.bg,
+    required this.surface,
+    required this.surfaceHi,
+    required this.fill,
+    required this.border,
+    required this.borderHi,
+    required this.ink,
+    required this.inkSoft,
+    required this.muted,
+    required this.accent,
+    required this.danger,
+    required this.warn,
+    required this.gold,
+    required this.goldLight,
+  });
+
+  final Brightness brightness;
+  final Color bg, surface, surfaceHi, fill, border, borderHi;
+  final Color ink, inkSoft, muted;
+  final Color accent, danger, warn, gold, goldLight;
+
+  /// iOS grouped background #F2F2F7, карт #FFFFFF.
+  static const light = AppPalette(
+    brightness: Brightness.light,
+    bg: Color(0xFFF2F2F7),
+    surface: Color(0xFFFFFFFF),
+    surfaceHi: Color(0xFFE9E9EE),
+    fill: Color(0x1F767680), // tertiary fill — оролтын талбар
+    border: Color(0x293C3C43), // separator ~16%
+    borderHi: Color(0x4A3C3C43), // separator 29%
+    ink: Color(0xFF000000),
+    inkSoft: Color(0xCC3C3C43),
+    muted: Color(0x993C3C43), // secondary label 60%
+    accent: Color(0xFF34C759),
+    danger: Color(0xFFFF3B30),
+    warn: Color(0xFFFF9500),
+    gold: Color(0xFFC99A1B),
+    goldLight: Color(0xFFE6C15A),
+  );
+
+  /// iOS dark: хар дэвсгэр, карт #1C1C1E, elevated #2C2C2E.
+  static const dark = AppPalette(
+    brightness: Brightness.dark,
+    bg: Color(0xFF000000),
+    surface: Color(0xFF1C1C1E),
+    surfaceHi: Color(0xFF2C2C2E),
+    fill: Color(0x3D767680),
+    border: Color(0x33545458),
+    borderHi: Color(0x59545458),
+    ink: Color(0xFFFFFFFF),
+    inkSoft: Color(0xCCEBEBF5),
+    muted: Color(0x99EBEBF5),
+    accent: Color(0xFF30D158),
+    danger: Color(0xFFFF453A),
+    warn: Color(0xFFFF9F0A),
+    gold: Color(0xFFF2C14E),
+    goldLight: Color(0xFFF8DB90),
+  );
+}
+
+/// Дэлгэцүүдээс `AppColors.ink` маягаар уншигддаг өнгөнүүд — const БИШ.
+/// Идэвхтэй багцыг [apply] root дээрээс системийн brightness-ээр сольдог.
 abstract class AppColors {
-  // Дэвсгэр давхаргууд — чавганы гүн
-  static const bg = Color(0xFF140B1C);
-  static const surface = Color(0xFF1A1024);
-  static const surfaceHi = Color(0xFF2A1B3D);
+  static AppPalette _p = AppPalette.light;
 
-  // Хуваагч / хүрээ — цөцгий 8% ба 16%
-  static const border = Color(0x14F3E9DC);
-  static const borderHi = Color(0x29F3E9DC);
+  static AppPalette get palette => _p;
+  static bool get isDark => _p.brightness == Brightness.dark;
 
-  // Гол accent — шүрэн
-  static const coral = Color(0xFFFF6B4A);
-  static const coralLight = Color(0xFFFF9275);
+  /// Системийн brightness-ийн дагуу багцыг сольно (EduudApp дуудна).
+  static void apply(Brightness b) =>
+      _p = b == Brightness.dark ? AppPalette.dark : AppPalette.light;
 
-  // Текст — цөцгийн ястай (саарал биш)
-  static const ink = Color(0xFFF3E9DC);
-  static const inkSoft = Color(0xFFD8CCD6);
-  static const muted = Color(0xFFA999B4);
+  // Дэвсгэр давхаргууд
+  static Color get bg => _p.bg;
+  static Color get surface => _p.surface;
+  static Color get surfaceHi => _p.surfaceHi;
 
-  /// Шүрэн CTA дээрх бараан чавга бэх — контраст ~6:1.
-  static const ctaInk = Color(0xFF1C0C16);
+  /// Оролт, skeleton-ийн саарал дүүргэлт (iOS tertiary fill).
+  static Color get fill => _p.fill;
 
-  // Семантик
-  static const live = Color(0xFFFF4F7B);
-  static const liveSoft = Color(0xFFFF8FA9);
-  static const success = Color(0xFF63D9A4);
-  static const gold = Color(0xFFF2C14E); // зөвхөн ялалт
-  static const goldLight = Color(0xFFF8DB90);
+  // Хуваагч / хүрээ
+  static Color get border => _p.border;
+  static Color get borderHi => _p.borderHi;
 
-  // Маягтын төлөв. Алдааг зөвхөн өнгөөр биш, icon + текстээр давхар илэрхийлнэ.
-  static const danger = Color(0xFFFF7A85);
-  static const dangerSoft = Color(0xFFFFA9B0);
-  static const dangerBg = Color(0x1FFF7A85);
-  static const warn = Color(0xFFFFB547);
-  static const warnBg = Color(0x1FFFB547);
-  static const successBg = Color(0x1F63D9A4);
+  // Гол accent — ногоон (coral нь хуучин нэрийн alias)
+  static Color get accent => _p.accent;
+  static Color get coral => _p.accent;
+  static Color get coralLight => _p.accent;
+
+  // Текст
+  static Color get ink => _p.ink;
+  static Color get inkSoft => _p.inkSoft;
+  static Color get muted => _p.muted;
+
+  /// Accent товч дээрх бэх — цагаан.
+  static Color get ctaInk => const Color(0xFFFFFFFF);
+
+  // Семантик — улаан зөвхөн алдаа / сүүлийн секунд
+  static Color get live => _p.danger;
+  static Color get liveSoft => _p.danger;
+  static Color get success => _p.accent;
+  static Color get gold => _p.gold; // зөвхөн ялагч
+  static Color get goldLight => _p.goldLight;
+
+  static Color get danger => _p.danger;
+  static Color get dangerSoft => _p.danger;
+  static Color get dangerBg => _p.danger.withValues(alpha: 0.12);
+  static Color get warn => _p.warn;
+  static Color get warnBg => _p.warn.withValues(alpha: 0.14);
+  static Color get successBg => _p.accent.withValues(alpha: 0.14);
 
   /// Нууц үгийн бат бөх байдлын шат: сул → дунд → сайн → хүчтэй.
-  static const strength = [danger, warn, coralLight, success];
+  static List<Color> get strength => [danger, warn, accent, success];
 
-  static const dangerGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFFF8A94), Color(0xFFD94452)],
-  );
-
-  /// Шүрэн CTA — бараг хавтгай, зөөлөн л өнгө хазайлттай.
-  static const ctaGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFFFF7556), Color(0xFFFF6140)],
-  );
-
-  static const winGradient = LinearGradient(
-    colors: [Color(0xFFF2C14E), Color(0xFFF8DB90)],
-  );
-
-  static const cardGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF231533), Color(0xFF1C1129)],
-  );
-
-  static const balGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF2A1B3D), Color(0xFF34224B)],
-  );
+  // Gradient-үүд хассан — нийцлийн үүднээс хавтгай (нэг өнгөтэй) хэвээр.
+  static LinearGradient get dangerGradient =>
+      LinearGradient(colors: [danger, danger]);
+  static LinearGradient get ctaGradient =>
+      LinearGradient(colors: [accent, accent]);
+  static LinearGradient get winGradient =>
+      LinearGradient(colors: [gold, gold]);
+  static LinearGradient get cardGradient =>
+      LinearGradient(colors: [surface, surface]);
+  static LinearGradient get balGradient =>
+      LinearGradient(colors: [surfaceHi, surfaceHi]);
 }
 
 /// Хөдөлгөөний токен — бүх animation нэг хэмнэлтэй байна.
@@ -89,9 +147,6 @@ abstract class AppMotion {
   static const exit = Curves.easeInCubic;
   static const fluid = Curves.easeOutQuint;
 
-  /// Ambient өнгө зургаас зургийн хооронд уусах хугацаа.
-  static const ambient = Duration(milliseconds: 900);
-
   /// Пүршин мэдрэмж — сонголт, идэвхжилт зэрэг "барьж авах" хөдөлгөөнд.
   static const spring = Curves.easeOutBack;
 
@@ -100,124 +155,148 @@ abstract class AppMotion {
 }
 
 abstract class AppRadius {
-  static const chip = 14.0;
-  static const control = 18.0;
-  static const card = 24.0;
-  static const art = 28.0;
-  static const sheet = 32.0;
+  static const chip = 12.0;
+  static const control = 14.0;
+  static const card = 16.0;
+  static const art = 20.0;
+  static const sheet = 20.0;
 }
 
 abstract class AppTheme {
-  /// Үнэ, тоо — tabular figures, 800 жин.
-  static TextStyle price({double size = 28, Color color = AppColors.ink}) =>
-      GoogleFonts.manrope(
+  /// Үнэ, тоо — системийн фонт, tabular figures, 700 жин.
+  static TextStyle price({double size = 28, Color? color}) => TextStyle(
         fontSize: size,
-        fontWeight: FontWeight.w800,
-        color: color,
+        fontWeight: FontWeight.w700,
+        color: color ?? AppColors.ink,
         height: 1.1,
-        letterSpacing: -0.5,
+        letterSpacing: -0.4,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  static ThemeData get dark {
+  static ThemeData get light => _build(AppPalette.light);
+  static ThemeData get dark => _build(AppPalette.dark);
+
+  static ThemeData _build(AppPalette p) {
+    final isDark = p.brightness == Brightness.dark;
+    // Web дээр системийн фонтын жагсаалт; iOS/Android-д платформын default.
+    final fallback =
+        kIsWeb ? const ['system-ui', '-apple-system', 'Roboto'] : null;
+    final scheme = (isDark ? const ColorScheme.dark() : const ColorScheme.light())
+        .copyWith(
+      primary: p.accent,
+      onPrimary: Colors.white,
+      secondary: p.accent,
+      surface: p.surface,
+      error: p.danger,
+      onSurface: p.ink,
+      outline: p.borderHi,
+      outlineVariant: p.border,
+    );
     final base = ThemeData(
-      brightness: Brightness.dark,
+      brightness: p.brightness,
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.bg,
-      splashFactory: InkSparkle.splashFactory,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.coral,
-        secondary: AppColors.coralLight,
-        surface: AppColors.surface,
-        error: AppColors.danger,
-        onPrimary: AppColors.ctaInk,
-        onSurface: AppColors.ink,
-      ),
+      colorScheme: scheme,
+      scaffoldBackgroundColor: p.bg,
+      fontFamilyFallback: fallback,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      }),
     );
 
-    final body = GoogleFonts.manropeTextTheme(base.textTheme).apply(
-      bodyColor: AppColors.ink,
-      displayColor: AppColors.ink,
+    final body = base.textTheme.apply(
+      bodyColor: p.ink,
+      displayColor: p.ink,
+      fontFamilyFallback: fallback,
     );
 
-    TextStyle display(double size, FontWeight w) => GoogleFonts.manrope(
+    TextStyle? w(TextStyle? s, double size, FontWeight weight,
+            {Color? color, double? height, double? spacing}) =>
+        s?.copyWith(
           fontSize: size,
-          fontWeight: w,
-          color: AppColors.ink,
-          letterSpacing: -0.3,
+          fontWeight: weight,
+          color: color ?? p.ink,
+          height: height,
+          letterSpacing: spacing,
         );
 
     return base.copyWith(
       textTheme: body.copyWith(
-        displayLarge: display(40, FontWeight.w800)
-            .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-        displayMedium: display(23, FontWeight.w800),
-        displaySmall: display(16, FontWeight.w700),
-        titleLarge:
-            body.titleLarge?.copyWith(fontWeight: FontWeight.w700, height: 1.3),
-        titleMedium: body.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: AppColors.inkSoft,
-        ),
+        // 34/700 — iOS large title (том тоо, countdown)
+        displayLarge: w(body.displayLarge, 34, FontWeight.w700, spacing: -0.4)
+            ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+        displayMedium: w(body.displayMedium, 22, FontWeight.w700, spacing: -0.3),
+        displaySmall: w(body.displaySmall, 17, FontWeight.w600),
+        headlineMedium: w(body.headlineMedium, 34, FontWeight.w700, spacing: -0.4),
+        headlineSmall: w(body.headlineSmall, 28, FontWeight.w700, spacing: -0.3),
+        titleLarge: w(body.titleLarge, 22, FontWeight.w700, height: 1.25),
+        titleMedium: w(body.titleMedium, 17, FontWeight.w600),
+        titleSmall: w(body.titleSmall, 15, FontWeight.w600),
+        bodyLarge: w(body.bodyLarge, 17, FontWeight.w400),
+        bodyMedium: w(body.bodyMedium, 15, FontWeight.w400),
         bodySmall:
-            body.bodySmall?.copyWith(color: AppColors.muted, height: 1.5),
+            w(body.bodySmall, 13, FontWeight.w400, color: p.muted, height: 1.4),
         // Eyebrow хэв маяг хориотой — энгийн, том үсэг, зайгүй.
-        labelSmall: body.labelSmall?.copyWith(
-          color: AppColors.inkSoft,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
+        labelSmall: w(body.labelSmall, 13, FontWeight.w600, color: p.inkSoft),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppColors.coral,
-        selectionColor: AppColors.coral.withValues(alpha: 0.35),
-        selectionHandleColor: AppColors.coral,
+        cursorColor: p.accent,
+        selectionColor: p.accent.withValues(alpha: 0.3),
+        selectionHandleColor: p.accent,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
+        foregroundColor: p.ink,
+        titleTextStyle: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: p.ink,
+          fontFamilyFallback: fallback,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface.withValues(alpha: 0.7),
-        hintStyle: const TextStyle(color: AppColors.muted),
+        fillColor: p.fill,
+        hintStyle: TextStyle(color: p.muted),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.coral, width: 1.6),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          borderSide: BorderSide(color: p.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.danger, width: 1.4),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          borderSide: BorderSide(color: p.danger, width: 1.2),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          borderSide: BorderSide(color: p.danger, width: 1.5),
         ),
         // Алдааны текстийг AppField өөрөө зурдаг тул энд орон зай эзлүүлэхгүй.
         errorStyle: const TextStyle(fontSize: 0, height: 0),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.surfaceHi,
-        contentTextStyle:
-            GoogleFonts.manrope(color: AppColors.ink, fontSize: 14),
+        backgroundColor: isDark ? p.surfaceHi : const Color(0xFF2C2C2E),
+        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
         behavior: SnackBarBehavior.floating,
         // Хөвөгч навын дээгүүр харагдана.
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.chip),
-          side: const BorderSide(color: AppColors.borderHi),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -225,8 +304,8 @@ abstract class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
-      dividerTheme:
-          const DividerThemeData(color: AppColors.border, thickness: 1),
+      dividerTheme: DividerThemeData(color: p.border, thickness: 0.5, space: 0.5),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: p.accent),
       tabBarTheme: base.tabBarTheme.copyWith(dividerColor: Colors.transparent),
     );
   }

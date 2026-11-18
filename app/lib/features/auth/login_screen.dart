@@ -182,44 +182,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: TextButton(
                   onPressed:
                       _loading ? null : () => context.push('/auth/forgot'),
-                  child: const Text(
+                  child: Text(
                     'Нууц үгээ мартсан уу?',
                     style: TextStyle(
-                        color: AppColors.inkSoft,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700),
+                        color: AppColors.accent,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               PrimaryButton(
                 label: 'Нэвтрэх',
-                icon: LucideIcons.logIn,
                 loading: _loading,
                 onPressed: _loading ? null : _submit,
               ),
-              const SizedBox(height: 28),
-              Container(height: 1, color: AppColors.border),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Wrap(
                 alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Text('Шинэ хэрэглэгч үү?',
+                  Text('Шинэ хэрэглэгч үү?',
                       style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.inkSoft)),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.muted)),
                   TextButton(
                     onPressed: _loading
                         ? null
                         : () => context.push(_withNext('/auth/register')),
-                    child: const Text(
+                    child: Text(
                       'Бүртгүүлэх',
                       style: TextStyle(
-                          color: AppColors.ink,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800),
+                          color: AppColors.accent,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],

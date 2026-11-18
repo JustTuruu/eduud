@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons, CupertinoPage;
 
 import '../features/auction/auction_detail_screen.dart';
 import '../features/auth/auth_controller.dart';
@@ -24,7 +25,14 @@ import '../shared/widgets.dart';
 import 'theme/app_theme.dart';
 
 /// Дэлгэц баруунаас гулсаж орж ирнэ — урагш ахих чиглэлийг илэрхийлнэ.
-CustomTransitionPage<T> _slidePage<T>(GoRouterState state, Widget child) {
+/// iOS/macOS дээр жинхэнэ Cupertino шилжилт (зүүн ирмэгээс чирж буцах),
+/// бусад дээр зөөлөн slide+fade.
+Page<T> _slidePage<T>(GoRouterState state, Widget child) {
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS)) {
+    return CupertinoPage<T>(key: state.pageKey, child: child);
+  }
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
@@ -193,7 +201,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         )
       else ...[
         // Нэвтрээгүй үед `/` нь landing page. Төлөв тодорхойгүй (token
-        // шалгаж байх) агшинд хоосон чавга дэлгэц — landing/нүүр хооронд
+        // шалгаж байх) агшинд хоосон дэлгэц — landing/нүүр хооронд
         // анивчихгүй.
         GoRoute(
           path: '/',
@@ -212,9 +220,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 const _destinations = [
-  NavDestination(icon: LucideIcons.house, label: 'Нүүр'),
-  NavDestination(icon: LucideIcons.filePlus2, label: 'Хүсэлт'),
-  NavDestination(icon: LucideIcons.user, label: 'Профайл'),
+  NavDestination(icon: CupertinoIcons.house_fill, label: 'Нүүр'),
+  NavDestination(icon: CupertinoIcons.doc_text_fill, label: 'Хүсэлт'),
+  NavDestination(icon: CupertinoIcons.person_crop_circle_fill, label: 'Профайл'),
 ];
 
 class _Splash extends StatelessWidget {
@@ -240,7 +248,7 @@ class _AppShell extends ConsumerWidget {
 
     if (wide) {
       final user = ref.watch(authProvider).valueOrNull;
-      // Ambient талбар дээд навын ард ч үргэлжилнэ: нав агуулгын ДЭЭР хөвж,
+      // Нав агуулгын ДЭЭР хөвж,
       // агуулга нь навын өндрөөр дээд padding авна (SafeArea-аар).
       final mq = MediaQuery.of(context);
       return Scaffold(

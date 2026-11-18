@@ -13,7 +13,6 @@ import '../../shared/app_nav_bar.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
-import '../wallet/sub_page.dart';
 import 'request_validators.dart';
 
 final myRequestsProvider =
@@ -163,6 +162,16 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     }
   }
 
+  Future<void> _pickCategory() async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAppSheet<String>(
+      context,
+      builder: (ctx) => _CategorySheet(selected: _category),
+    );
+    if (picked == null) return;
+    setState(() => _category = picked == _category ? null : picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -170,165 +179,147 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final wide = Breakpoints.isWide(context);
     final bottom = (wide ? 40.0 : NavMetrics.bottomInset(context)) + viewInsets;
+    final firstError = _titleError ?? _descError ?? _priceError;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: AppBackground(
-        seed: 'requests',
-        child: SafeArea(
-          bottom: false,
-          child: PageFrame(
-            maxWidth: 720,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
-              children: [
-                Reveal(
-                  index: 0,
-                  child: Text('Бараагаа дуудлага худалдаанд оруулах',
-                      style: text.displayMedium),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Барааныхаа мэдээллийг илгээгээрэй — бид хянаж, '
-                  'тохирвол дуудлага худалдаанд оруулна.',
-                  style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
-                ),
-                const SizedBox(height: 32),
-                ErrorBanner(message: _formError, shakeToken: _shake),
-                const PlainLabel('Барааны мэдээлэл'),
-                const SizedBox(height: 16),
-                AppField(
-                  label: 'Барааны нэр *',
+      body: SafeArea(
+        bottom: false,
+        child: PageFrame(
+          maxWidth: 720,
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(16, 12, 16, bottom),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text('Хүсэлт', style: text.headlineMedium),
+              ),
+              const SizedBox(height: 6),
+              const _Footnote(
+                'Бараагаа дуудлага худалдаанд оруулах хүсэлт илгээнэ үү. '
+                'Бид хянаад холбогдоно.',
+              ),
+              const SizedBox(height: 20),
+              ErrorBanner(message: _formError, shakeToken: _shake),
+              const _SectionHeader('Барааны мэдээлэл'),
+              _Group(children: [
+                _InputRow(
                   controller: _title,
-                  hint: 'Жиш. iPhone 15 Pro 256GB',
-                  error: _titleError,
+                  hint: 'Нэр',
                   maxLength: 120,
+                  invalid: _titleError != null,
                   enabled: !_loading,
-                  shakeToken: _titleError == null ? 0 : _shake,
                   textInputAction: TextInputAction.next,
                   textCapitalization: TextCapitalization.sentences,
                   onChanged: (_) => _revalidate(),
                 ),
-                const SizedBox(height: 18),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 8),
-                  child: PlainLabel('Ангилал'),
+                _ChoiceRow(
+                  label: 'Ангилал',
+                  value: _category,
+                  enabled: !_loading,
+                  onTap: _pickCategory,
                 ),
-                AppChoiceChips<String>(
-                  options: [for (final c in _categories) ChipOption(c, c)],
-                  selected: _category,
-                  onSelected: (v) =>
-                      setState(() => _category = v == _category ? null : v),
-                ),
-                const SizedBox(height: 18),
-                AppField(
-                  label: 'Тайлбар *',
+                _InputRow(
                   controller: _description,
-                  hint: 'Байдал, жил, дутагдал, багцад юу орох зэргийг бичнэ үү.',
-                  error: _descError,
-                  helper: _descError == null
-                      ? '${_description.text.characters.length} / 4000'
-                      : null,
+                  hint: 'Тайлбар — байдал, жил, дутагдал, багцад юу орох',
                   maxLines: 6,
                   minLines: 4,
                   maxLength: 4000,
+                  invalid: _descError != null,
                   enabled: !_loading,
-                  shakeToken: _descError == null ? 0 : _shake,
                   textCapitalization: TextCapitalization.sentences,
                   onChanged: (_) => _revalidate(),
                 ),
-                const SizedBox(height: 18),
-                AppField(
-                  label: 'Хүссэн эхлэх үнэ (₮)',
+                _InputRow(
                   controller: _price,
-                  hint: '0',
-                  error: _priceError,
+                  hint: 'Эхлэх үнэ',
+                  prefixLabel: 'Эхлэх үнэ',
+                  suffixText: '₮',
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 12,
+                  invalid: _priceError != null,
                   enabled: !_loading,
-                  shakeToken: _priceError == null ? 0 : _shake,
                   onChanged: (_) => _revalidate(),
                 ),
-                const SizedBox(height: 28),
-                const PlainLabel('Бусад мэдээлэл'),
-                const SizedBox(height: 16),
-                AppField(
-                  label: 'Тохиромжтой хугацаа',
+              ]),
+              if (firstError != null)
+                _Footnote(firstError, color: AppColors.danger)
+              else
+                _Footnote(
+                    'Тайлбар: ${_description.text.characters.length} / 4000'),
+              const SizedBox(height: 20),
+              const _SectionHeader('Бусад мэдээлэл'),
+              _Group(children: [
+                _InputRow(
                   controller: _preferred,
-                  hint: 'Жиш. 12-р сарын эхний долоо хоног, орой 20:00',
+                  hint: 'Тохиромжтой хугацаа',
                   maxLength: 120,
                   enabled: !_loading,
                 ),
-                const SizedBox(height: 18),
-                AppField(
-                  label: 'Нэмэлт мэдээлэл',
+                _InputRow(
                   controller: _other,
-                  hint: 'Бидэнд мэдэгдэх бусад зүйл.',
+                  hint: 'Нэмэлт мэдээлэл',
                   maxLines: 4,
                   minLines: 3,
                   maxLength: 2000,
                   enabled: !_loading,
                   textCapitalization: TextCapitalization.sentences,
                 ),
-                const SizedBox(height: 28),
-                PrimaryButton(
-                  label: 'Илгээх',
-                  icon: LucideIcons.send,
-                  loading: _loading,
-                  onPressed: _loading ? null : () => _submit(draft: false),
-                ),
-                const SizedBox(height: 12),
-                _GhostButton(
-                  label: 'Ноорог хадгалах',
+              ]),
+              const SizedBox(height: 24),
+              PrimaryButton(
+                label: 'Илгээх',
+                loading: _loading,
+                onPressed: _loading ? null : () => _submit(draft: false),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
                   onPressed: _loading ? null : () => _submit(draft: true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    minimumSize: const Size(44, 44),
+                    textStyle: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w600),
+                  ),
+                  child: const Text('Ноорог хадгалах'),
                 ),
-                const SizedBox(height: 48),
-                const Reveal(
-                  index: 1,
-                  child: Text('Миний хүсэлтүүд',
-                      style: TextStyle(
-                          fontSize: 23,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                          color: AppColors.ink)),
-                ),
-                const SizedBox(height: 16),
-                history.when(
-                  loading: () => const Column(children: [
-                    Skeleton(height: 88, radius: 16),
-                    SizedBox(height: 12),
-                    Skeleton(height: 88, radius: 16),
-                  ]),
-                  error: (e, _) => Column(children: [
-                    Text(apiErrorMessage(e),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.inkSoft)),
-                    const SizedBox(height: 12),
-                    _GhostButton(
-                      label: 'Дахин оролдох',
-                      onPressed: () => ref.invalidate(myRequestsProvider),
-                    ),
-                  ]),
-                  data: (list) => list.isEmpty
-                      ? const EmptyState(
-                          icon: LucideIcons.filePlus2,
-                          title: 'Хүсэлт хараахан алга',
-                          subtitle: 'Илгээсэн хүсэлт энд харагдана.',
-                        )
-                      : Column(children: [
-                          for (final r in list)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _RequestTile(
-                                item: r,
-                                onCancel: () => unawaited(_cancel(r)),
-                              ),
-                            ),
-                        ]),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 28),
+              const _SectionHeader('Миний хүсэлтүүд'),
+              history.when(
+                loading: () => const Column(children: [
+                  Skeleton(height: 64, radius: 16),
+                  SizedBox(height: 8),
+                  Skeleton(height: 64, radius: 16),
+                ]),
+                error: (e, _) => Column(children: [
+                  Text(apiErrorMessage(e),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.muted)),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => ref.invalidate(myRequestsProvider),
+                    child: const Text('Дахин оролдох'),
+                  ),
+                ]),
+                data: (list) => list.isEmpty
+                    ? const EmptyState(
+                        icon: LucideIcons.filePlus2,
+                        title: 'Хүсэлт хараахан алга',
+                        subtitle: 'Илгээсэн хүсэлт энд харагдана.',
+                      )
+                    : _Group(children: [
+                        for (final r in list)
+                          _RequestRow(
+                            item: r,
+                            onCancel: () => unawaited(_cancel(r)),
+                          ),
+                      ]),
+              ),
+            ],
           ),
         ),
       ),
@@ -336,31 +327,248 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   }
 }
 
-/// Хоёрдогч үйлдэл — хүрээтэй, дүүргэлтгүй (ганц coral CTA-г давахгүй).
-class _GhostButton extends StatelessWidget {
-  const _GhostButton({required this.label, required this.onPressed});
+class _Footnote extends StatelessWidget {
+  const _Footnote(this.text, {this.color});
 
-  final String label;
-  final VoidCallback? onPressed;
+  final String text;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPressable(
-      onPressed: onPressed,
-      child: Container(
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(color: AppColors.borderHi),
-        ),
-        child: Text(
-          label,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+      child: Text(text,
           style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: onPressed == null ? AppColors.muted : AppColors.ink,
-          ),
+              fontSize: 13, height: 1.4, color: color ?? AppColors.muted)),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted)),
+    );
+  }
+}
+
+/// iOS grouped inset карт — мөрүүдийн хооронд 0.5px зааг.
+class _Group extends StatelessWidget {
+  const _Group({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child:
+                  Divider(height: 0.5, thickness: 0.5, color: AppColors.border),
+            ),
+          children[i],
+        ],
+      ]),
+    );
+  }
+}
+
+class _InputRow extends StatelessWidget {
+  const _InputRow({
+    required this.controller,
+    required this.hint,
+    this.prefixLabel,
+    this.suffixText,
+    this.keyboardType,
+    this.inputFormatters,
+    this.maxLength,
+    this.maxLines = 1,
+    this.minLines,
+    this.invalid = false,
+    this.enabled = true,
+    this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final String? prefixLabel;
+  final String? suffixText;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final int maxLines;
+  final int? minLines;
+  final bool invalid;
+  final bool enabled;
+  final TextInputAction? textInputAction;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final inline = prefixLabel != null;
+    final field = TextField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      maxLines: maxLines,
+      minLines: minLines,
+      textAlign: inline ? TextAlign.end : TextAlign.start,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      onChanged: onChanged,
+      cursorColor: AppColors.accent,
+      style: TextStyle(fontSize: 17, color: AppColors.ink),
+      buildCounter:
+          (_, {required currentLength, required isFocused, maxLength}) => null,
+      decoration: InputDecoration.collapsed(
+        hintText: inline ? '0' : hint,
+        hintStyle: TextStyle(fontSize: 17, color: AppColors.muted),
+      ),
+    );
+    return Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      color: invalid ? AppColors.dangerBg : null,
+      child: inline
+          ? Row(children: [
+              Text(prefixLabel!,
+                  style: TextStyle(fontSize: 17, color: AppColors.ink)),
+              const SizedBox(width: 12),
+              Expanded(child: field),
+              if (suffixText != null) ...[
+                const SizedBox(width: 4),
+                Text(suffixText!,
+                    style: TextStyle(fontSize: 17, color: AppColors.muted)),
+              ],
+            ])
+          : field,
+    );
+  }
+}
+
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            Text(label, style: TextStyle(fontSize: 17, color: AppColors.ink)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value ?? 'Сонгох',
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 17, color: AppColors.muted),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(LucideIcons.chevronRight, size: 18, color: AppColors.muted),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategorySheet extends StatelessWidget {
+  const _CategorySheet({required this.selected});
+
+  final String? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Text('Ангилал',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(children: [
+                for (var i = 0; i < _categories.length; i++) ...[
+                  if (i > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: Divider(
+                          height: 0.5, thickness: 0.5, color: AppColors.border),
+                    ),
+                  InkWell(
+                    onTap: () => Navigator.pop(context, _categories[i]),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 50),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(_categories[i],
+                              style: TextStyle(
+                                  fontSize: 17, color: AppColors.ink)),
+                        ),
+                        if (_categories[i] == selected)
+                          Icon(LucideIcons.check,
+                              size: 20, color: AppColors.accent),
+                      ]),
+                    ),
+                  ),
+                ],
+              ]),
+            ),
+          ],
         ),
       ),
     );
@@ -370,14 +578,13 @@ class _GhostButton extends StatelessWidget {
 Color _statusColor(String s) => switch (s) {
       'approved' => AppColors.success,
       'rejected' => AppColors.danger,
-      'info_requested' => AppColors.warn,
-      'reviewing' => AppColors.coralLight,
-      'pending' => AppColors.ink,
+      'pending' || 'info_requested' => AppColors.warn,
+      'reviewing' => const Color(0xFF0A84FF),
       _ => AppColors.muted,
     };
 
-class _RequestTile extends StatelessWidget {
-  const _RequestTile({required this.item, required this.onCancel});
+class _RequestRow extends StatelessWidget {
+  const _RequestRow({required this.item, required this.onCancel});
 
   final AuctionRequest item;
   final VoidCallback onCancel;
@@ -385,11 +592,11 @@ class _RequestTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _statusColor(item.status);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+    final note = item.adminNote?.trim() ?? '';
+    final footnote =
+        TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -401,87 +608,48 @@ class _RequestTile extends StatelessWidget {
                   item.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink),
                 ),
               ),
               const SizedBox(width: 12),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  AuctionRequest.statusLabel(item.status),
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink),
-                ),
-              ]),
+              Text(
+                AuctionRequest.statusLabel(item.status),
+                style: TextStyle(fontSize: 15, color: color),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            item.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13.5, height: 1.45, color: AppColors.inkSoft),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           Text(
             [
               if (item.category != null) item.category!,
               if (item.startPrice != null) formatMnt(item.startPrice!),
               DateFormat('yyyy.MM.dd HH:mm').format(item.createdAt.toLocal()),
             ].join(' · '),
-            style: const TextStyle(
-                fontSize: 12.5,
-                color: AppColors.inkSoft,
-                fontFeatures: [FontFeature.tabularFigures()]),
+            style: footnote,
           ),
-          if (item.adminNote != null && item.adminNote!.trim().isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHi,
-                borderRadius: BorderRadius.circular(AppRadius.chip),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(LucideIcons.messageSquare,
-                      size: 14, color: AppColors.coralLight),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(item.adminNote!,
-                        style: const TextStyle(
-                            fontSize: 13, height: 1.45, color: AppColors.ink)),
-                  ),
-                ],
-              ),
-            ),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(note, style: footnote),
           ],
-          if (item.canCancel) ...[
-            const SizedBox(height: 8),
+          if (item.canCancel)
             Align(
               alignment: Alignment.centerRight,
-              child: AnimatedPressable(
+              child: TextButton(
                 onPressed: onCancel,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-                  child: Text('Цуцлах',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.danger)),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  minimumSize: const Size(44, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
                 ),
+                child: const Text('Цуцлах'),
               ),
             ),
-          ],
         ],
       ),
     );
@@ -497,27 +665,28 @@ class _CancelSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
+          20, 20, 20, 16 + MediaQuery.paddingOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Хүсэлтийг цуцлах уу?',
-              style: Theme.of(context).textTheme.displayMedium),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.displaySmall),
           const SizedBox(height: 8),
           Text(
             '“$title” хүсэлт цуцлагдана. Үүнийг буцаах боломжгүй.',
-            style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, height: 1.4, color: AppColors.muted),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           PrimaryButton(
             label: 'Цуцлах',
             gradient: AppColors.dangerGradient,
-            foreground: AppColors.ctaInk,
             onPressed: () => Navigator.pop(context, true),
           ),
-          const SizedBox(height: 12),
-          _GhostButton(
+          const SizedBox(height: 8),
+          SecondaryButton(
             label: 'Болих',
             onPressed: () => Navigator.pop(context, false),
           ),

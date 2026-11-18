@@ -81,6 +81,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: subPageAppBar(context, 'Эрх цэнэглэх'),
       body: AppBackground(
         seed: 'wallet',
         child: SafeArea(
@@ -88,37 +89,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           child: PageFrame(
             maxWidth: 720,
             child: RefreshIndicator(
-              color: AppColors.coral,
-              backgroundColor: AppColors.surfaceHi,
+              color: AppColors.accent,
+              backgroundColor: AppColors.surface,
               onRefresh: () async {
                 ref.invalidate(walletTxProvider);
                 ref.invalidate(packagesProvider);
                 await ref.read(authProvider.notifier).refreshProfile();
               },
               child: ListView(
-                padding: EdgeInsets.fromLTRB(20, 12, 20, 40 + safeBottom),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 40 + safeBottom),
                 children: [
-                  const SubPageHeader(title: 'Эрх цэнэглэх'),
-                  const SizedBox(height: 32),
-                  Reveal(index: 0, child: _Balance(balance: user?.balance ?? 0)),
-                  const SizedBox(height: 40),
-                  Reveal(
-                    index: 1,
-                    child: const Text('Багц сонгох',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.ink)),
-                  ),
-                  const SizedBox(height: 14),
+                  _Balance(balance: user?.balance ?? 0),
+                  const SizedBox(height: 28),
                   packages.when(
-                    loading: () => const Column(children: [
-                      Skeleton(height: 76, radius: 20),
-                      SizedBox(height: 10),
-                      Skeleton(height: 76, radius: 20),
-                      SizedBox(height: 10),
-                      Skeleton(height: 76, radius: 20),
-                    ]),
+                    loading: () => const Skeleton(height: 176, radius: 16),
                     error: (e, _) => _Retry(
                       message: apiErrorMessage(e),
                       onRetry: () => ref.invalidate(packagesProvider),
@@ -129,35 +114,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       onBuy: _buy,
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  Reveal(
-                    index: 4,
-                    child: const Text('Гүйлгээний түүх',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.ink)),
-                  ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 28),
                   txs.when(
-                    loading: () => const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Skeleton(height: 56, radius: 14),
-                    ),
+                    loading: () => const Skeleton(height: 56, radius: 16),
                     error: (e, _) => _Retry(
                       message: apiErrorMessage(e),
                       onRetry: () => ref.invalidate(walletTxProvider),
                     ),
                     data: (list) => list.isEmpty
-                        ? const EmptyState(
-                            icon: LucideIcons.receipt,
-                            title: 'Гүйлгээ алга',
-                            subtitle: 'Эрх цэнэглэсний дараа энд харагдана.',
-                          )
-                        : Column(children: [
-                            for (var i = 0; i < list.length; i++)
-                              _TxRow(tx: list[i], last: i == list.length - 1),
-                          ]),
+                        ? GroupSection(title: 'Гүйлгээний түүх', children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: const EmptyState(
+                                icon: LucideIcons.receipt,
+                                title: 'Гүйлгээ алга',
+                                subtitle:
+                                    'Эрх цэнэглэсний дараа энд харагдана.',
+                              ),
+                            ),
+                          ])
+                        : GroupSection(
+                            title: 'Гүйлгээний түүх',
+                            children: [for (final t in list) _TxRow(tx: t)],
+                          ),
                   ),
                 ],
               ),
@@ -177,42 +156,31 @@ class _Balance extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Таны эрх',
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.inkSoft)),
-        const SizedBox(height: 4),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text('$balance',
-                    style: AppTheme.price(size: 72).copyWith(height: 1)),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('эрх',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.inkSoft)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Text('Санал өгөх бүрт 1 эрх зарцуулагдана.',
-            style: TextStyle(fontSize: 14, color: AppColors.inkSoft)),
-      ],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Таны эрх',
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          const SizedBox(height: 4),
+          Text('$balance эрх', style: AppTheme.price(size: 34)),
+          const SizedBox(height: 6),
+          Text('Санал өгөх бүрт 1 эрх зарцуулагдана.',
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+        ],
+      ),
     );
   }
 }
+
+/// Ногоон текст — light дээр уншигдахын тулд арай бараан.
+Color get _greenText =>
+    AppColors.isDark ? AppColors.accent : const Color(0xFF1E8E3E);
 
 class _Packages extends StatelessWidget {
   const _Packages(
@@ -224,6 +192,10 @@ class _Packages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (list.isEmpty) {
+      return const EmptyState(
+          icon: LucideIcons.package, title: 'Багц одоохондоо алга');
+    }
     // Хамгийн хямд нэг эрхтэй багцыг тэмдэглэнэ.
     String? bestId;
     var best = double.infinity;
@@ -234,35 +206,19 @@ class _Packages extends StatelessWidget {
         bestId = p.id;
       }
     }
-    if (list.isEmpty) {
-      return const EmptyState(
-          icon: LucideIcons.package, title: 'Багц одоохондоо алга');
-    }
-    return LayoutBuilder(builder: (context, c) {
-      final cols = c.maxWidth >= 560 ? 2 : 1;
-      const gap = 12.0;
-      final w = (c.maxWidth - gap * (cols - 1)) / cols;
-      return Wrap(
-        spacing: gap,
-        runSpacing: gap,
-        children: [
-          for (var i = 0; i < list.length; i++)
-            SizedBox(
-              width: w,
-              child: Reveal(
-                index: 2 + (i > 1 ? 1 : i),
-                child: _PackageRow(
-                  pkg: list[i],
-                  best: list[i].id == bestId && list.length > 1,
-                  busy: buying == list[i].id,
-                  disabled: buying != null,
-                  onTap: () => onBuy(list[i]),
-                ),
-              ),
-            ),
-        ],
-      );
-    });
+    return GroupSection(
+      title: 'Багц сонгох',
+      children: [
+        for (final p in list)
+          _PackageRow(
+            pkg: p,
+            best: p.id == bestId && list.length > 1,
+            busy: buying == p.id,
+            disabled: buying != null,
+            onTap: () => onBuy(p),
+          ),
+      ],
+    );
   }
 }
 
@@ -284,72 +240,73 @@ class _PackageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final per = (pkg.priceMnt / pkg.tokens).round();
-    return Semantics(
-      button: true,
-      label: '${pkg.tokens} эрх, ${formatMnt(pkg.priceMnt)}',
-      child: AnimatedPressable(
-        onPressed: disabled ? null : onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 76),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: best
-                  ? AppColors.coral.withValues(alpha: 0.5)
-                  : AppColors.border,
-              width: best ? 1.4 : 1,
-            ),
-          ),
-          child: Row(children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
+    final pill = Container(
+      constraints: const BoxConstraints(minWidth: 84, minHeight: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: busy
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: AppColors.accent),
+            )
+          : Text(formatMnt(pkg.priceMnt),
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: _greenText,
+                  fontFeatures: const [FontFeature.tabularFigures()])),
+    );
+    return Opacity(
+      opacity: disabled && !busy ? 0.5 : 1,
+      child: Semantics(
+        button: true,
+        label: '${pkg.tokens} эрх, ${formatMnt(pkg.priceMnt)}',
+        child: AnimatedPressable(
+          onPressed: disabled ? null : onTap,
+          scale: 0.99,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 64),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.transparent,
+            child: Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text('${pkg.tokens} эрх',
-                        style: AppTheme.price(size: 24)),
-                    if (best) ...[
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.coral.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text('Хамгийн хямд',
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink)),
+                    const SizedBox(height: 2),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text('Нэг эрх ${formatMnt(per)}',
                             style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.coralLight)),
-                      ),
-                    ],
-                  ]),
-                  const SizedBox(height: 4),
-                  Text('Нэг эрх ${formatMnt(per)}',
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.inkSoft,
-                          fontFeatures: [FontFeature.tabularFigures()])),
-                ],
+                                fontSize: 13, color: AppColors.muted)),
+                        if (best)
+                          Text('Хамгийн хямд',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _greenText)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            if (busy)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.2, color: AppColors.coral),
-              )
-            else
-              Text(formatMnt(pkg.priceMnt), style: AppTheme.price(size: 18)),
-            const SizedBox(width: 6),
-            const Icon(LucideIcons.chevronRight,
-                size: 18, color: AppColors.muted),
-          ]),
+              const SizedBox(width: 12),
+              pill,
+            ]),
+          ),
         ),
       ),
     );
@@ -367,17 +324,17 @@ class _Retry extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(children: [
-        const Icon(LucideIcons.wifiOff, size: 18, color: AppColors.inkSoft),
+        Icon(LucideIcons.wifiOff, size: 18, color: AppColors.muted),
         const SizedBox(width: 12),
         Expanded(
           child: Text(message,
-              style: const TextStyle(color: AppColors.inkSoft, height: 1.4)),
+              style: TextStyle(color: AppColors.inkSoft, height: 1.4)),
         ),
         TextButton(
           onPressed: onRetry,
-          child: const Text('Дахин оролдох',
+          child: Text('Дахин оролдох',
               style: TextStyle(
-                  color: AppColors.coralLight, fontWeight: FontWeight.w800)),
+                  color: _greenText, fontWeight: FontWeight.w600)),
         ),
       ]),
     );
@@ -394,36 +351,20 @@ String _txLabel(WalletTx tx) {
   };
 }
 
-/// Гүйлгээний мөр — карт биш, 1px хуваагчтай жагсаалт.
+/// Гүйлгээний мөр — нэр, огноо, баруун талд +/− тоо.
 class _TxRow extends StatelessWidget {
-  const _TxRow({required this.tx, required this.last});
+  const _TxRow({required this.tx});
 
   final WalletTx tx;
-  final bool last;
-
-  IconData get _icon => switch (tx.type) {
-        'purchase' => LucideIcons.circleArrowDown,
-        'bid' => LucideIcons.gavel,
-        'refund' => LucideIcons.rotateCcw,
-        _ => LucideIcons.settings2,
-      };
 
   @override
   Widget build(BuildContext context) {
     final positive = tx.amount > 0;
     final sign = positive ? '+' : (tx.amount < 0 ? '−' : '');
     return Container(
-      constraints: const BoxConstraints(minHeight: 64),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(children: [
-        Icon(_icon,
-            size: 20, color: positive ? AppColors.success : AppColors.inkSoft),
-        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,23 +372,20 @@ class _TxRow extends StatelessWidget {
               Text(_txLabel(tx),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink)),
+                  style: TextStyle(fontSize: 17, color: AppColors.ink)),
               const SizedBox(height: 2),
               Text(_dateFmt.format(tx.createdAt.toLocal()),
-                  style: const TextStyle(
-                      fontSize: 12.5,
+                  style: TextStyle(
+                      fontSize: 13,
                       color: AppColors.muted,
-                      fontFeatures: [FontFeature.tabularFigures()])),
+                      fontFeatures: const [FontFeature.tabularFigures()])),
             ],
           ),
         ),
+        const SizedBox(width: 12),
         Text('$sign${tx.amount.abs()}',
             style: AppTheme.price(
-                size: 18,
-                color: positive ? AppColors.success : AppColors.ink)),
+                size: 17, color: positive ? _greenText : AppColors.ink)),
       ]),
     );
   }

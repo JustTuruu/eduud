@@ -260,7 +260,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _Steps(step: _step, isRegister: _isRegister),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               // Алхам солигдоход агуулга зөөлөн солигдоно.
               AnimatedSwitcher(
                 duration: AppMotion.base,
@@ -342,7 +342,6 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         const SizedBox(height: 28),
         PrimaryButton(
           label: 'Код авах',
-          icon: LucideIcons.send,
           loading: _loading,
           onPressed: _loading ? null : _sendOtp,
         ),
@@ -388,7 +387,6 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         const SizedBox(height: 24),
         PrimaryButton(
           label: 'Баталгаажуулах',
-          icon: LucideIcons.check,
           loading: _loading,
           onPressed: _loading ? null : _verifyOtp,
         ),
@@ -403,8 +401,9 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
                   ? 'Дахин код авах ($_resendIn сек)'
                   : 'Дахин код авах',
               style: TextStyle(
-                color: _resendIn > 0 ? AppColors.muted : AppColors.ink,
-                fontWeight: FontWeight.w700,
+                color: _resendIn > 0 ? AppColors.muted : AppColors.accent,
+                fontWeight: FontWeight.w400,
+                fontSize: 15,
               ),
             ),
           ),
@@ -476,7 +475,6 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
         const SizedBox(height: 26),
         PrimaryButton(
           label: _isRegister ? 'Бүртгүүлэх' : 'Нууц үг хадгалах',
-          icon: _isRegister ? LucideIcons.badgeCheck : LucideIcons.keyRound,
           loading: _loading,
           onPressed: _loading ? null : _finish,
         ),
@@ -492,8 +490,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
   }
 }
 
-/// Алхмын заагч: утас → код → нэр/нууц үг. Дууссан алхам шүрэн цэнхэр
-/// тэмдэгтэй, одоогийнх шүрэн хүрээтэй, дараагийнх hairline.
+/// Алхмын заагч: "1/3" жижиг тайлбар + нимгэн гурван хэсэгт зурвас.
 class _Steps extends StatelessWidget {
   const _Steps({required this.step, required this.isRegister});
 
@@ -505,79 +502,34 @@ class _Steps extends StatelessWidget {
     final labels = ['Утас', 'Код', isRegister ? 'Нэр, нууц үг' : 'Нууц үг'];
     return Semantics(
       label: '${step + 1}-р алхам, нийт ${labels.length}',
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final done = i < step;
-          final current = i == step;
-          Widget line(bool on, bool visible) => Expanded(
-                child: AnimatedContainer(
-                  duration: AppMotion.base,
-                  height: 2,
-                  color: !visible
-                      ? Colors.transparent
-                      : on
-                          ? AppColors.coral
-                          : AppColors.borderHi,
-                ),
-              );
-          return Expanded(
-            child: Column(
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(children: [
-                  line(i <= step, i > 0),
-                  AnimatedContainer(
-                    duration: AppMotion.base,
-                    curve: AppMotion.enter,
-                    width: 30,
-                    height: 30,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: done
-                          ? AppColors.coral
-                          : current
-                              ? AppColors.coral.withValues(alpha: 0.16)
-                              : Colors.transparent,
-                      border: Border.all(
-                        color: done || current
-                            ? AppColors.coral
-                            : AppColors.borderHi,
-                        width: current ? 1.6 : 1,
+                for (var i = 0; i < labels.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  Expanded(
+                    child: AnimatedContainer(
+                      duration: AppMotion.base,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: i <= step ? AppColors.accent : AppColors.fill,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    child: done
-                        ? const Icon(LucideIcons.check,
-                            size: 16, color: AppColors.ctaInk)
-                        : Text(
-                            '${i + 1}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color:
-                                  current ? AppColors.ink : AppColors.inkSoft,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                            ),
-                          ),
                   ),
-                  line(i < step, i < labels.length - 1),
-                ]),
-                const SizedBox(height: 8),
-                Text(
-                  labels[i],
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: current ? FontWeight.w800 : FontWeight.w600,
-                    color: current ? AppColors.ink : AppColors.inkSoft,
-                  ),
-                ),
+                ],
               ],
             ),
-          );
-        }),
+            const SizedBox(height: 8),
+            Text(
+              '${step + 1}/${labels.length} · ${labels[step]}',
+              style: TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
+          ],
+        ),
       ),
     );
   }

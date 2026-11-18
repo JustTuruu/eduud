@@ -24,142 +24,110 @@ class AuctionListScreen extends ConsumerWidget {
     final async = ref.watch(auctionListProvider(status));
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: AppBackground(
-        seed: 'list-$status',
-        child: SafeArea(
-          bottom: false,
-          child: PageFrame(
-            maxWidth: 1120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
-                  child: Row(children: [
-                    IconButton(
-                      tooltip: 'Буцах',
-                      onPressed: () =>
-                          context.canPop() ? context.pop() : context.go('/'),
-                      icon: const Icon(LucideIcons.chevronLeft,
-                          size: 24, color: AppColors.ink),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        _title,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                  ]),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: async.when(
-                    loading: () => const _GridSkeleton(),
-                    error: (e, _) => Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          EmptyState(
-                            icon: LucideIcons.triangleAlert,
-                            title: apiErrorMessage(e),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: 220,
-                            child: PrimaryButton(
-                              label: 'Дахин оролдох',
-                              icon: LucideIcons.refreshCw,
-                              onPressed: () =>
-                                  ref.invalidate(auctionListProvider(status)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    data: (list) {
-                      final items = [...list]..sort((a, b) =>
-                          status == 'scheduled'
-                              ? a.startsAt.compareTo(b.startsAt)
-                              : b.endsAt.compareTo(a.endsAt));
-                      if (items.isEmpty) {
-                        return EmptyState(
-                          icon: LucideIcons.gavel,
-                          title: status == 'scheduled'
-                              ? 'Удахгүй эхлэх дуудлага алга'
-                              : 'Дууссан дуудлага алга',
-                        );
-                      }
-                      return RefreshIndicator(
-                        color: AppColors.coral,
-                        backgroundColor: AppColors.surfaceHi,
-                        onRefresh: () async {
-                          ref.invalidate(auctionListProvider(status));
-                          await ref.read(auctionListProvider(status).future);
-                        },
-                        child: GridView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 200,
-                            mainAxisExtent: 270,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 24,
-                          ),
-                          itemCount: items.length,
-                          itemBuilder: (context, i) => AuctionTile(
-                            auction: items[i],
-                            onTap: () =>
-                                context.push('/auctions/${items[i].id}'),
-                          ),
-                        ),
-                      );
-                    },
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(_title),
+      ),
+      body: PageFrame(
+        maxWidth: 1100,
+        child: async.when(
+          loading: () => const _Grid(count: 6),
+          error: (e, _) => Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EmptyState(
+                    icon: LucideIcons.triangleAlert,
+                    title: apiErrorMessage(e),
                   ),
-                ),
-              ],
+                  SizedBox(
+                    width: 220,
+                    child: PrimaryButton(
+                      label: 'Дахин оролдох',
+                      onPressed: () =>
+                          ref.invalidate(auctionListProvider(status)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+          data: (list) {
+            final items = [...list]..sort((a, b) => status == 'scheduled'
+                ? a.startsAt.compareTo(b.startsAt)
+                : b.endsAt.compareTo(a.endsAt));
+            if (items.isEmpty) {
+              return EmptyState(
+                icon: LucideIcons.gavel,
+                title: status == 'scheduled'
+                    ? 'Удахгүй эхлэх дуудлага алга'
+                    : 'Дууссан дуудлага алга',
+              );
+            }
+            return RefreshIndicator(
+              color: AppColors.accent,
+              onRefresh: () async {
+                ref.invalidate(auctionListProvider(status));
+                await ref.read(auctionListProvider(status).future);
+              },
+              child: _Grid(
+                count: items.length,
+                builder: (i) => AuctionTile(
+                  auction: items[i],
+                  onTap: () => context.push('/auctions/${items[i].id}'),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _GridSkeleton extends StatelessWidget {
-  const _GridSkeleton();
+/// Дөрвөлжин зурагтай картуудын сүлжээ; [builder] байхгүй бол skeleton.
+class _Grid extends StatelessWidget {
+  const _Grid({required this.count, this.builder});
+
+  final int count;
+  final Widget Function(int i)? builder;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        mainAxisExtent: 270,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 24,
-      ),
-      itemCount: 6,
-      itemBuilder: (context, i) => const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: Skeleton(height: 160, radius: 20),
-          ),
-          SizedBox(height: 10),
-          Skeleton(height: 14, width: 110),
-          SizedBox(height: 6),
-          Skeleton(height: 12, width: 70),
-        ],
-      ),
-    );
+    final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6);
+    return LayoutBuilder(builder: (context, box) {
+      const pad = 20.0;
+      const gap = 16.0;
+      final cols = ((box.maxWidth - pad * 2 + gap) / (170 + gap))
+          .floor()
+          .clamp(2, 6);
+      final w = (box.maxWidth - pad * 2 - gap * (cols - 1)) / cols;
+      return GridView.builder(
+        physics: builder == null
+            ? const NeverScrollableScrollPhysics()
+            : const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(pad, 8, pad, 40),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: cols,
+          mainAxisExtent: w + 76 * scale,
+          crossAxisSpacing: gap,
+          mainAxisSpacing: 20,
+        ),
+        itemCount: count,
+        itemBuilder: (context, i) => builder != null
+            ? builder!(i)
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Skeleton(height: w, width: w, radius: 14),
+                  const SizedBox(height: 10),
+                  const Skeleton(height: 14, width: 110),
+                  const SizedBox(height: 6),
+                  const Skeleton(height: 12, width: 70),
+                ],
+              ),
+      );
+    });
   }
 }

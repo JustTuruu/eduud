@@ -42,135 +42,115 @@ class ProfileScreen extends ConsumerWidget {
             maxWidth: 720,
             child: ListView(
               padding: EdgeInsets.fromLTRB(
-                  20,
-                  20,
-                  20,
+                  16,
+                  8,
+                  16,
                   Breakpoints.isWide(context)
                       ? 40
                       : NavMetrics.bottomInset(context)),
               children: [
-                Reveal(
-                  index: 0,
-                  child: _Header(
-                    user: user,
-                    onAvatar: () => _editAvatar(context, ref, user),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
+                  child: Text('Профайл',
+                      style: Theme.of(context).textTheme.headlineMedium),
+                ),
+                _Header(
+                  user: user,
+                  onTap: () => _editName(context, ref, user.name),
+                ),
+                const SizedBox(height: 28),
+                GroupSection(dividerInset: 57, children: [
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.gem, color: _tileGreen),
+                    title: 'Миний эрх',
+                    value: '${user.balance} эрх',
+                    onTap: () => context.push('/wallet'),
                   ),
-                ),
-                const SizedBox(height: 28),
-                Reveal(
-                  index: 1,
-                  // Row-ийн stretch нь ListView-д хязгааргүй өндөр авдаг тул
-                  // IntrinsicHeight-аар хоёр tile-ийн өндрийг тэгшилнэ.
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: _HeroTile(
-                            icon: LucideIcons.gem,
-                            label: 'Миний эрх',
-                            value: '${user.balance}',
-                            unit: 'эрх',
-                            hint: 'Цэнэглэх',
-                            onTap: () => context.push('/wallet'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _HeroTile(
-                            icon: LucideIcons.trophy,
-                            label: 'Хожсон бараа',
-                            value: due > 0 ? '$due' : null,
-                            unit: due > 0 ? 'төлөх' : null,
-                            hint: due > 0 ? 'Төлбөр хүлээж байна' : 'Харах',
-                            highlight: due > 0,
-                            onTap: () => context.push('/orders'),
-                          ),
-                        ),
-                      ],
-                    ),
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.trophy, color: _tileOrange),
+                    title: 'Хожсон бараа',
+                    trailing: due > 0 ? _Badge(count: due) : null,
+                    onTap: () => context.push('/orders'),
                   ),
-                ),
-                const SizedBox(height: 36),
-                Reveal(
-                  index: 2,
-                  child: _Group(title: 'Бүртгэл', rows: [
-                    _Row(
-                      icon: LucideIcons.userPen,
-                      label: 'Нэр солих',
-                      value: user.name,
-                      onTap: () => _editName(context, ref, user.name),
-                    ),
-                    _Row(
-                      icon: LucideIcons.palette,
-                      label: 'Аватар солих',
-                      onTap: () => _editAvatar(context, ref, user),
-                    ),
-                    _Row(
-                      icon: LucideIcons.keyRound,
-                      label: 'Нууц үг солих',
-                      onTap: () => _changePassword(context, ref),
-                    ),
-                  ]),
-                ),
+                ]),
                 const SizedBox(height: 28),
-                Reveal(
-                  index: 3,
-                  child: _Group(title: 'Тусламж', rows: [
-                    _Row(
-                      icon: LucideIcons.lifeBuoy,
-                      label: 'Тусламж',
-                      onTap: () => context.push('/help'),
-                    ),
-                    _Row(
-                      icon: LucideIcons.messageSquare,
-                      label: 'Санал хүсэлт',
-                      onTap: () => context.push('/feedback'),
-                    ),
-                  ]),
-                ),
+                GroupSection(title: 'Бүртгэл', dividerInset: 57, children: [
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.userPen, color: _tileBlue),
+                    title: 'Нэр солих',
+                    onTap: () => _editName(context, ref, user.name),
+                  ),
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.palette, color: _tileOrange),
+                    title: 'Аватар солих',
+                    onTap: () => _editAvatar(context, ref, user),
+                  ),
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.keyRound, color: _tileGray),
+                    title: 'Нууц үг солих',
+                    onTap: () => _changePassword(context, ref),
+                  ),
+                ]),
                 const SizedBox(height: 28),
-                Reveal(
-                  index: 4,
-                  child: _Group(title: 'Нөхцөл', rows: [
-                    _Row(
-                      icon: LucideIcons.fileText,
-                      label: 'Үйлчилгээний нөхцөл',
-                      onTap: () => context.push('/content/terms'),
-                    ),
-                    _Row(
-                      icon: LucideIcons.shieldCheck,
-                      label: 'Нууцлалын бодлого',
-                      onTap: () => context.push('/content/privacy'),
-                    ),
-                  ]),
-                ),
-                const SizedBox(height: 56),
-                Center(
-                  child: AnimatedPressable(
-                    onPressed: () => _logout(context, ref),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      alignment: Alignment.center,
-                      child:
-                          const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(LucideIcons.logOut,
-                            size: 18, color: AppColors.danger),
-                        SizedBox(width: 10),
-                        Text('Гарах',
+                GroupSection(title: 'Тусламж', dividerInset: 57, children: [
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.lifeBuoy, color: _tileBlue),
+                    title: 'Тусламж',
+                    onTap: () => context.push('/help'),
+                  ),
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.messageSquare, color: _tileGreen),
+                    title: 'Санал хүсэлт',
+                    onTap: () => context.push('/feedback'),
+                  ),
+                ]),
+                const SizedBox(height: 28),
+                GroupSection(title: 'Нөхцөл', dividerInset: 57, children: [
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.fileText, color: _tileGray),
+                    title: 'Үйлчилгээний нөхцөл',
+                    onTap: () => context.push('/content/terms'),
+                  ),
+                  GroupRow(
+                    leading: const IconTile(
+                        icon: LucideIcons.shieldCheck, color: _tileGray),
+                    title: 'Нууцлалын бодлого',
+                    onTap: () => context.push('/content/privacy'),
+                  ),
+                ]),
+                const SizedBox(height: 28),
+                GroupSection(children: [
+                  Semantics(
+                    button: true,
+                    label: 'Гарах',
+                    child: AnimatedPressable(
+                      onPressed: () => _logout(context, ref),
+                      scale: 0.99,
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        alignment: Alignment.center,
+                        color: Colors.transparent,
+                        child: Text('Гарах',
                             style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w400,
                                 color: AppColors.danger)),
-                      ]),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Center(
+                ]),
+                const SizedBox(height: 20),
+                Center(
                   child: Text('E-Duud 0.1.0',
-                      style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+                      style: TextStyle(fontSize: 13, color: AppColors.muted)),
                 ),
               ],
             ),
@@ -246,27 +226,26 @@ class ProfileScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Гарах уу?',
+            Text('Гарах уу?',
                 style: TextStyle(
                     fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.ink)),
             const SizedBox(height: 8),
-            const Text('Дахин орохдоо нэвтэрнэ.',
+            Text('Дахин орохдоо нэвтэрнэ.',
                 style: TextStyle(fontSize: 14, color: AppColors.inkSoft)),
             const SizedBox(height: 22),
             PrimaryButton(
               label: 'Гарах',
               icon: LucideIcons.logOut,
               gradient: AppColors.dangerGradient,
-              // Улаан gradient бараан тул цагаан текст тод харагдана.
               foreground: Colors.white,
               onPressed: () => Navigator.pop(ctx, true),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Болих',
+              child: Text('Болих',
                   style: TextStyle(color: AppColors.inkSoft)),
             ),
           ],
@@ -282,280 +261,53 @@ class ProfileScreen extends ConsumerWidget {
 
 // ---------------------------------------------------------------------------
 
-/// Толгой — аватар, нэр, утас зүүн талдаа; админ бол жижиг тэмдэг.
+// iOS system өнгөнүүд — icon tile дээр цагаан дүрстэй хослоно.
+const _tileGreen = Color(0xFF34C759);
+const _tileBlue = Color(0xFF007AFF);
+const _tileOrange = Color(0xFFFF9500);
+const _tileGray = Color(0xFF8E8E93);
+
+/// Толгой карт — аватар, нэр, утас; дарвал нэр засна.
 class _Header extends StatelessWidget {
-  const _Header({required this.user, required this.onAvatar});
+  const _Header({required this.user, required this.onTap});
 
   final UserProfile user;
-  final VoidCallback onAvatar;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Semantics(
-        button: true,
-        label: 'Аватар солих',
-        child: AnimatedPressable(
-          onPressed: onAvatar,
-          child: Stack(clipBehavior: Clip.none, children: [
-            AppAvatar(name: user.name, avatarUrl: user.avatarUrl, size: 76),
-            Positioned(
-              right: -2,
-              bottom: -2,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surfaceHi,
-                  border: Border.all(color: AppColors.bg, width: 2.5),
-                ),
-                child: const Icon(LucideIcons.pencil,
-                    size: 12, color: AppColors.ink),
-              ),
-            ),
-          ]),
-        ),
-      ),
-      const SizedBox(width: 18),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(user.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    color: AppColors.ink)),
-            const SizedBox(height: 2),
-            Text(user.phone,
-                style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.inkSoft,
-                    fontFeatures: [FontFeature.tabularFigures()])),
-            if (user.isAdmin) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceHi.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(LucideIcons.badgeCheck,
-                      size: 13, color: AppColors.inkSoft),
-                  SizedBox(width: 6),
-                  Text('Админ',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.inkSoft)),
-                ]),
-              ),
-            ],
-          ],
-        ),
+    return GroupSection(children: [
+      GroupRow(
+        minHeight: 84,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        leading: AppAvatar(name: user.name, avatarUrl: user.avatarUrl, size: 60),
+        title: user.name,
+        subtitle: user.isAdmin ? '${user.phone} · Админ' : user.phone,
+        onTap: onTap,
       ),
     ]);
   }
 }
 
-/// "Миний эрх" / "Хожсон бараа" — профайлын хоёр гол орц.
-class _HeroTile extends StatelessWidget {
-  const _HeroTile({
-    required this.icon,
-    required this.label,
-    required this.hint,
-    required this.onTap,
-    this.value,
-    this.unit,
-    this.highlight = false,
-  });
+/// Төлөх хүлээж буй барааны тоо — улаан дугуй.
+class _Badge extends StatelessWidget {
+  const _Badge({required this.count});
 
-  final IconData icon;
-  final String label;
-  final String? value;
-  final String? unit;
-  final String hint;
-  final bool highlight;
-  final VoidCallback onTap;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '$label ${value ?? ''} ${unit ?? ''}',
-      child: AnimatedPressable(
-        onPressed: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 144),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: highlight
-                  ? AppColors.coral.withValues(alpha: 0.5)
-                  : AppColors.border,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Icon(icon, size: 18, color: AppColors.coralLight),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.inkSoft)),
-                ),
-              ]),
-              const SizedBox(height: 14),
-              if (value != null)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(value!,
-                            style:
-                                AppTheme.price(size: 40).copyWith(height: 1)),
-                      ),
-                    ),
-                    if (unit != null) ...[
-                      const SizedBox(width: 6),
-                      Text(unit!,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.inkSoft)),
-                    ],
-                  ],
-                )
-              else
-                const Text('Бүгд',
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                        color: AppColors.ink)),
-              const SizedBox(height: 10),
-              Row(children: [
-                Expanded(
-                  child: Text(hint,
-                      style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.coralLight)),
-                ),
-                const Icon(LucideIcons.chevronRight,
-                    size: 16, color: AppColors.coralLight),
-              ]),
-            ],
-          ),
-        ),
+    return Container(
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.danger,
+        borderRadius: BorderRadius.circular(11),
       ),
-    );
-  }
-}
-
-/// Тохиргооны бүлэг — гарчиг + 1px хуваагчтай мөрүүд (тус тусдаа карт биш).
-class _Group extends StatelessWidget {
-  const _Group({required this.title, required this.rows});
-
-  final String title;
-  final List<_Row> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        PlainLabel(title),
-        const SizedBox(height: 4),
-        Container(
-          decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: AppColors.border),
-              bottom: BorderSide(color: AppColors.border),
-            ),
-          ),
-          child: Column(children: [
-            for (var i = 0; i < rows.length; i++)
-              Container(
-                decoration: BoxDecoration(
-                  border: i == rows.length - 1
-                      ? null
-                      : const Border(
-                          bottom: BorderSide(color: AppColors.border)),
-                ),
-                child: rows[i],
-              ),
-          ]),
-        ),
-      ],
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedPressable(
-      onPressed: onTap,
-      scale: 0.99,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 56),
-        color: Colors.transparent,
-        child: Row(children: [
-          Icon(icon, size: 20, color: AppColors.inkSoft),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink)),
-          ),
-          if (value != null)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Padding(
-                padding: const EdgeInsets.only(left: 12, right: 8),
-                child: Text(value!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 14, color: AppColors.inkSoft)),
-              ),
-            ),
-          const Icon(LucideIcons.chevronRight,
-              size: 18, color: AppColors.muted),
-        ]),
-      ),
+      child: Text('$count',
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
     );
   }
 }
@@ -618,10 +370,10 @@ class _EditNameDialogState extends State<_EditNameDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Нэр солих',
+          Text('Нэр солих',
               style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.ink)),
           const SizedBox(height: 20),
           AppField(
@@ -650,7 +402,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
             child:
-                const Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
+                Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
       ),
@@ -731,10 +483,10 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Нууц үг солих',
+          Text('Нууц үг солих',
               style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.ink)),
           const SizedBox(height: 20),
           ErrorBanner(message: _formError, shakeToken: _shake),
@@ -797,7 +549,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           TextButton(
             onPressed: _loading ? null : () => Navigator.pop(context),
             child:
-                const Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
+                Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
           ),
         ],
       ),

@@ -83,78 +83,50 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        title: const Text('Тусламж'),
         leading: const AppBackButton(),
       ),
-      body: AppBackground(
-        seed: 'help',
-        child: SafeArea(
-          top: false,
-          child: PageFrame(
-            maxWidth: 640,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 64),
-              children: [
-                const Text(
-                  'Тусламж',
-                  style: TextStyle(
-                    fontSize: 32,
-                    height: 1.15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    color: AppColors.ink,
-                  ),
+      body: SafeArea(
+        top: false,
+        child: PageFrame(
+          maxWidth: 640,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
+            children: [
+              for (final group in _groups) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                  child: Text(group.title,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted)),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Түгээмэл асуултууд. Хариултаа олохгүй бол доороос бидэнд бичээрэй.',
-                  style: TextStyle(
-                      fontSize: 15, height: 1.5, color: AppColors.inkSoft),
-                ),
-                for (final group in _groups) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40, bottom: 4),
-                    child: Row(children: [
-                      Icon(group.icon, size: 18, color: AppColors.coralLight),
-                      const SizedBox(width: 10),
-                      Text(
-                        group.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ]),
-                  ),
-                  for (final f in group.items) _FaqTile(faq: f),
-                ],
-                const Padding(
-                  padding: EdgeInsets.only(top: 40, bottom: 8),
-                  child: Text(
-                    'Хариултаа олсонгүй юу?',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ),
-                const Text(
+                _Card(
+                    children: [for (final f in group.items) _FaqTile(faq: f)]),
+              ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 32, 4, 8),
+                child: Text('Хариултаа олсонгүй юу?', style: text.displaySmall),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
+                child: Text(
                   'Алдаа, санал, гомдол — юу ч бай бичээрэй, бид хариу өгнө.',
                   style: TextStyle(
-                      fontSize: 15, height: 1.5, color: AppColors.inkSoft),
+                      fontSize: 15, height: 1.4, color: AppColors.muted),
                 ),
-                const SizedBox(height: 16),
-                PrimaryButton(
-                  label: 'Санал хүсэлт илгээх',
-                  icon: LucideIcons.send,
-                  onPressed: () => context.push('/feedback'),
-                ),
-                const SizedBox(height: 32),
+              ),
+              PrimaryButton(
+                label: 'Санал хүсэлт илгээх',
+                onPressed: () => context.push('/feedback'),
+              ),
+              const SizedBox(height: 24),
+              _Card(children: [
                 _LinkRow(
                   icon: LucideIcons.fileText,
                   label: 'Үйлчилгээний нөхцөл',
@@ -165,8 +137,8 @@ class HelpScreen extends StatelessWidget {
                   label: 'Нууцлалын бодлого',
                   onTap: () => context.push('/content/privacy'),
                 ),
-              ],
-            ),
+              ]),
+            ],
           ),
         ),
       ),
@@ -174,8 +146,37 @@ class HelpScreen extends StatelessWidget {
   }
 }
 
-/// Дэлгэгддэг асуулт — зөвхөн хацар шугамтай мөр. Нээгдэхэд хариулт зөөлөн
-/// тэлж, сум эргэнэ. Screen reader-т нээлттэй/хаалттай төлөв уншигдана.
+/// iOS grouped inset карт — мөрүүдийн хооронд 0.5px зааг.
+class _Card extends StatelessWidget {
+  const _Card({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child:
+                  Divider(height: 0.5, thickness: 0.5, color: AppColors.border),
+            ),
+          children[i],
+        ],
+      ]),
+    );
+  }
+}
+
+/// Дэлгэгддэг асуулт. Нээгдэхэд хариулт зөөлөн тэлж, сум эргэнэ.
+/// Screen reader-т нээлттэй/хаалттай төлөв уншигдана.
 class _FaqTile extends StatefulWidget {
   const _FaqTile({required this.faq});
 
@@ -192,69 +193,58 @@ class _FaqTileState extends State<_FaqTile> {
   Widget build(BuildContext context) {
     final reduce = reducedMotion(context);
     final dur = reduce ? Duration.zero : AppMotion.base;
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            button: true,
-            expanded: _open,
-            child: InkWell(
-              onTap: () => setState(() => _open = !_open),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 56),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.faq.question,
-                          style: const TextStyle(
-                            fontSize: 15.5,
-                            height: 1.4,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
-                          ),
-                        ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: _open,
+          child: InkWell(
+            onTap: () => setState(() => _open = !_open),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.faq.question,
+                        style: TextStyle(
+                            fontSize: 17, height: 1.3, color: AppColors.ink),
                       ),
-                      const SizedBox(width: 12),
-                      AnimatedRotation(
-                        turns: _open ? 0.5 : 0,
-                        duration: dur,
-                        curve: AppMotion.enter,
-                        child: const Icon(LucideIcons.chevronDown,
-                            size: 20, color: AppColors.inkSoft),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedRotation(
+                      turns: _open ? 0.25 : 0,
+                      duration: dur,
+                      curve: AppMotion.enter,
+                      child: Icon(LucideIcons.chevronRight,
+                          size: 18, color: AppColors.muted),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          AnimatedSize(
-            duration: dur,
-            curve: AppMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _open
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 18, right: 32),
-                    child: Text(
-                      widget.faq.answer,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.65,
-                        color: AppColors.inkSoft,
-                      ),
-                    ),
-                  )
-                : const SizedBox(width: double.infinity, height: 0),
-          ),
-        ],
-      ),
+        ),
+        AnimatedSize(
+          duration: dur,
+          curve: AppMotion.enter,
+          alignment: Alignment.topCenter,
+          child: _open
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Text(
+                    widget.faq.answer,
+                    style: TextStyle(
+                        fontSize: 15, height: 1.45, color: AppColors.muted),
+                  ),
+                )
+              : const SizedBox(width: double.infinity, height: 0),
+        ),
+      ],
     );
   }
 }
@@ -277,22 +267,16 @@ class _LinkRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.border)),
-          ),
+          constraints: const BoxConstraints(minHeight: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(children: [
-            Icon(icon, size: 18, color: AppColors.inkSoft),
-            const SizedBox(width: 14),
+            Icon(icon, size: 20, color: AppColors.accent),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink)),
+                  style: TextStyle(fontSize: 17, color: AppColors.ink)),
             ),
-            const Icon(LucideIcons.chevronRight,
-                size: 18, color: AppColors.muted),
+            Icon(LucideIcons.chevronRight, size: 18, color: AppColors.muted),
           ]),
         ),
       ),

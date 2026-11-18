@@ -7,56 +7,182 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets.dart';
 
-/// Профайлаас push хийсэн дэлгэцүүдийн дээд хэсэг: буцах товч + гарчиг.
+/// Профайлаас push хийсэн дэлгэцүүдийн стандарт дээд мөр: буцах сум + гарчиг.
 /// Web дээр шууд холбоосоор орсон бол буцах түүх байхгүй тул [fallback] руу очно.
-class SubPageHeader extends StatelessWidget {
-  const SubPageHeader({
-    super.key,
-    required this.title,
-    this.fallback = '/profile',
-  });
+PreferredSizeWidget subPageAppBar(
+  BuildContext context,
+  String title, {
+  String fallback = '/profile',
+}) {
+  return AppBar(
+    centerTitle: true,
+    leading: Semantics(
+      button: true,
+      label: 'Буцах',
+      child: IconButton(
+        icon: Icon(LucideIcons.chevronLeft, size: 28, color: AppColors.accent),
+        onPressed: () =>
+            context.canPop() ? context.pop() : context.go(fallback),
+      ),
+    ),
+    title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+  );
+}
 
-  final String title;
-  final String fallback;
+/// iOS Settings маягийн өнгөт дөрвөлжин icon (29px, радиус 7, цагаан дүрс).
+class IconTile extends StatelessWidget {
+  const IconTile({super.key, required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      width: 29,
+      height: 29,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Icon(icon, size: 17, color: Colors.white),
+    );
+  }
+}
+
+/// Бүлэглэсэн жагсаалт — карт (радиус 16), мөр хоорондын 0.5px хуваагч.
+/// [dividerInset] нь хуваагчийн зүүн талын зай (icon-ийн дараа эхэлнэ).
+class GroupSection extends StatelessWidget {
+  const GroupSection({
+    super.key,
+    required this.children,
+    this.title,
+    this.footer,
+    this.dividerInset = 16,
+  });
+
+  final List<Widget> children;
+  final String? title;
+  final String? footer;
+  final double dividerInset;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).textTheme.bodySmall;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(
-          button: true,
-          label: 'Буцах',
-          child: AnimatedPressable(
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go(fallback),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceHi.withValues(alpha: 0.7),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Icon(LucideIcons.chevronLeft,
-                  size: 22, color: AppColors.ink),
-            ),
+        if (title != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(title!,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted)),
+          ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: Container(
+            color: AppColors.surface,
+            child: Column(children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0)
+                  Padding(
+                    padding: EdgeInsets.only(left: dividerInset),
+                    child: Container(height: 0.5, color: AppColors.borderHi),
+                  ),
+                children[i],
+              ],
+            ]),
           ),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-              color: AppColors.ink,
-            ),
+        if (footer != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(footer!, style: muted),
           ),
-        ),
       ],
+    );
+  }
+}
+
+/// Бүлгийн мөр: [leading] + гарчиг (+ тайлбар) + [trailing] (+ сум).
+class GroupRow extends StatelessWidget {
+  const GroupRow({
+    super.key,
+    required this.title,
+    this.leading,
+    this.subtitle,
+    this.value,
+    this.trailing,
+    this.onTap,
+    this.chevron = true,
+    this.minHeight = 48,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  });
+
+  final String title;
+  final Widget? leading;
+  final String? subtitle;
+  final String? value;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool chevron;
+  final double minHeight;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = Container(
+      constraints: BoxConstraints(minHeight: minHeight),
+      padding: padding,
+      color: Colors.transparent,
+      child: Row(children: [
+        if (leading != null) ...[leading!, const SizedBox(width: 12)],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.ink)),
+              if (subtitle != null)
+                Text(subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            ],
+          ),
+        ),
+        if (value != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(value!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 17, color: AppColors.muted)),
+            ),
+          ),
+        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+        if (onTap != null && chevron) ...[
+          const SizedBox(width: 6),
+          Icon(LucideIcons.chevronRight, size: 18, color: AppColors.borderHi),
+        ],
+      ]),
+    );
+    if (onTap == null) return row;
+    return Semantics(
+      button: true,
+      label: title,
+      child: AnimatedPressable(onPressed: onTap, scale: 0.99, child: row),
     );
   }
 }
@@ -117,7 +243,7 @@ class _RevealState extends State<Reveal> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Хэсгийн гарчиг — 13/700, жижиг үсэг, зай тавьсан.
+/// Хэсгийн гарчиг — 13/600, энгийн жижиг үсэг.
 class PlainLabel extends StatelessWidget {
   const PlainLabel(this.text, {super.key});
 
@@ -126,7 +252,7 @@ class PlainLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(text,
-        style: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkSoft));
+        style: TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted));
   }
 }

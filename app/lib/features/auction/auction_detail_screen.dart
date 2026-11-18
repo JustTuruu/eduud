@@ -12,7 +12,6 @@ import '../../core/api/socket_client.dart';
 import '../../core/models.dart';
 import '../../core/router.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/ambient_backdrop.dart';
 import '../../shared/avatars.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
@@ -122,6 +121,7 @@ final auctionDetailProvider = AsyncNotifierProvider.autoDispose
     .family<AuctionDetailController, AuctionDetail, String>(
         AuctionDetailController.new);
 
+
 class AuctionDetailScreen extends ConsumerStatefulWidget {
   const AuctionDetailScreen({super.key, required this.auctionId});
 
@@ -134,7 +134,6 @@ class AuctionDetailScreen extends ConsumerStatefulWidget {
 
 class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _bidding = false;
-  int _page = 0;
   String? _toast;
   Timer? _toastTimer;
 
@@ -182,8 +181,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     });
   }
 
-  void _back() => context.canPop() ? context.pop() : context.go('/');
-
   @override
   Widget build(BuildContext context) {
     ref.listen(auctionDetailProvider(widget.auctionId), _onDetailChanged);
@@ -193,11 +190,22 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     final a = detailAsync.valueOrNull;
 
     Widget body;
+    Widget? bottomBar;
     if (a != null) {
-      body = _buildData(a, me?.id, wide);
+      final bid = a.status == 'live'
+          ? _BidControl(
+              auction: a,
+              meId: me?.id,
+              busy: _bidding,
+              onBid: _bid,
+              onLogin: _requireLogin,
+            )
+          : null;
+      body = _buildData(a, me?.id, wide, bid);
+      if (bid != null && !wide) bottomBar = _BidBar(child: bid);
     } else if (detailAsync.hasError) {
       body = Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -206,12 +214,10 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                 icon: LucideIcons.triangleAlert,
                 title: apiErrorMessage(detailAsync.error!),
               ),
-              const SizedBox(height: 16),
               SizedBox(
                 width: 220,
                 child: PrimaryButton(
                   label: 'Дахин оролдох',
-                  icon: LucideIcons.refreshCw,
                   onPressed: () =>
                       ref.invalidate(auctionDetailProvider(widget.auctionId)),
                 ),
@@ -224,80 +230,48 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       body = _DetailSkeleton(wide: wide);
     }
 
-    final images = a?.images ?? const <String>[];
-    final url = images.isEmpty ? null : images[_page.clamp(0, images.length - 1)];
-
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: const Text('Дуудлага'),
+      ),
+      bottomNavigationBar: bottomBar,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: AmbientBackdrop(
-              image: url == null ? null : NetworkImage(url),
-              imageKey: url,
-              seed: widget.auctionId,
-            ),
-          ),
-          Positioned.fill(child: SafeArea(bottom: false, child: body)),
+          Positioned.fill(child: body),
           // Хугацаа сунгагдсан мэдэгдэл
           Positioned(
-            top: MediaQuery.paddingOf(context).top + 12,
-            left: 72,
-            right: 72,
+            top: 8,
+            left: 24,
+            right: 24,
             child: IgnorePointer(
               child: Center(child: _ExtendedToast(message: _toast)),
             ),
-          ),
-          // Буцах — шилэн дугуй
-          Positioned(
-            top: MediaQuery.paddingOf(context).top + 8,
-            left: 16,
-            child: _GlassBackButton(onPressed: _back),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildData(AuctionDetail a, String? meId, bool wide) {
+  Widget _buildData(AuctionDetail a, String? meId, bool wide, Widget? bid) {
     final controller =
         ref.read(auctionDetailProvider(widget.auctionId).notifier);
     final live = a.status == 'live';
     final ended = a.status == 'ended' || a.status == 'settled';
     final iWon = ended && meId != null && a.lastBidder?.id == meId;
-
-    final bidButton = live
-        ? _BidControl(
-            auction: a,
-            meId: meId,
-            busy: _bidding,
-            onBid: _bid,
-            onLogin: _requireLogin,
-          )
-        : null;
+    final text = Theme.of(context).textTheme;
 
     final info = <Widget>[
-      Text(
-        a.title,
-        style: const TextStyle(
-          fontSize: 26,
-          height: 1.2,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
-          color: AppColors.ink,
-        ),
-      ),
-      const SizedBox(height: 12),
-      _StatusLine(auction: a, ended: ended, iWon: iWon),
+      Text(a.title, style: text.titleLarge),
       const SizedBox(height: 8),
-      if (!ended)
+      _StatusLine(auction: a, ended: ended, iWon: iWon),
+      const SizedBox(height: 12),
+      if (!ended || a.lastBidder != null)
         Align(
           alignment: Alignment.centerLeft,
-          child: AnimatedPrice(amount: a.currentPrice, fontSize: 44),
-        )
-      else if (a.lastBidder != null)
-        Text(formatMnt(a.currentPrice),
-            style: AppTheme.price(size: 44, color: AppColors.gold)),
+          child: AnimatedPrice(amount: a.currentPrice, fontSize: 34),
+        ),
       const SizedBox(height: 16),
       if (live)
         _DetailTimer(
@@ -311,23 +285,33 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
         )
       else if (ended)
         Text('${a.bidCount} санал',
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.inkSoft,
-                fontFeatures: [FontFeature.tabularFigures()])),
+            style: TextStyle(
+                fontSize: 15,
+                color: AppColors.muted,
+                fontFeatures: const [FontFeature.tabularFigures()])),
       if (ended && iWon) ...[
         const SizedBox(height: 20),
-        _WonAction(onTap: () => context.go('/orders')),
+        PrimaryButton(
+          label: 'Хожсон бараа руу очих',
+          onPressed: () => context.go('/orders'),
+        ),
       ],
     ];
 
     final details = <Widget>[
       if (a.description.isNotEmpty) ...[
         const _SectionTitle('Тайлбар'),
-        Text(a.description,
-            style: const TextStyle(
-                fontSize: 15, height: 1.65, color: AppColors.inkSoft)),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+          child: Text(a.description,
+              style: TextStyle(
+                  fontSize: 15, height: 1.5, color: AppColors.inkSoft)),
+        ),
       ],
       if (a.bids.isNotEmpty) ...[
         const _SectionTitle('Сүүлийн саналууд'),
@@ -335,17 +319,13 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       ],
     ];
 
-    final gallery = _Gallery(
-      auctionId: a.id,
-      images: a.images,
-      onPageChanged: (i) => setState(() => _page = i),
-    );
+    final gallery = _Gallery(auctionId: a.id, images: a.images);
 
     if (wide) {
       return PageFrame(
-        maxWidth: 1120,
+        maxWidth: 1100,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(40, 72, 40, 0),
+          padding: const EdgeInsets.fromLTRB(40, 16, 40, 0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -363,9 +343,9 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
                   padding: const EdgeInsets.only(bottom: 48),
                   children: [
                     ...info,
-                    if (bidButton != null) ...[
+                    if (bid != null) ...[
                       const SizedBox(height: 24),
-                      bidButton,
+                      bid,
                     ],
                     ...details,
                   ],
@@ -377,49 +357,22 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
       );
     }
 
-    return Stack(
-      children: [
-        PageFrame(
-          maxWidth: 560,
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(20, 64, 20, live ? 148 : 48),
-            children: [
-              gallery,
-              const SizedBox(height: 24),
-              ...info,
-              ...details,
-            ],
-          ),
-        ),
-        if (bidButton != null)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00140B1C), AppColors.bg],
-                  stops: [0, 0.4],
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
-                  child: PageFrame(maxWidth: 560, child: bidButton),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return PageFrame(
+      maxWidth: 560,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+        children: [
+          gallery,
+          const SizedBox(height: 20),
+          ...info,
+          ...details,
+        ],
+      ),
     );
   }
 }
 
-/// Хэсгийн гарчиг — дээр нь илүү зай, доор нь бага.
+/// Хэсгийн гарчиг — 13/600 хоёрдогч өнгө, жижиг үсэг.
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
 
@@ -428,45 +381,48 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 40, bottom: 12),
+      padding: const EdgeInsets.only(top: 28, bottom: 8, left: 4),
       child: Text(
         text,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
-          color: AppColors.ink,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.muted,
         ),
       ),
     );
   }
 }
 
-class _GlassBackButton extends StatelessWidget {
-  const _GlassBackButton({required this.onPressed});
+/// Доод тогтмол хэсэг: гадаргуу + 0.5px дээд зураас + бага зэрэг blur.
+class _BidBar extends StatelessWidget {
+  const _BidBar({required this.child});
 
-  final VoidCallback onPressed;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Буцах',
-      child: AnimatedPressable(
-        onPressed: onPressed,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.bg.withValues(alpha: 0.45),
-                border: Border.all(color: AppColors.borderHi),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.92),
+            border: Border(
+              top: BorderSide(color: AppColors.borderHi, width: 0.5),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              child: Center(
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: child,
+                ),
               ),
-              child: const Icon(LucideIcons.chevronLeft,
-                  size: 22, color: AppColors.ink),
             ),
           ),
         ),
@@ -506,19 +462,17 @@ class _ExtendedToast extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceHi,
                   borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(
-                      color: AppColors.coral.withValues(alpha: 0.5)),
+                  border: Border.all(color: AppColors.border, width: 0.5),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(LucideIcons.timer,
-                      size: 16, color: AppColors.coralLight),
+                  Icon(LucideIcons.timer, size: 16, color: AppColors.accent),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       message!,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.ink,
                       ),
                     ),
@@ -530,17 +484,12 @@ class _ExtendedToast extends StatelessWidget {
   }
 }
 
-/// Том зураг. Хэд хэдэн зураг байвал хуруугаар шударч, доор нь цэг гарна.
+/// Том зураг (inset, радиус 16). Хэд хэдэн зураг байвал шударч, доор нь цэг гарна.
 class _Gallery extends StatefulWidget {
-  const _Gallery({
-    required this.auctionId,
-    required this.images,
-    required this.onPageChanged,
-  });
+  const _Gallery({required this.auctionId, required this.images});
 
   final String auctionId;
   final List<String> images;
-  final ValueChanged<int> onPageChanged;
 
   @override
   State<_Gallery> createState() => _GalleryState();
@@ -555,43 +504,30 @@ class _GalleryState extends State<_Gallery> {
     final placeholder = ArtPlaceholder(seed: widget.auctionId, iconSize: 64);
     return Column(
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.art),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 40,
-                offset: const Offset(0, 20),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.art),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: images.isEmpty
-                  ? placeholder
-                  : PageView.builder(
-                      itemCount: images.length,
-                      onPageChanged: (i) {
-                        setState(() => _index = i);
-                        widget.onPageChanged(i);
-                      },
-                      itemBuilder: (context, i) => Image.network(
-                        images[i],
-                        fit: BoxFit.cover,
-                        semanticLabel: 'Зураг ${i + 1}',
-                        loadingBuilder: (context, child, progress) =>
-                            progress == null ? child : placeholder,
-                        errorBuilder: (_, __, ___) => placeholder,
-                      ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: images.isEmpty
+                ? placeholder
+                : PageView.builder(
+                    itemCount: images.length,
+                    onPageChanged: (i) => setState(() => _index = i),
+                    itemBuilder: (context, i) => Image.network(
+                      images[i],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      semanticLabel: 'Зураг ${i + 1}',
+                      loadingBuilder: (context, child, progress) =>
+                          progress == null ? child : placeholder,
+                      errorBuilder: (_, __, ___) => placeholder,
                     ),
-            ),
+                  ),
           ),
         ),
         if (images.length > 1) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -599,13 +535,12 @@ class _GalleryState extends State<_Gallery> {
                 AnimatedContainer(
                   duration: AppMotion.fast,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == _index ? 20 : 6,
+                  width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: i == _index
-                        ? AppColors.coral
-                        : AppColors.ink.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(3),
+                    shape: BoxShape.circle,
+                    color:
+                        i == _index ? AppColors.accent : AppColors.borderHi,
                   ),
                 ),
             ],
@@ -616,7 +551,7 @@ class _GalleryState extends State<_Gallery> {
   }
 }
 
-/// Тэргүүлж буй хүн / ялагч / эхлэх цаг.
+/// Тэргүүлж буй хүн / ялагч / эхлэх цаг. Алт зөвхөн "Ялагч"-д.
 class _StatusLine extends StatelessWidget {
   const _StatusLine(
       {required this.auction, required this.ended, required this.iWon});
@@ -628,9 +563,9 @@ class _StatusLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = auction;
-    IconData icon;
+    IconData? icon;
     String text;
-    Color color = AppColors.inkSoft;
+    Color color = AppColors.muted;
     if (ended) {
       icon = LucideIcons.trophy;
       if (iWon) {
@@ -641,28 +576,34 @@ class _StatusLine extends StatelessWidget {
         color = AppColors.gold;
       } else {
         text = 'Ялагч байхгүй';
+        icon = null;
       }
     } else if (a.status == 'live') {
-      icon = LucideIcons.crown;
       text = a.lastBidder != null
           ? 'Тэргүүлж байна: ${a.lastBidder!.name}'
           : 'Анхны санал хүлээж байна';
     } else {
-      icon = LucideIcons.clock;
       text = 'Удахгүй эхлэх · ${formatStartLabel(a.startsAt, DateTime.now())}';
     }
     return Semantics(
       liveRegion: true,
       child: Row(children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 8),
+        if (icon != null) ...[
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+        ],
         Expanded(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w700, color: color),
+              fontSize: 15,
+              fontWeight: ended && a.lastBidder != null
+                  ? FontWeight.w600
+                  : FontWeight.w400,
+              color: color,
+            ),
           ),
         ),
       ]),
@@ -670,23 +611,8 @@ class _StatusLine extends StatelessWidget {
   }
 }
 
-class _WonAction extends StatelessWidget {
-  const _WonAction({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return PrimaryButton(
-      label: 'Хожсон бараа руу очих',
-      icon: LucideIcons.trophy,
-      onPressed: onTap,
-    );
-  }
-}
-
-/// Үлдсэн хугацааны зураас: урт = үлдсэн / нийт. Сүүлийн 10 секундэд шүрэн
-/// лугшино. Секунд тутам зөвхөн энэ жижиг widget дахин бүтнэ.
+/// Үлдсэн хугацааны нимгэн (4px) зураас: урт = үлдсэн / нийт. Сүүлийн 10 секунд
+/// улаан. Секунд тутам зөвхөн энэ жижиг widget дахин бүтнэ.
 class _DetailTimer extends StatefulWidget {
   const _DetailTimer({
     required this.startsAt,
@@ -706,13 +632,9 @@ class _DetailTimer extends StatefulWidget {
   State<_DetailTimer> createState() => _DetailTimerState();
 }
 
-class _DetailTimerState extends State<_DetailTimer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 700));
+class _DetailTimerState extends State<_DetailTimer> {
   Timer? _ticker;
   late DateTime _now = _clock();
-  bool _urgent = false;
   bool _fired = false;
 
   DateTime _clock() =>
@@ -722,7 +644,6 @@ class _DetailTimerState extends State<_DetailTimer>
   void initState() {
     super.initState();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
-    _updateUrgent();
   }
 
   @override
@@ -730,45 +651,27 @@ class _DetailTimerState extends State<_DetailTimer>
     super.didUpdateWidget(old);
     if (old.endsAt != widget.endsAt) _fired = false;
     _now = _clock();
-    _updateUrgent();
   }
 
   void _tick() {
     if (!mounted) return;
     setState(() => _now = _clock());
-    _updateUrgent();
     if (!_fired && widget.endsAt.difference(_now).inMilliseconds <= 0) {
       _fired = true;
       widget.onFinished();
     }
   }
 
-  void _updateUrgent() {
-    final ms = widget.endsAt.difference(_now).inMilliseconds;
-    final urgent = ms > 0 && ms <= 10000;
-    if (urgent == _urgent) return;
-    _urgent = urgent;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_urgent && !reducedMotion(context)) {
-        unawaited(_pulse.repeat(reverse: true));
-      } else {
-        _pulse.stop();
-        _pulse.value = 0;
-      }
-    });
-  }
-
   @override
   void dispose() {
     _ticker?.cancel();
-    _pulse.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final remaining = widget.endsAt.difference(_now);
+    final urgent = remaining.inMilliseconds > 0 && remaining.inSeconds < 10;
     final frac = remainingFraction(
         startsAt: widget.startsAt, endsAt: widget.endsAt, now: _now);
     const tab = [FontFeature.tabularFigures()];
@@ -777,56 +680,36 @@ class _DetailTimerState extends State<_DetailTimer>
       child: ExcludeSemantics(
         child: Column(
           children: [
-            SizedBox(
-              height: 6,
-              child: LayoutBuilder(builder: (context, box) {
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(end: frac),
-                  duration: reducedMotion(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 1000),
-                  curve: Curves.linear,
-                  builder: (context, v, _) => AnimatedBuilder(
-                    animation: _pulse,
-                    builder: (context, _) {
-                      final p = _pulse.value;
-                      final fill =
-                          Color.lerp(AppColors.coral, AppColors.coralLight, p)!;
-                      final x = (box.maxWidth * v).clamp(0.0, box.maxWidth);
-                      return Stack(
-                        alignment: Alignment.centerLeft,
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: AppColors.ink.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          Container(
-                            height: 6,
-                            width: x,
-                            decoration: BoxDecoration(
-                              color: fill,
-                              borderRadius: BorderRadius.circular(3),
-                              boxShadow: _urgent
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.coral.withValues(
-                                            alpha: 0.25 + 0.45 * p),
-                                        blurRadius: 6 + 8 * p,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                );
-              }),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: SizedBox(
+                height: 4,
+                child: LayoutBuilder(builder: (context, box) {
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(end: frac),
+                    duration: reducedMotion(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 1000),
+                    curve: Curves.linear,
+                    builder: (context, v, _) => Stack(
+                      children: [
+                        Positioned.fill(
+                            child: ColoredBox(color: AppColors.fill)),
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: (box.maxWidth * v).clamp(0.0, box.maxWidth),
+                          child: ColoredBox(
+                              color: urgent
+                                  ? AppColors.danger
+                                  : AppColors.accent),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -835,19 +718,18 @@ class _DetailTimerState extends State<_DetailTimer>
                 Text(
                   formatRemaining(remaining),
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                     fontFeatures: tab,
-                    color: _urgent ? AppColors.coralLight : AppColors.ink,
+                    color: urgent ? AppColors.danger : AppColors.ink,
                   ),
                 ),
                 Text(
                   '${widget.bidCount} санал',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: 15,
                     fontFeatures: tab,
-                    color: AppColors.inkSoft,
+                    color: AppColors.muted,
                   ),
                 ),
               ],
@@ -859,7 +741,7 @@ class _DetailTimerState extends State<_DetailTimer>
   }
 }
 
-/// Дэлгэц дээрх ганц, тусгаарлагдсан үндсэн үйлдэл.
+/// Дэлгэц дээрх ганц үндсэн үйлдэл — ногоон "Санал өгөх · 1 эрх".
 class _BidControl extends StatelessWidget {
   const _BidControl({
     required this.auction,
@@ -879,81 +761,27 @@ class _BidControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final guest = meId == null;
     final mine = !guest && auction.lastBidder?.id == meId;
-    final disabled = mine || busy;
     final label = guest
         ? 'Нэвтэрч санал өгөх · 1 эрх'
         : mine
             ? 'Та тэргүүлж байна'
             : 'Санал өгөх · 1 эрх';
-    final icon = guest
-        ? LucideIcons.logIn
-        : mine
-            ? LucideIcons.crown
-            : LucideIcons.gavel;
-    final fg = mine ? AppColors.muted : AppColors.ctaInk;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Semantics(
-          button: true,
-          enabled: !disabled,
+        PrimaryButton(
           label: label,
-          child: ExcludeSemantics(
-            child: AnimatedPressable(
-              haptic: false,
-              scale: 0.96,
-              onPressed: disabled ? null : (guest ? onLogin : onBid),
-              child: Container(
-                height: 56,
-                width: double.infinity,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: disabled ? null : AppColors.ctaGradient,
-                  color: disabled ? AppColors.surfaceHi : null,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: disabled
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: AppColors.coral.withValues(alpha: 0.38),
-                            blurRadius: 26,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                ),
-                child: busy
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.4, color: AppColors.coral),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(icon, size: 20, color: fg),
-                          const SizedBox(width: 10),
-                          Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: fg,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-          ),
+          loading: busy,
+          onPressed: mine ? null : (guest ? onLogin : onBid),
         ),
         const SizedBox(height: 8),
         Text(
           mine
               ? 'Өөр хүн санал өгөхийг хүлээнэ үү'
               : 'Санал бүр үнийг ${formatMnt(auction.increment)}-аар өсгөнө',
-          style: const TextStyle(fontSize: 12.5, color: AppColors.inkSoft),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: AppColors.muted),
         ),
       ],
     );
@@ -969,7 +797,7 @@ String _timeAgo(DateTime t) {
   return '${s ~/ 86400} өдрийн өмнө';
 }
 
-/// Саналын түүх — цэвэр жагсаалт. "Хэдийн өмнө" шошго 15с тутам шинэчлэгдэнэ.
+/// Саналын түүх — grouped inset жагсаалт. "Хэдийн өмнө" шошго 15с тутам шинэчлэгдэнэ.
 class _BidHistory extends StatefulWidget {
   const _BidHistory({required this.bids});
 
@@ -998,16 +826,22 @@ class _BidHistoryState extends State<_BidHistory> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var i = 0; i < widget.bids.length; i++)
-          _BidRow(
-            key: ValueKey(widget.bids[i].id),
-            bid: widget.bids[i],
-            isTop: i == 0,
-            last: i == widget.bids.length - 1,
-          ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: ColoredBox(
+        color: AppColors.surface,
+        child: Column(
+          children: [
+            for (var i = 0; i < widget.bids.length; i++)
+              _BidRow(
+                key: ValueKey(widget.bids[i].id),
+                bid: widget.bids[i],
+                isTop: i == 0,
+                last: i == widget.bids.length - 1,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1023,12 +857,8 @@ class _BidRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(children: [
         AppAvatar(name: bid.user.name, avatarUrl: bid.user.avatarUrl, size: 36),
         const SizedBox(width: 12),
@@ -1040,14 +870,14 @@ class _BidRow extends StatelessWidget {
                 bid.user.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w400,
                     color: AppColors.ink),
               ),
               Text(
                 _timeAgo(bid.createdAt),
-                style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
               ),
             ],
           ),
@@ -1056,12 +886,26 @@ class _BidRow extends StatelessWidget {
         Text(
           formatMnt(bid.price),
           style: AppTheme.price(
-              size: 16, color: isTop ? AppColors.coralLight : AppColors.ink),
+              size: 17, color: isTop ? AppColors.accent : AppColors.ink),
         ),
       ]),
     );
 
-    if (reducedMotion(context)) return row;
+    // 0.5px хуваагч — аватарын зүүн ирмэгээс эхэлнэ.
+    final withDivider = Stack(
+      children: [
+        row,
+        if (!last)
+          Positioned(
+            left: 64,
+            right: 0,
+            bottom: 0,
+            child: Container(height: 0.5, color: AppColors.border),
+          ),
+      ],
+    );
+
+    if (reducedMotion(context)) return withDivider;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: AppMotion.base,
@@ -1071,7 +915,7 @@ class _BidRow extends StatelessWidget {
         child:
             Transform.translate(offset: Offset(0, -12 * (1 - t)), child: child),
       ),
-      child: row,
+      child: withDivider,
     );
   }
 }
@@ -1084,21 +928,21 @@ class _DetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PageFrame(
-      maxWidth: wide ? 1120 : 560,
+      maxWidth: wide ? 1100 : 560,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(wide ? 40 : 20, 64, wide ? 40 : 20, 0),
+        padding: EdgeInsets.fromLTRB(wide ? 40 : 20, 8, wide ? 40 : 20, 0),
         child: LayoutBuilder(builder: (context, box) {
           final side = wide ? (box.maxWidth - 48) / 2 : box.maxWidth;
           final art = Skeleton(
-              height: side.clamp(0, 560), width: side, radius: AppRadius.art);
+              height: side.clamp(0, 560), width: side, radius: AppRadius.card);
           final lines = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
-              Skeleton(height: 28, width: 240),
+              Skeleton(height: 24, width: 240),
               SizedBox(height: 16),
-              Skeleton(height: 44, width: 180),
+              Skeleton(height: 34, width: 160),
               SizedBox(height: 16),
-              Skeleton(height: 10),
+              Skeleton(height: 4),
             ],
           );
           if (wide) {
@@ -1109,7 +953,7 @@ class _DetailSkeleton extends StatelessWidget {
           }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [art, const SizedBox(height: 24), lines],
+            children: [art, const SizedBox(height: 20), lines],
           );
         }),
       ),

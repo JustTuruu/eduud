@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,16 +14,53 @@ void main() {
   runApp(const ProviderScope(child: EduudApp()));
 }
 
-class EduudApp extends ConsumerWidget {
+class EduudApp extends ConsumerStatefulWidget {
   const EduudApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EduudApp> createState() => _EduudAppState();
+}
+
+/// Системийн light/dark солигдоход [AppColors]-ийн багцыг сольж, бүх
+/// widget-ийг дахин зурна. AppColors нь static тул Theme-д хамааралгүй
+/// widget-үүд өөрсдөө мэдэхгүй — тиймээс element мод дагуу markNeedsBuild
+/// хийнэ (Navigator/router-ийн төлөв устахгүй).
+class _EduudAppState extends ConsumerState<EduudApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    AppColors.apply(PlatformDispatcher.instance.platformBrightness);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    AppColors.apply(PlatformDispatcher.instance.platformBrightness);
+    setState(() {});
+    void rebuild(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(rebuild);
+    }
+
+    (context as Element).visitChildren(rebuild);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'E-Duud',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }

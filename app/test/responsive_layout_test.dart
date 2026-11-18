@@ -12,7 +12,6 @@ import 'package:eduud/shared/app_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 final _sample = [
   for (var i = 0; i < 4; i++)
@@ -66,8 +65,6 @@ Future<void> _setSize(WidgetTester tester, Size size) async {
 
 void main() {
   setUpAll(() {
-    // Тестэд google_fonts сүлжээнээс татахгүй — fallback фонт.
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   for (final (label, size) in [

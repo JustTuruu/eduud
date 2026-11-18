@@ -26,80 +26,70 @@ class ContentScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
         leading: const AppBackButton(),
       ),
-      body: AppBackground(
-        seed: 'content-$contentKey',
-        child: SafeArea(
-          top: false,
-          child: content.when(
-            loading: () => const PageFrame(
-              maxWidth: 640,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Skeleton(height: 32, width: 240),
-                    SizedBox(height: 24),
-                    Skeleton(height: 14),
-                    SizedBox(height: 10),
-                    Skeleton(height: 14),
-                    SizedBox(height: 10),
-                    Skeleton(height: 14, width: 180),
-                  ],
-                ),
-              ),
-            ),
-            error: (e, _) => Center(
+      body: SafeArea(
+        top: false,
+        child: content.when(
+          loading: () => const PageFrame(
+            maxWidth: 680,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  EmptyState(
-                    icon: LucideIcons.triangleAlert,
-                    title: apiErrorMessage(e),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: 220,
-                    child: PrimaryButton(
-                      label: 'Дахин оролдох',
-                      icon: LucideIcons.refreshCw,
-                      onPressed: () =>
-                          ref.invalidate(contentProvider(contentKey)),
-                    ),
-                  ),
+                  Skeleton(height: 32, width: 240),
+                  SizedBox(height: 24),
+                  Skeleton(height: 14),
+                  SizedBox(height: 10),
+                  Skeleton(height: 14),
+                  SizedBox(height: 10),
+                  Skeleton(height: 14, width: 180),
                 ],
               ),
             ),
-            data: (c) => PageFrame(
-              maxWidth: 640,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 64),
-                children: [
-                  Text(
-                    c['title'] as String? ?? '',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      height: 1.15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                      color: AppColors.ink,
-                    ),
+          ),
+          error: (e, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EmptyState(
+                  icon: LucideIcons.triangleAlert,
+                  title: apiErrorMessage(e),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 220,
+                  child: PrimaryButton(
+                    label: 'Дахин оролдох',
+                    icon: LucideIcons.refreshCw,
+                    onPressed: () =>
+                        ref.invalidate(contentProvider(contentKey)),
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    c['body'] as String? ?? '',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.75,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.ink,
-                    ),
+                ),
+              ],
+            ),
+          ),
+          data: (c) => PageFrame(
+            maxWidth: 680,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
+              children: [
+                Text(
+                  c['title'] as String? ?? '',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  c['body'] as String? ?? '',
+                  style: TextStyle(
+                    fontSize: 17,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.ink,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

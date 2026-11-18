@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/app_theme.dart';
-import 'ambient_backdrop.dart';
 
 final _mnt = NumberFormat('#,###', 'en');
 
@@ -72,33 +71,8 @@ class _AnimatedPressableState extends State<AnimatedPressable> {
 // Surfaces
 // ---------------------------------------------------------------------------
 
-class _HairlinePainter extends CustomPainter {
-  _HairlinePainter({required this.radius, required this.gradient});
-
-  final double radius;
-  final Gradient gradient;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final rrect = RRect.fromRectAndRadius(
-      rect.deflate(0.5),
-      Radius.circular(radius),
-    );
-    final paint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawRRect(rrect, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _HairlinePainter old) =>
-      old.radius != radius || old.gradient != gradient;
-}
-
-/// Карт: чавганы гадаргуу + 1px hairline + зөөлөн сүүдэр (glow-гүй).
-/// Дарахад агшина.
+/// Карт: энгийн гадаргуу, радиус 16. Light дээр хүрээгүй, dark дээр хүрээгүй
+/// (өнгөний зөрүүгээр ялгана). Сүүдэргүй. Дарахад агшина.
 class GlowCard extends StatelessWidget {
   const GlowCard({
     super.key,
@@ -111,31 +85,19 @@ class GlowCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final double radius;
+
+  /// Хуучин API-тай нийцүүлэх; ашиглагдахгүй.
   final bool glow;
 
   @override
   Widget build(BuildContext context) {
-    final card = CustomPaint(
-      foregroundPainter: _HairlinePainter(
-        radius: radius,
-        gradient:
-            const LinearGradient(colors: [AppColors.border, AppColors.border]),
+    final card = Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(radius),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(radius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: child,
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
     if (onTap == null) return card;
     return AnimatedPressable(onPressed: onTap, scale: 0.98, child: card);
@@ -162,9 +124,10 @@ class GlassChip extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: AppColors.isDark
+                ? const Color(0xFF2C2C2E).withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(AppRadius.chip),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: child,
         ),
@@ -174,14 +137,14 @@ class GlassChip extends StatelessWidget {
 }
 
 /// Шүрэн цагираг — дансны үлдэгдэл, аватар, countdown-ийн хүрээ.
-/// Статик: нимгэн шүрэн зураас + зөөлөн туяа (хөдөлгөөнгүй).
+/// Статик: нимгэн accent зураас (туяагүй).
 class CoralRing extends StatelessWidget {
   const CoralRing({
     super.key,
     required this.size,
     required this.child,
     this.strokeWidth = 3.5,
-    this.glow = true,
+    this.glow = false,
   });
 
   final double size;
@@ -214,17 +177,6 @@ class _CoralRingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = (size.shortestSide - strokeWidth) / 2;
-    if (glow) {
-      canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..color = AppColors.coral.withValues(alpha: 0.35)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth + 4
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-      );
-    }
     canvas.drawCircle(
       center,
       radius,
@@ -241,8 +193,8 @@ class _CoralRingPainter extends CustomPainter {
       old.strokeWidth != strokeWidth || old.glow != glow;
 }
 
-/// Бүх дэлгэцийн нийтлэг дэвсгэр — чавганы ambient талбар.
-/// [seed] өгвөл (жиш. auction id) түүнээс тогтсон өнгө гаргана.
+/// Бүх дэлгэцийн нийтлэг дэвсгэр — энгийн grouped дэвсгэр өнгө.
+/// [seed] хуучин API-тай нийцүүлэх; ашиглагдахгүй.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, required this.child, this.seed});
 
@@ -251,16 +203,11 @@ class AppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(child: AmbientBackdrop(seed: seed ?? 'e-duud')),
-        child,
-      ],
-    );
+    return ColoredBox(color: AppColors.bg, child: child);
   }
 }
 
-/// Нэвтрэх/бүртгүүлэх дэлгэцийн дэвсгэр — ижил ambient талбар.
+/// Нэвтрэх/бүртгүүлэх дэлгэцийн дэвсгэр — энгийн grouped дэвсгэр.
 class AuthBackground extends StatelessWidget {
   const AuthBackground({
     super.key,
@@ -288,7 +235,7 @@ class LiveBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GlassChip(
+    return GlassChip(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -340,19 +287,18 @@ class TokenBalanceChip extends StatelessWidget {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceHi.withValues(alpha: 0.7),
+        color: AppColors.accent.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.borderHi),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.gem, size: 14, color: AppColors.coral),
+          Icon(LucideIcons.gem, size: 14, color: AppColors.coral),
           const SizedBox(width: 7),
           Text(
             '$balance эрх',
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
               fontSize: 14,
               color: AppColors.ink,
               fontFeatures: [FontFeature.tabularFigures()],
@@ -370,8 +316,8 @@ class TokenBalanceChip extends StatelessWidget {
 // Buttons
 // ---------------------------------------------------------------------------
 
-/// Gradient CTA — дарахад агшиж glow тархана; icon өгвөл алх шиг "цохих"
-/// хөдөлгөөн хийнэ.
+/// Үндсэн товч — хавтгай accent (ногоон), 50px, радиус 14, цагаан тод шошго.
+/// Дарахад агшина; icon өгвөл жижиг "цохих" хөдөлгөөн хийнэ.
 class PrimaryButton extends StatefulWidget {
   const PrimaryButton({
     super.key,
@@ -391,9 +337,7 @@ class PrimaryButton extends StatefulWidget {
   final bool loading;
   final Gradient? gradient;
 
-  /// Товчны текст/icon-ы өнгө. Мөсөн цэнхэр CTA дээр бараан бэх тод
-  /// уншигддаг тул default нь [AppColors.ctaInk]; бараан gradient (жиш.
-  /// danger) өгвөл цагаан дамжуулна.
+  /// Товчны текст/icon-ы өнгө. Default нь цагаан ([AppColors.ctaInk]).
   final Color? foreground;
 
   @override
@@ -413,7 +357,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
   }
 
   void _handleTap() {
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
     if (!reducedMotion(context)) _strike.forward(from: 0);
     widget.onPressed?.call();
   }
@@ -442,22 +386,13 @@ class _PrimaryButtonState extends State<PrimaryButton>
           child: AnimatedContainer(
             duration: AppMotion.base,
             curve: AppMotion.enter,
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: const BoxConstraints(minHeight: 50),
             decoration: BoxDecoration(
-              gradient:
-                  enabled ? (widget.gradient ?? AppColors.ctaGradient) : null,
-              color: enabled ? null : AppColors.surfaceHi,
+              // gradient өгсөн бол (жиш. danger) эхний өнгийг хавтгайгаар авна.
+              color: enabled
+                  ? (widget.gradient?.colors.first ?? AppColors.accent)
+                  : AppColors.fill,
               borderRadius: BorderRadius.circular(AppRadius.control),
-              boxShadow: enabled
-                  ? [
-                      BoxShadow(
-                        color: AppColors.coral
-                            .withValues(alpha: _pressed ? 0.55 : 0.3),
-                        blurRadius: _pressed ? 30 : 22,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.control),
@@ -506,8 +441,8 @@ class _PrimaryButtonState extends State<PrimaryButton>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 15.5,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
                                       color: enabled ? fg : AppColors.muted,
                                     ),
                                   ),
@@ -527,6 +462,68 @@ class _PrimaryButtonState extends State<PrimaryButton>
                           ],
                         ),
                 ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Хоёрдогч товч — accent 12% дүүргэлт, accent шошго (iOS "tinted").
+/// [destructive] үед улаан. 50px, радиус 14.
+class SecondaryButton extends StatelessWidget {
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onPressed,
+    this.destructive = false,
+  });
+
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final color = destructive ? AppColors.danger : AppColors.accent;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: AnimatedPressable(
+        onPressed: onPressed,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: enabled ? color.withValues(alpha: 0.12) : AppColors.fill,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 20, color: enabled ? color : AppColors.muted),
+                  const SizedBox(width: 8),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: enabled ? color : AppColors.muted,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -661,7 +658,6 @@ class CountdownPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.borderHi),
       ),
       child: Column(
         children: [
@@ -699,17 +695,19 @@ class PriceText extends StatelessWidget {
     super.key,
     required this.amount,
     this.fontSize = 20,
-    this.color = AppColors.ink,
+    this.color,
   });
 
   final int amount;
   final double fontSize;
-  final Color color;
+
+  /// Өгөөгүй бол одоогийн theme-ийн үндсэн текстийн өнгө.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Text(formatMnt(amount),
-        style: AppTheme.price(size: fontSize, color: color));
+        style: AppTheme.price(size: fontSize, color: color ?? AppColors.ink));
   }
 }
 
@@ -759,20 +757,9 @@ class AuctionImage extends StatelessWidget {
     Widget child = url == null || url!.isEmpty
         ? Container(
             height: height,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF241634),
-                  Color(0xFF3A2755),
-                  Color(0xFF241634)
-                ],
-              ),
-            ),
+            color: AppColors.fill,
             child: Center(
-              child: Icon(LucideIcons.package,
-                  size: 44, color: Colors.white.withValues(alpha: 0.14)),
+              child: Icon(LucideIcons.package, size: 40, color: AppColors.muted),
             ),
           )
         : Image.network(
@@ -781,7 +768,7 @@ class AuctionImage extends StatelessWidget {
             width: double.infinity,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) =>
-                Container(height: height, color: AppColors.surfaceHi),
+                Container(height: height, color: AppColors.fill),
           );
 
     if (scrim) {
@@ -813,7 +800,7 @@ class AuctionImage extends StatelessWidget {
 // Loading / empty
 // ---------------------------------------------------------------------------
 
-/// Shimmer skeleton — navy дээгүүр мөнгөлөг гэрэл шүргэж өнгөрнө.
+/// Skeleton — саарал дүүргэлт дээгүүр зөөлөн гэрэл өнгөрнө.
 class Skeleton extends StatefulWidget {
   const Skeleton({super.key, this.height = 16, this.width, this.radius = 10});
 
@@ -857,10 +844,10 @@ class _SkeletonState extends State<Skeleton>
             gradient: LinearGradient(
               begin: Alignment(-1.5 + 3 * _c.value, 0),
               end: Alignment(-0.5 + 3 * _c.value, 0),
-              colors: const [
-                Color(0xFF241634),
-                Color(0xFF33224A),
-                Color(0xFF241634),
+              colors: [
+                AppColors.fill,
+                AppColors.fill.withValues(alpha: AppColors.fill.a * 0.5),
+                AppColors.fill,
               ],
             ),
           ),
@@ -921,10 +908,9 @@ class EmptyState extends StatelessWidget {
             height: 76,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surfaceHi.withValues(alpha: 0.6),
-              border: Border.all(color: AppColors.borderHi),
+              color: AppColors.fill,
             ),
-            child: Icon(icon, size: 30, color: AppColors.coralLight),
+            child: Icon(icon, size: 30, color: AppColors.muted),
           ),
           const SizedBox(height: 18),
           Text(title,
@@ -946,7 +932,7 @@ class EmptyState extends StatelessWidget {
 // Sheets & dialogs
 // ---------------------------------------------------------------------------
 
-/// Нэгдсэн bottom sheet — chip бариул, glass гадаргуу, зөөлөн орж ирэх хөдөлгөөн.
+/// Нэгдсэн bottom sheet — бариул, энгийн гадаргуу.
 ///
 /// `useRootNavigator: true` нь чухал: үгүй бол sheet нь shell-ийн салбар
 /// navigator дотор нээгдэж, доод навигацийн мөр түүний доод хэсгийг дарна.
@@ -956,7 +942,7 @@ Future<T?> showAppSheet<T>(BuildContext context,
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
+    barrierColor: Colors.black.withValues(alpha: 0.4),
     backgroundColor: Colors.transparent,
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.92,
@@ -966,7 +952,6 @@ Future<T?> showAppSheet<T>(BuildContext context,
         color: AppColors.surface,
         borderRadius:
             const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-        border: Border.all(color: AppColors.borderHi),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -976,7 +961,7 @@ Future<T?> showAppSheet<T>(BuildContext context,
             height: 4,
             margin: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
-              color: AppColors.borderHi,
+              color: AppColors.fill,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -995,7 +980,7 @@ Future<T?> showAppDialog<T>(BuildContext context,
     useRootNavigator: true,
     barrierDismissible: true,
     barrierLabel: 'Хаах',
-    barrierColor: Colors.black.withValues(alpha: 0.6),
+    barrierColor: Colors.black.withValues(alpha: 0.4),
     transitionDuration: AppMotion.base,
     transitionBuilder: (context, anim, _, child) {
       final curved = CurvedAnimation(parent: anim, curve: AppMotion.fluid);

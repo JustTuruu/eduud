@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,12 +83,8 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 24,
-                offset: const Offset(0, 12)),
-          ],
+          // Dark дээр цагаан карт ялгарахын тулд нимгэн хүрээ.
+          border: Border.all(color: AppColors.border, width: 0.5),
         ),
         child: Image.network(
           inv.qrImageUrl!,
@@ -98,12 +92,12 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
           height: size,
           loadingBuilder: (context, child, progress) => progress == null
               ? child
-              : const SizedBox(
+              : SizedBox(
                   width: size,
                   height: size,
                   child: Center(
                     child: CircularProgressIndicator(
-                        color: AppColors.coral, strokeWidth: 2.4),
+                        color: AppColors.accent, strokeWidth: 2.4),
                   ),
                 ),
           errorBuilder: (_, __, ___) => SizedBox(
@@ -112,15 +106,14 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(LucideIcons.imageOff,
-                    size: 30, color: AppColors.surfaceHi),
+                const Icon(LucideIcons.imageOff, size: 30, color: Color(0xFF8E8E93)),
                 const SizedBox(height: 10),
                 Text('QR харагдсангүй. Дахин нээнэ үү.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
-                        ?.copyWith(color: AppColors.surfaceHi)),
+                        ?.copyWith(color: const Color(0xFF3C3C43))),
               ],
             ),
           ),
@@ -130,7 +123,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
   }
 
   Widget _step(int n, String text) => Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -140,19 +133,19 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.borderHi),
+                color: AppColors.fill,
               ),
               child: Text('$n',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.inkSoft)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(text,
-                  style: const TextStyle(
-                      fontSize: 14, height: 1.4, color: AppColors.inkSoft)),
+                  style: TextStyle(
+                      fontSize: 15, height: 1.4, color: AppColors.inkSoft)),
             ),
           ],
         ),
@@ -165,18 +158,22 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
     final testMode =
         ref.watch(serverConfigProvider).valueOrNull?.paymentTestMode ?? false;
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 28 + safeBottom),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + safeBottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Төлөх дүн',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.inkSoft)),
-          const SizedBox(height: 6),
-          Text(formatMnt(inv.amountMnt), style: AppTheme.price(size: 40)),
+          Text('Төлбөр төлөх',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          Text(formatMnt(inv.amountMnt),
+              textAlign: TextAlign.center,
+              style: AppTheme.price(size: 40)),
+          const SizedBox(height: 4),
+          Text('Төлөх дүн',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
           const SizedBox(height: 20),
           if (inv.qrImageUrl != null)
             _qr(context, inv)
@@ -184,12 +181,11 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.bg.withValues(alpha: 0.5),
+                color: AppColors.bg,
                 borderRadius: BorderRadius.circular(AppRadius.control),
-                border: Border.all(color: AppColors.border),
               ),
               child: SelectableText(inv.qrText!,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13, color: AppColors.inkSoft, height: 1.6)),
             ),
             const SizedBox(height: 8),
@@ -201,9 +197,9 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
                   ScaffoldMessenger.of(context)
                       .showSnackBar(const SnackBar(content: Text('Хууллаа')));
                 },
-                icon: const Icon(LucideIcons.copy,
+                icon: Icon(LucideIcons.copy,
                     size: 15, color: AppColors.inkSoft),
-                label: const Text('Хуулах',
+                label: Text('Хуулах',
                     style: TextStyle(color: AppColors.inkSoft)),
               ),
             ),
@@ -214,12 +210,11 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
           const SizedBox(height: 22),
           PrimaryButton(
             label: 'Төлсөн, шалгах',
-            icon: LucideIcons.refreshCw,
-            loading: _checking,
+                        loading: _checking,
             onPressed: _checking ? null : _check,
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Төлбөр орж ирэхэд автоматаар баталгаажна.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: AppColors.muted),
@@ -236,10 +231,10 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.flaskConical,
+                  Icon(LucideIcons.flaskConical,
                       size: 18, color: AppColors.warn),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Туршилтын горим. Банк руу орохгүйгээр төлсөн болгоно.',
                       style: TextStyle(
@@ -259,15 +254,15 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
                             color: AppColors.warn.withValues(alpha: 0.6)),
                       ),
                       child: _simulating
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: AppColors.warn))
-                          : const Text('Төлсөн болгох',
+                          : Text('Төлсөн болгох',
                               style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   color: AppColors.warn)),
                     ),
                   ),
@@ -281,52 +276,41 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
   }
 }
 
-/// Шилэн bottom sheet — цонхны ард ambient өнгө нэвт харагдана (blur 30).
-/// Хөвөгч гадаргуу тул шилэн байх нь зөв; агуулга нь plum өнгөтэй.
+/// iOS маягийн bottom sheet — бариул, дугуй дээд булан, энгийн гадаргуу.
+/// (Нэр нь хуучнаар үлдсэн; blur/шилэн эффектгүй.)
 Future<T?> showGlassSheet<T>(BuildContext context,
     {required WidgetBuilder builder}) {
   return showModalBottomSheet<T>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
+    barrierColor: Colors.black.withValues(alpha: 0.4),
     backgroundColor: Colors.transparent,
     elevation: 0,
     constraints: BoxConstraints(
       maxWidth: 560,
       maxHeight: MediaQuery.of(context).size.height * 0.92,
     ),
-    builder: (context) => ClipRRect(
-      borderRadius:
-          const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.78),
-            borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.sheet)),
-            border: const Border(
-                top: BorderSide(color: AppColors.borderHi),
-                left: BorderSide(color: AppColors.border),
-                right: BorderSide(color: AppColors.border)),
+    builder: (context) => Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color: AppColors.borderHi,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.borderHi,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Flexible(child: builder(context)),
-            ],
-          ),
-        ),
+          Flexible(child: builder(context)),
+        ],
       ),
     ),
   );

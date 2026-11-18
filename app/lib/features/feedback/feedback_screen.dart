@@ -145,6 +145,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: subPageAppBar(context, 'Санал хүсэлт'),
       body: AppBackground(
         seed: 'feedback',
         child: SafeArea(
@@ -152,23 +153,25 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           child: PageFrame(
             maxWidth: 720,
             child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding:
-                  EdgeInsets.fromLTRB(20, 12, 20, 40 + safeBottom + viewInsets),
+                  EdgeInsets.fromLTRB(16, 8, 16, 40 + safeBottom + viewInsets),
               children: [
-                const SubPageHeader(title: 'Санал хүсэлт'),
-                const SizedBox(height: 24),
-                Reveal(
-                  index: 0,
-                  child: const Text(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
+                  child: Text(
                     'Юуг сайжруулах ёстойг хэлээрэй. Санал болгоныг бид уншина.',
                     style: TextStyle(
-                        fontSize: 15, height: 1.5, color: AppColors.inkSoft),
+                        fontSize: 15, height: 1.4, color: AppColors.muted),
                   ),
                 ),
-                const SizedBox(height: 28),
                 ErrorBanner(message: _formError, shakeToken: _shake),
-                Reveal(
-                  index: 1,
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -189,7 +192,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                         ),
                       ),
                       FieldMessage(error: _typeError),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       const PlainLabel('Аль хэсэгт хамаарах вэ?'),
                       const SizedBox(height: 10),
                       Shake(
@@ -207,7 +210,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                         ),
                       ),
                       FieldMessage(error: _categoryError),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       AppField(
                         label: 'Дэлгэрэнгүй',
                         controller: _message,
@@ -230,42 +233,31 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                           }
                         },
                       ),
-                      const SizedBox(height: 28),
-                      PrimaryButton(
-                        label: 'Илгээх',
-                        icon: LucideIcons.send,
-                        loading: _loading,
-                        onPressed: _loading ? null : _submit,
-                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 48),
-                const Text('Миний илгээсэн',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  label: 'Илгээх',
+                  loading: _loading,
+                  onPressed: _loading ? null : _submit,
+                ),
+                const SizedBox(height: 32),
                 history.when(
-                  loading: () => const Column(children: [
-                    Skeleton(height: 74, radius: 16),
-                    SizedBox(height: 10),
-                    Skeleton(height: 74, radius: 16),
-                  ]),
+                  loading: () => const Skeleton(height: 96, radius: 16),
                   error: (e, _) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(children: [
                       Expanded(
                         child: Text(apiErrorMessage(e),
-                            style: const TextStyle(color: AppColors.inkSoft)),
+                            style: TextStyle(color: AppColors.inkSoft)),
                       ),
                       TextButton(
                         onPressed: () => ref.invalidate(myFeedbackProvider),
-                        child: const Text('Дахин оролдох',
+                        child: Text('Дахин оролдох',
                             style: TextStyle(
-                                color: AppColors.coralLight,
-                                fontWeight: FontWeight.w800)),
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600)),
                       ),
                     ]),
                   ),
@@ -275,11 +267,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                           title: 'Санал хараахан илгээгээгүй',
                           subtitle: 'Илгээсэн санал чинь энд харагдана.',
                         )
-                      : Column(children: [
-                          for (var i = 0; i < list.length; i++)
-                            _FeedbackRow(
-                                item: list[i], last: i == list.length - 1),
-                        ]),
+                      : GroupSection(
+                          title: 'Миний илгээсэн',
+                          children: [
+                            for (final f in list) _FeedbackRow(item: f),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -292,8 +285,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 
 typedef _Option = (String, String, IconData?);
 
-/// Сонголтын chip-үүд. Сонгосон нь шүрэн 16% дүүргэлт + шүрэн хүрээтэй
-/// (одоогийн сонголтыг шүрэнээр тэмдэглэнэ).
+/// Сонголтын chip-үүд. Сонгосон нь ногоон 14% дүүргэлт + ногоон хүрээтэй.
 class _Choices extends StatelessWidget {
   const _Choices(
       {required this.options, required this.selected, required this.onSelected});
@@ -323,13 +315,14 @@ class _Choices extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: o.$1 == selected
-                      ? AppColors.coral.withValues(alpha: 0.16)
-                      : AppColors.surface.withValues(alpha: 0.7),
+                      ? AppColors.accent.withValues(alpha: 0.14)
+                      : AppColors.fill,
                   borderRadius: BorderRadius.circular(AppRadius.chip),
                   border: Border.all(
                     color: o.$1 == selected
-                        ? AppColors.coral.withValues(alpha: 0.6)
-                        : AppColors.border,
+                        ? AppColors.accent
+                        : Colors.transparent,
+                    width: 1.5,
                   ),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -337,7 +330,7 @@ class _Choices extends StatelessWidget {
                     Icon(o.$3,
                         size: 16,
                         color: o.$1 == selected
-                            ? AppColors.coralLight
+                            ? AppColors.accent
                             : AppColors.inkSoft),
                     const SizedBox(width: 8),
                   ],
@@ -345,7 +338,7 @@ class _Choices extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight:
-                            o.$1 == selected ? FontWeight.w800 : FontWeight.w600,
+                            o.$1 == selected ? FontWeight.w600 : FontWeight.w400,
                         color: AppColors.ink,
                       )),
                 ]),
@@ -359,12 +352,11 @@ class _Choices extends StatelessWidget {
 
 final _fbDate = DateFormat('yyyy.MM.dd HH:mm');
 
-/// Илгээсэн саналын мөр — хуваагчтай жагсаалт.
+/// Илгээсэн саналын мөр — бүлэглэсэн жагсаалтын нэг мөр.
 class _FeedbackRow extends StatelessWidget {
-  const _FeedbackRow({required this.item, required this.last});
+  const _FeedbackRow({required this.item});
 
   final FeedbackItem item;
-  final bool last;
 
   Color get _statusColor => switch (item.status) {
         'resolved' => AppColors.success,
@@ -375,19 +367,14 @@ class _FeedbackRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
             Icon(_typeIcons[item.type] ?? LucideIcons.messageSquare,
-                size: 16, color: AppColors.inkSoft),
+                size: 16, color: AppColors.muted),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -395,49 +382,39 @@ class _FeedbackRow extends StatelessWidget {
                 '${FeedbackMeta.categoryLabel(item.category)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.inkSoft),
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _statusColor.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(FeedbackMeta.statusLabel(item.status),
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: _statusColor)),
-            ),
+            Text(FeedbackMeta.statusLabel(item.status),
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _statusColor)),
           ]),
           const SizedBox(height: 10),
           Text(item.message,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 14, height: 1.5, color: AppColors.ink)),
+              style: TextStyle(
+                  fontSize: 15, height: 1.4, color: AppColors.ink)),
           if (item.adminNote != null) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceHi.withValues(alpha: 0.7),
+                color: AppColors.fill,
                 borderRadius: BorderRadius.circular(AppRadius.chip),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.reply,
-                      size: 15, color: AppColors.coralLight),
+                  Icon(LucideIcons.reply,
+                      size: 15, color: AppColors.accent),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(item.adminNote!,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 13.5,
                             height: 1.45,
                             color: AppColors.inkSoft)),
@@ -448,8 +425,8 @@ class _FeedbackRow extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Text(_fbDate.format(item.createdAt.toLocal()),
-              style: const TextStyle(
-                  fontSize: 12.5,
+              style: TextStyle(
+                  fontSize: 13,
                   color: AppColors.muted,
                   fontFeatures: [FontFeature.tabularFigures()])),
         ],
@@ -482,23 +459,21 @@ class _ThanksDialog extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.successBg,
-                  border: Border.all(
-                      color: AppColors.success.withValues(alpha: 0.45)),
                 ),
-                child: const Icon(LucideIcons.check,
+                child: Icon(LucideIcons.check,
                     size: 30, color: AppColors.success),
               ),
             ),
           ),
           const SizedBox(height: 18),
-          const Text('Баярлалаа',
+          Text('Баярлалаа',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.ink)),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Санал чинь хүрлээ. Хариуг доорх жагсаалтаас харна.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.inkSoft),

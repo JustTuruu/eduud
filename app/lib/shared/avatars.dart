@@ -24,7 +24,7 @@ class AvatarPreset {
   /// Нэрийн эхний үсгийн өнгө — цайвар өнгөн дээр бараан, бараан дээр цагаан.
   Color get foreground {
     final avg = Color.lerp(colors.first, colors.last, 0.5)!;
-    return avg.computeLuminance() > 0.38 ? AppColors.ctaInk : Colors.white;
+    return avg.computeLuminance() > 0.38 ? const Color(0xFF1C1C1E) : Colors.white;
   }
 }
 
@@ -82,27 +82,27 @@ class AppAvatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: preset?.gradient ??
-            (isNetwork ? null : AppColors.balGradient),
-        color: isNetwork ? AppColors.surfaceHi : null,
+        gradient: preset?.gradient,
+        color: preset != null ? null : AppColors.fill,
       ),
       child: isNetwork
           ? Image.network(
               avatarUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _Initial(name: name, size: size),
+              errorBuilder: (_, __, ___) =>
+                  _Initial(name: name, size: size, color: AppColors.inkSoft),
             )
           : _Initial(
               name: name,
               size: size,
-              color: preset?.foreground ?? Colors.white),
+              color: preset?.foreground ?? AppColors.inkSoft),
     );
   }
 }
 
 class _Initial extends StatelessWidget {
   const _Initial(
-      {required this.name, required this.size, this.color = Colors.white});
+      {required this.name, required this.size, required this.color});
 
   final String name;
   final double size;
@@ -115,7 +115,7 @@ class _Initial extends StatelessWidget {
         avatarInitial(name),
         style: TextStyle(
           fontSize: size * 0.42,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           color: color,
           height: 1,
         ),
@@ -124,8 +124,7 @@ class _Initial extends StatelessWidget {
   }
 }
 
-/// Аватар сонгогч — дээр нь сонгосон өнгөөр үзүүлэх томоор, доор нь өнгөний
-/// жагсаалт. Хадгалахад `preset:<id>` утгыг буцаана (sheet-ээс).
+/// Аватар сонгогч — дээр нь сонгосон өнгийг томоор, доор нь дугуй өнгөний тор. Хадгалахад `preset:<id>` утгыг буцаана (sheet-ээс).
 class AvatarPicker extends StatefulWidget {
   const AvatarPicker({super.key, required this.name, required this.current});
 
@@ -143,16 +142,14 @@ class _AvatarPickerState extends State<AvatarPicker> {
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).viewPadding.bottom;
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + safeBottom),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + safeBottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Аватар сонгох',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ink)),
+          Text('Аватар сонгох',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 20),
           Center(
             child: AnimatedSwitcher(
@@ -180,8 +177,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
           const SizedBox(height: 26),
           PrimaryButton(
             label: 'Хадгалах',
-            icon: LucideIcons.check,
-            onPressed: _selected == null || _selected == widget.current
+                        onPressed: _selected == null || _selected == widget.current
                 ? null
                 : () => Navigator.pop(context, _selected),
           ),
@@ -207,7 +203,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: on ? AppColors.ink : Colors.transparent,
+              color: on ? AppColors.accent : Colors.transparent,
               width: 2,
             ),
           ),

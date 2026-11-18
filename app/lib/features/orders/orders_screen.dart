@@ -26,7 +26,7 @@ const _statusLabels = {
 
 Color _statusColor(String s) => switch (s) {
       'pending' => AppColors.warn,
-      'paid' => AppColors.success,
+      'expired' => AppColors.danger,
       _ => AppColors.muted,
     };
 
@@ -41,16 +41,13 @@ class OrdersScreen extends ConsumerWidget {
 
     Widget scroll(List<Widget> children) => ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 40 + safeBottom),
-          children: [
-            const SubPageHeader(title: 'Хожсон бараа'),
-            const SizedBox(height: 24),
-            ...children,
-          ],
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 40 + safeBottom),
+          children: children,
         );
 
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: subPageAppBar(context, 'Хожсон бараа'),
       body: AppBackground(
         seed: 'orders',
         child: SafeArea(
@@ -58,16 +55,14 @@ class OrdersScreen extends ConsumerWidget {
           child: PageFrame(
             maxWidth: 720,
             child: RefreshIndicator(
-              color: AppColors.coral,
-              backgroundColor: AppColors.surfaceHi,
+              color: AppColors.accent,
+              backgroundColor: AppColors.surface,
               onRefresh: () => ref.refresh(ordersProvider.future),
               child: orders.when(
                 loading: () => scroll(const [
-                  Skeleton(height: 96, radius: 20),
-                  SizedBox(height: 14),
-                  Skeleton(height: 96, radius: 20),
-                  SizedBox(height: 14),
-                  Skeleton(height: 96, radius: 20),
+                  Skeleton(height: 120, radius: 16),
+                  SizedBox(height: 12),
+                  Skeleton(height: 120, radius: 16),
                 ]),
                 error: (e, _) => scroll([
                   EmptyState(
@@ -75,10 +70,10 @@ class OrdersScreen extends ConsumerWidget {
                   Center(
                     child: TextButton(
                       onPressed: () => ref.invalidate(ordersProvider),
-                      child: const Text('Дахин оролдох',
+                      child: Text('Дахин оролдох',
                           style: TextStyle(
-                              color: AppColors.coralLight,
-                              fontWeight: FontWeight.w800)),
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ]),
@@ -95,25 +90,13 @@ class OrdersScreen extends ConsumerWidget {
                   }
                   final due = list.where((o) => o.status == 'pending').length;
                   return scroll([
-                    Reveal(
-                      index: 0,
-                      child: Text(
-                        due > 0
-                            ? '$due бараа төлбөр хүлээж байна'
-                            : 'Бүх төлбөр хийгдсэн',
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.inkSoft),
-                      ),
+                    GroupSection(
+                      dividerInset: 84,
+                      footer: due > 0
+                          ? '$due бараа төлбөр хүлээж байна'
+                          : 'Бүх төлбөр хийгдсэн',
+                      children: [for (final o in list) _OrderRow(order: o)],
                     ),
-                    const SizedBox(height: 12),
-                    for (var i = 0; i < list.length; i++)
-                      Reveal(
-                        index: i + 1,
-                        child: _OrderRow(
-                            order: list[i], last: i == list.length - 1),
-                      ),
                   ]);
                 },
               ),
@@ -125,12 +108,11 @@ class OrdersScreen extends ConsumerWidget {
   }
 }
 
-/// Хожсон барааны мөр — карт биш, хуваагчтай; төлөх шаардлагатай үед төлөх товчтой.
+/// Хожсон барааны мөр — зураг, нэр, үнэ, төлөв; төлөх шаардлагатай үед товчтой.
 class _OrderRow extends ConsumerStatefulWidget {
-  const _OrderRow({required this.order, required this.last});
+  const _OrderRow({required this.order});
 
   final OrderItem order;
-  final bool last;
 
   @override
   ConsumerState<_OrderRow> createState() => _OrderRowState();
@@ -176,26 +158,21 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
     final color = _statusColor(o.status);
     final img = o.auctionImages.isEmpty ? null : o.auctionImages.first;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        border: widget.last
-            ? null
-            : const Border(bottom: BorderSide(color: AppColors.border)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
               child: SizedBox(
-                width: 76,
-                height: 76,
-                child: AuctionImage(url: img, height: 76),
+                width: 56,
+                height: 56,
+                child: AuctionImage(url: img, height: 56),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,52 +180,41 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
                   Text(o.auctionTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.ink)),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(formatMnt(o.finalPrice),
-                      style: AppTheme.price(
-                          size: 20,
-                          color: o.status == 'paid'
-                              ? AppColors.gold
-                              : AppColors.ink)),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(_statusLabels[o.status] ?? o.status,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: color)),
-                  ),
+                      style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.inkSoft,
+                          fontFeatures: const [FontFeature.tabularFigures()])),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            Text(_statusLabels[o.status] ?? o.status,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color)),
           ]),
           if (pending) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(children: [
-              const Icon(LucideIcons.clock, size: 16, color: AppColors.coralLight),
-              const SizedBox(width: 8),
-              const Text('Төлөх хугацаа:',
-                  style: TextStyle(fontSize: 14, color: AppColors.inkSoft)),
-              const SizedBox(width: 8),
+              Text('Төлөх хугацаа:',
+                  style: TextStyle(fontSize: 13, color: AppColors.muted)),
+              const SizedBox(width: 6),
               CountdownText(
                 endsAt: o.payDeadline,
-                style: AppTheme.price(size: 16, color: AppColors.ink),
+                style: AppTheme.price(size: 13, color: AppColors.ink)
+                    .copyWith(fontWeight: FontWeight.w600),
               ),
             ]),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             PrimaryButton(
               label: 'Төлөх',
-              icon: LucideIcons.creditCard,
               loading: _paying,
               onPressed: _paying ? null : _pay,
             ),

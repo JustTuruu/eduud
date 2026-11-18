@@ -3,12 +3,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/ambient_backdrop.dart';
 import '../../shared/widgets.dart';
 import 'auction_timing.dart';
 
-/// Зураггүй / ачаалж буй үеийн "цомгийн хавтас" — auction id-аас тогтсон
-/// өнгөтэй, ертөнцөөсөө гарахгүй placeholder.
+/// Зураггүй / ачаалж буй үеийн энгийн саарал placeholder.
 class ArtPlaceholder extends StatelessWidget {
   const ArtPlaceholder({super.key, required this.seed, this.iconSize = 40});
 
@@ -17,31 +15,21 @@ class ArtPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AmbientPalette.fromSeed(seed);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(AppColors.surfaceHi, c[0], 0.55)!,
-            Color.lerp(AppColors.surface, c[1], 0.4)!,
-          ],
-        ),
-      ),
+    return ColoredBox(
+      color: AppColors.fill,
       child: Center(
-        child: Icon(LucideIcons.gavel,
-            size: iconSize, color: AppColors.ink.withValues(alpha: 0.22)),
+        child: Icon(LucideIcons.package,
+            size: iconSize, color: AppColors.muted),
       ),
     );
   }
 }
 
-/// Дөрвөлжин "цомог" зураг: ачаалж байхад / алдаатай үед placeholder,
+/// Дөрвөлжин зураг: ачаалж байхад / алдаатай үед placeholder,
 /// ачаалагдахад зөөлөн гарч ирнэ.
 class AuctionArt extends StatelessWidget {
   const AuctionArt(
-      {super.key, required this.auctionId, this.url, this.radius = 20});
+      {super.key, required this.auctionId, this.url, this.radius = 16});
 
   final String auctionId;
   final String? url;
@@ -78,6 +66,7 @@ class AuctionArt extends StatelessWidget {
 
 /// Хэвтээ мөр болон бүх жагсаалтын карт: дөрвөлжин зураг + нэр + дэд мэдээлэл.
 /// Удахгүй эхлэх → эхлэх цаг; дууссан → ялагч + эцсийн үнэ.
+/// Зураг гадна талын өргөнийг дүүргэнэ; текст нь ~64px (зураг доор) шаардана.
 class AuctionTile extends StatelessWidget {
   const AuctionTile({super.key, required this.auction, required this.onTap});
 
@@ -87,57 +76,51 @@ class AuctionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = auction;
-    final text = Theme.of(context).textTheme;
     final ended = a.status == 'ended' || a.status == 'settled';
+    final String foot;
+    if (ended) {
+      foot = a.lastBidder != null
+          ? '${a.lastBidder!.name} · ${formatMnt(a.currentPrice)}'
+          : 'Ялагчгүй';
+    } else {
+      foot = formatStartLabel(a.startsAt, DateTime.now());
+    }
     return AnimatedPressable(
       onPressed: onTap,
       scale: 0.97,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AuctionArt(
             auctionId: a.id,
             url: a.images.isEmpty ? null : a.images.first,
+            radius: 14,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             a.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.2,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            foot,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: text.titleMedium?.copyWith(
-                color: AppColors.ink,
-                fontWeight: FontWeight.w700,
-                fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          if (ended) ...[
-            Text(
-              a.lastBidder != null ? a.lastBidder!.name : 'Ялагчгүй',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.15,
+              color: AppColors.muted,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-            if (a.lastBidder != null)
-              Text(formatMnt(a.currentPrice),
-                  style: AppTheme.price(size: 15, color: AppColors.gold)),
-          ] else
-            Row(children: [
-              const Icon(LucideIcons.clock,
-                  size: 13, color: AppColors.coralLight),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  formatStartLabel(a.startsAt, DateTime.now()),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.inkSoft,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ]),
+          ),
         ],
       ),
     );

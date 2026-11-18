@@ -1,15 +1,13 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../shared/app_nav_bar.dart' show Wordmark;
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 
-/// Нэвтрэх / бүртгүүлэх дэлгэцүүдийн нийтлэг бүрхүүл: ambient талбар,
-/// дээд талд буцах + wordmark, голд нь тайван нэг багана. Өргөн дэлгэц дээр
-/// маягт нэг чавган самбар дээр сууна.
+/// Нэвтрэх / бүртгүүлэх дэлгэцүүдийн нийтлэг бүрхүүл: iOS маягийн дээд мөр
+/// (буцах сум), доор нь том гарчигтай нэг багана. Өргөн дэлгэц дээр голд нь.
 class AuthShell extends StatelessWidget {
   const AuthShell({
     super.key,
@@ -37,63 +35,57 @@ class AuthShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wide = Breakpoints.isWide(context);
-    final body = wide
-        ? Container(
-            padding: const EdgeInsets.fromLTRB(36, 36, 36, 32),
-            decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.78),
-              borderRadius: BorderRadius.circular(AppRadius.art),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 40,
-                  offset: const Offset(0, 22),
+    final enabled = backEnabled;
+    return AuthBackground(
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth + 40),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 44,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Semantics(
+                      button: true,
+                      label: 'Буцах',
+                      child: InkResponse(
+                        onTap: enabled
+                            ? (onBack ?? () => _defaultBack(context))
+                            : null,
+                        radius: 24,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(CupertinoIcons.chevron_back,
+                                size: 22,
+                                color:
+                                    enabled ? AppColors.accent : AppColors.muted),
+                            Text('Буцах',
+                                style: TextStyle(
+                                    fontSize: 17,
+                                    color: enabled
+                                        ? AppColors.accent
+                                        : AppColors.muted)),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(20, wide ? 24 : 8, 20, 32),
+                    child: child,
+                  ),
                 ),
               ],
             ),
-            child: child,
-          )
-        : child;
-
-    return AuthBackground(
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            // Гарын өндрийг Scaffold өөрөө нөхдөг тул viewInsets давхар нэмэхгүй.
-            padding: EdgeInsets.fromLTRB(wide ? 32 : 20, 8, wide ? 32 : 20, 32),
-            child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(minHeight: constraints.maxHeight - 40),
-              child: Column(
-                children: [
-                  Row(children: [
-                    _BackButton(
-                      onPressed: backEnabled
-                          ? (onBack ?? () => _defaultBack(context))
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Wordmark(size: 19, onTap: () => context.go('/')),
-                  ]),
-                  SizedBox(height: wide ? 40 : 28),
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: reducedMotion(context) ? 1 : 0, end: 1),
-                    duration: const Duration(milliseconds: 600),
-                    curve: AppMotion.fluid,
-                    builder: (context, t, c) => Opacity(
-                      opacity: t.clamp(0.0, 1.0),
-                      child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - t)), child: c),
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: body,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -101,36 +93,7 @@ class AuthShell extends StatelessWidget {
   }
 }
 
-class _BackButton extends StatelessWidget {
-  const _BackButton({this.onPressed});
-
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Буцах',
-      child: AnimatedPressable(
-        onPressed: onPressed,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.surface.withValues(alpha: 0.7),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Icon(LucideIcons.arrowLeft,
-              size: 20,
-              color: onPressed == null ? AppColors.muted : AppColors.ink),
-        ),
-      ),
-    );
-  }
-}
-
-/// Дэлгэцийн гарчиг + тайлбар — зүүн тийш, цөцгий.
+/// Дэлгэцийн том гарчиг (34/700) + нэг мөр тайлбар.
 class AuthHeading extends StatelessWidget {
   const AuthHeading({super.key, required this.title, required this.subtitle});
 
@@ -144,21 +107,15 @@ class AuthHeading extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontSize: 32,
-                height: 1.1,
-                color: AppColors.ink,
-              ),
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(color: AppColors.ink),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.5,
-            fontWeight: FontWeight.w500,
-            color: AppColors.inkSoft,
-          ),
+          style: TextStyle(fontSize: 17, height: 1.4, color: AppColors.muted),
         ),
         const SizedBox(height: 28),
       ],
