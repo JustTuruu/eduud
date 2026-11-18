@@ -143,7 +143,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     super.dispose();
   }
 
-  /// Зочин "Санал өгөх" дарвал нэвтрэх дэлгэц рүү — нэвтэрсний дараа яг энэ
+  /// Зочин "Нэвтэрч оролцох" дарвал нэвтрэх дэлгэц рүү — нэвтэрсний дараа яг энэ
   /// auction руугаа буцна.
   void _requireLogin() {
     context.push(loginLocation(next: '/auctions/${widget.auctionId}'));
@@ -741,7 +741,7 @@ class _DetailTimerState extends State<_DetailTimer> {
   }
 }
 
-/// Дэлгэц дээрх ганц үндсэн үйлдэл — ногоон "Санал өгөх · 1 эрх".
+/// Дэлгэц дээрх ганц үндсэн үйлдэл — ногоон "Дуудлага худалдаанд оролцох".
 class _BidControl extends StatelessWidget {
   const _BidControl({
     required this.auction,
@@ -762,10 +762,10 @@ class _BidControl extends StatelessWidget {
     final guest = meId == null;
     final mine = !guest && auction.lastBidder?.id == meId;
     final label = guest
-        ? 'Нэвтэрч санал өгөх · 1 эрх'
+        ? 'Нэвтэрч оролцох'
         : mine
             ? 'Та тэргүүлж байна'
-            : 'Санал өгөх · 1 эрх';
+            : 'Дуудлага худалдаанд оролцох';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -778,8 +778,8 @@ class _BidControl extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           mine
-              ? 'Өөр хүн санал өгөхийг хүлээнэ үү'
-              : 'Санал бүр үнийг ${formatMnt(auction.increment)}-аар өсгөнө',
+              ? 'Өөр хүн оролцохыг хүлээнэ үү'
+              : '1 эрх зарцуулна · үнэ ${formatMnt(auction.increment)}-өөр өснө',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13, color: AppColors.muted),
         ),

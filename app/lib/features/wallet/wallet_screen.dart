@@ -170,7 +170,7 @@ class _Balance extends StatelessWidget {
           const SizedBox(height: 4),
           Text('$balance эрх', style: AppTheme.price(size: 34)),
           const SizedBox(height: 6),
-          Text('Санал өгөх бүрт 1 эрх зарцуулагдана.',
+          Text('Оролцох бүрт 1 эрх зарцуулагдана.',
               style: TextStyle(fontSize: 13, color: AppColors.muted)),
         ],
       ),
@@ -345,7 +345,7 @@ String _txLabel(WalletTx tx) {
   if (tx.note != null && tx.note!.trim().isNotEmpty) return tx.note!;
   return switch (tx.type) {
     'purchase' => 'Эрх цэнэглэсэн',
-    'bid' => 'Санал өгсөн',
+    'bid' => 'Оролцсон',
     'refund' => 'Эрх буцаасан',
     _ => 'Тохируулга',
   };

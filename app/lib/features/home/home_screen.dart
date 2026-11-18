@@ -557,7 +557,7 @@ class _LiveCardState extends State<_LiveCard>
   }
 }
 
-/// Нэр, тэргүүлэгч, үнэ, хугацаа, "Санал өгөх" товч.
+/// Нэр, тэргүүлэгч, үнэ, хугацаа, "Дуудлага худалдаанд оролцох" товч.
 class _LiveInfo extends StatelessWidget {
   const _LiveInfo({
     required this.auction,
@@ -599,7 +599,7 @@ class _LiveInfo extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           a.lastBidder == null
-              ? 'Анхны санал өгч эхлээрэй'
+              ? 'Анхны оролцогч болоорой'
               : 'Тэргүүлж байна: ${a.lastBidder!.name}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -611,7 +611,7 @@ class _LiveInfo extends StatelessWidget {
         _TimerBar(auction: a, offsetMs: offsetMs),
         SizedBox(height: big ? 24 : 14),
         PrimaryButton(
-          label: 'Санал өгөх',
+          label: 'Дуудлага худалдаанд оролцох',
           loading: busy,
           onPressed: () {
             HapticFeedback.mediumImpact();

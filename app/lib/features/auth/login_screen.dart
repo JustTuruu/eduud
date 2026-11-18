@@ -16,7 +16,7 @@ import 'auth_shell.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.next});
 
-  /// Нэвтэрсний дараа очих зам (жиш. санал өгөх гэж байсан auction).
+  /// Нэвтэрсний дараа очих зам (жиш. оролцох гэж байсан auction).
   final String? next;
 
   @override
@@ -131,7 +131,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const AuthHeading(
                 title: 'Нэвтрэх',
                 subtitle:
-                    'Санал өгөх, эрхээ цэнэглэх, хожсон бараагаа авахын тулд нэвтэрнэ үү.',
+                    'Дуудлага худалдаанд оролцох, эрхээ цэнэглэх, хожсон бараагаа авахын тулд нэвтэрнэ үү.',
               ),
               ErrorBanner(message: _formError, shakeToken: _shake),
               AppField(

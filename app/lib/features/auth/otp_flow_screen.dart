@@ -420,7 +420,7 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
           context,
           _isRegister ? 'Нэр, нууц үгээ оруулна уу' : 'Шинэ нууц үг',
           _isRegister
-              ? 'Дараа нь шууд санал өгч эхэлнэ.'
+              ? 'Дараа нь шууд оролцож эхэлнэ.'
               : 'Нууц үг солигдсоны дараа бүх төхөөрөмжөөс гарна.',
         ),
         ErrorBanner(message: _formError, shakeToken: _shake),

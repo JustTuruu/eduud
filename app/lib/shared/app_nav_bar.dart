@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -27,8 +28,50 @@ abstract class NavMetrics {
       barHeight + bottomGap + 16 + MediaQuery.paddingOf(context).bottom;
 }
 
-/// iOS 26 "Liquid Glass" капсул — blur 24, хагас тунгалаг дүүргэлт, нимгэн
-/// гэрэлтсэн хүрээ, дээд ирмэгийн highlight, зөөлөн сүүдэр.
+/// Saturation-ыг [s] дахин нэмэгдүүлэх өнгөний матриц — шилэн материалын ард
+/// байгаа агуулга бүдгэрэхгүй, харин "амьд" өнгөтэй хэвээр харагдана.
+ColorFilter _saturation(double s) => ColorFilter.matrix(<double>[
+      0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s, 0, 0, //
+      0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s, 0, 0, //
+      0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s, 0, 0, //
+      0, 0, 0, 1, 0,
+    ]);
+
+/// Шилэн материалын хүрээ — зүүн дээд тал тод, баруун доод тал бараг үл
+/// харагдах 1px gradient (specular rim).
+class _RimPainter extends CustomPainter {
+  const _RimPainter({required this.radius, required this.dark});
+
+  final double radius;
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(0.5);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: dark ? 0.35 : 0.80),
+          Colors.white.withValues(alpha: dark ? 0.04 : 0.10),
+          Colors.white.withValues(alpha: dark ? 0.10 : 0.25),
+        ],
+        stops: const [0, 0.6, 1],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(_RimPainter old) =>
+      old.radius != radius || old.dark != dark;
+}
+
+/// iOS 26 "Liquid Glass" материал — бага blur (sigma 5) + saturation 1.7,
+/// тунгалаг дүүргэлт, specular хүрээ, дээд ирмэгийн highlight, зөөлөн сүүдэр.
 class _Glass extends StatelessWidget {
   const _Glass({required this.radius, required this.child});
 
@@ -39,37 +82,38 @@ class _Glass extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = AppColors.isDark;
     final fill = dark
-        ? const Color(0xFF2C2C2E).withValues(alpha: 0.70)
-        : Colors.white.withValues(alpha: 0.72);
-    final rim = Colors.white.withValues(alpha: dark ? 0.14 : 0.50);
-    final highlight = Colors.white.withValues(alpha: dark ? 0.22 : 0.85);
+        ? const Color(0xFF1C1C1E).withValues(alpha: 0.42)
+        : Colors.white.withValues(alpha: 0.34);
+    final highlight = Colors.white.withValues(alpha: dark ? 0.30 : 0.70);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? 0.25 : 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: dark ? 0.30 : 0.10),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          filter: ImageFilter.compose(
+            outer: _saturation(1.7),
+            inner: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          ),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: fill,
               borderRadius: BorderRadius.circular(radius),
-              border: Border.all(color: rim),
             ),
             child: Stack(
               children: [
                 child,
                 // Дээд ирмэгийн дотоод гэрэл
                 Positioned(
-                  top: 0,
+                  top: 1,
                   left: radius * 0.6,
                   right: radius * 0.6,
                   height: 1,
@@ -83,6 +127,13 @@ class _Glass extends StatelessWidget {
                         ]),
                       ),
                     ),
+                  ),
+                ),
+                // Specular хүрээ
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                        painter: _RimPainter(radius: radius, dark: dark)),
                   ),
                 ),
               ],
@@ -151,58 +202,58 @@ class _GlassTabsState extends State<_GlassTabs>
   @override
   Widget build(BuildContext context) {
     final count = widget.destinations.length;
-    final pillFill = AppColors.isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.90);
-    return _Glass(
-      radius: widget.radius,
-      child: SizedBox(
-        height: widget.horizontal ? 52 : NavMetrics.barHeight,
-        width: widget.horizontal ? count * 128.0 + _inset * 2 : null,
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final w = (box.maxWidth - _inset * 2) / count;
-            return Padding(
-              padding: const EdgeInsets.all(_inset),
-              child: Stack(
-                children: [
-                  AnimatedBuilder(
-                    animation: _pos,
-                    builder: (context, _) => Positioned(
-                      left: _pos.value * w,
-                      top: 0,
-                      bottom: 0,
-                      width: w,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: pillFill,
-                          borderRadius:
-                              BorderRadius.circular(widget.radius - _inset),
-                        ),
+    final dark = AppColors.isDark;
+    final pillFill = dark
+        ? Colors.white.withValues(alpha: 0.14)
+        : Colors.white.withValues(alpha: 0.55);
+    final pillRim = Colors.white.withValues(alpha: dark ? 0.16 : 0.45);
+    return SizedBox(
+      height: widget.horizontal ? 52 : NavMetrics.barHeight,
+      width: widget.horizontal ? count * 128.0 + _inset * 2 : null,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final w = (box.maxWidth - _inset * 2) / count;
+          return Padding(
+            padding: const EdgeInsets.all(_inset),
+            child: Stack(
+              children: [
+                AnimatedBuilder(
+                  animation: _pos,
+                  builder: (context, _) => Positioned(
+                    left: _pos.value * w,
+                    top: 0,
+                    bottom: 0,
+                    width: w,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: pillFill,
+                        borderRadius:
+                            BorderRadius.circular(widget.radius - _inset),
+                        border: Border.all(color: pillRim, width: 0.5),
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      for (var i = 0; i < count; i++)
-                        Expanded(
-                          child: _NavItem(
-                            destination: widget.destinations[i],
-                            selected: i == widget.currentIndex,
-                            horizontal: widget.horizontal,
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              widget.onSelected(i);
-                            },
-                          ),
+                ),
+                Row(
+                  children: [
+                    for (var i = 0; i < count; i++)
+                      Expanded(
+                        child: _NavItem(
+                          destination: widget.destinations[i],
+                          selected: i == widget.currentIndex,
+                          horizontal: widget.horizontal,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            widget.onSelected(i);
+                          },
                         ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -210,37 +261,154 @@ class _GlassTabsState extends State<_GlassTabs>
 
 /// Доод навигаци — Apple Music (iOS 26) маягийн хөвөгч шилэн капсул.
 /// Өргөн: хажуу тал 16, доод = safe area + 8.
-class AppNavBar extends StatelessWidget {
+///
+/// [collapsed] үед (агуулгыг доош гүйлгэхэд) зүүн доод буланд зөвхөн идэвхтэй
+/// табын icon-той жижиг капсул болж хураагдана; дарвал [onExpand] дуудагдана.
+class AppNavBar extends StatefulWidget {
   const AppNavBar({
     super.key,
     required this.destinations,
     required this.currentIndex,
     required this.onSelected,
+    this.collapsed = false,
+    this.onExpand,
   });
 
   final List<NavDestination> destinations;
   final int currentIndex;
   final ValueChanged<int> onSelected;
+  final bool collapsed;
+  final VoidCallback? onExpand;
+
+  @override
+  State<AppNavBar> createState() => _AppNavBarState();
+}
+
+class _AppNavBarState extends State<AppNavBar>
+    with SingleTickerProviderStateMixin {
+  static const _collapsedWidth = 56.0;
+  static const _collapsedHeight = 48.0;
+
+  /// 0 = бүтэн капсул, 1 = хураагдсан.
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+    value: widget.collapsed ? 1 : 0,
+  );
+
+  @override
+  void didUpdateWidget(covariant AppNavBar old) {
+    super.didUpdateWidget(old);
+    if (old.collapsed != widget.collapsed) {
+      final target = widget.collapsed ? 1.0 : 0.0;
+      if (reducedMotion(context)) {
+        _c.value = target;
+      } else {
+        _c.animateTo(target, curve: Curves.easeOutCubic);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        0,
-        16,
-        NavMetrics.bottomGap + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: _GlassTabs(
-            destinations: destinations,
-            currentIndex: currentIndex,
-            onSelected: onSelected,
-            radius: 32,
-          ),
+    final bottomSafe = MediaQuery.paddingOf(context).bottom;
+    // Слотын өндөр тогтмол — хураагдахад агуулгын padding үсрэхгүй.
+    return SizedBox(
+      height: NavMetrics.barHeight + NavMetrics.bottomGap + bottomSafe,
+      child: Padding(
+        padding:
+            EdgeInsets.fromLTRB(16, 0, 16, NavMetrics.bottomGap + bottomSafe),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final full = math.min(box.maxWidth, 480.0);
+            return AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final t = _c.value;
+                final width = full + (_collapsedWidth - full) * t;
+                final height = NavMetrics.barHeight +
+                    (_collapsedHeight - NavMetrics.barHeight) * t;
+                final left = (box.maxWidth - full) / 2 * (1 - t);
+                final radius = 32 - 8 * t;
+                final dest = widget.destinations[widget.currentIndex];
+                // Бусад icon/шошго эхэлж бүдгэрч, жижиг icon дараа нь орж ирнэ.
+                final fullOpacity = (1 - t * 1.6).clamp(0.0, 1.0);
+                final miniOpacity = ((t - 0.4) / 0.6).clamp(0.0, 1.0);
+                return Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: left),
+                    child: SizedBox(
+                      width: width,
+                      height: height,
+                      child: _Glass(
+                        radius: radius,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (fullOpacity > 0)
+                              IgnorePointer(
+                                ignoring: widget.collapsed,
+                                child: Opacity(
+                                  opacity: fullOpacity,
+                                  child: Transform.scale(
+                                    alignment: Alignment.centerLeft,
+                                    scale: 1 - 0.12 * t,
+                                    child: OverflowBox(
+                                      alignment: Alignment.centerLeft,
+                                      minWidth: full,
+                                      maxWidth: full,
+                                      minHeight: NavMetrics.barHeight,
+                                      maxHeight: NavMetrics.barHeight,
+                                      child: _GlassTabs(
+                                        destinations: widget.destinations,
+                                        currentIndex: widget.currentIndex,
+                                        onSelected: widget.onSelected,
+                                        radius: 32,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (miniOpacity > 0)
+                              Opacity(
+                                opacity: miniOpacity,
+                                child: Semantics(
+                                  button: true,
+                                  label: dest.label,
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: widget.collapsed
+                                        ? () {
+                                            HapticFeedback.selectionClick();
+                                            widget.onExpand?.call();
+                                          }
+                                        : null,
+                                    child: Center(
+                                      child: Transform.scale(
+                                        scale: 0.8 + 0.2 * t,
+                                        child: Icon(dest.icon,
+                                            size: 24, color: AppColors.accent),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
     );
@@ -407,12 +575,15 @@ class AppTopNav extends StatelessWidget {
                     child: Wordmark(size: 20),
                   ),
                 ),
-                _GlassTabs(
-                  destinations: destinations,
-                  currentIndex: currentIndex,
-                  onSelected: onSelected,
+                _Glass(
                   radius: 26,
-                  horizontal: true,
+                  child: _GlassTabs(
+                    destinations: destinations,
+                    currentIndex: currentIndex,
+                    onSelected: onSelected,
+                    radius: 26,
+                    horizontal: true,
+                  ),
                 ),
                 Expanded(
                   child: Align(

@@ -121,7 +121,7 @@ class _Hero extends StatelessWidget {
       crossAxisAlignment: align,
       children: [
         Text(
-          'Нэг санал — нэг эрх.',
+          'Нэг оролцоо — нэг эрх.',
           textAlign: ta,
           style: TextStyle(
             fontSize: wide ? 56 : 36,
@@ -135,7 +135,7 @@ class _Hero extends StatelessWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
           child: Text(
-            'Хамгийн сүүлд санал өгсөн хүн барааг эцсийн үнээр авна.',
+            'Хамгийн сүүлд оролцсон хүн барааг эцсийн үнээр авна.',
             textAlign: ta,
             style: TextStyle(
                 fontSize: wide ? 21 : 17,
@@ -240,7 +240,7 @@ class _LiveCard extends StatelessWidget {
         ]),
         const SizedBox(height: 20),
         PrimaryButton(
-          label: 'Санал өгөх',
+          label: 'Дуудлага худалдаанд оролцох',
           onPressed: () => context.push('/auctions/${a.id}'),
         ),
       ],
@@ -278,13 +278,13 @@ class _HowItWorks extends StatelessWidget {
     ),
     (
       CupertinoIcons.hand_raised_fill,
-      'Санал өгнө',
-      'Санал бүр 1 эрх зарцуулж, үнийг нэмнэ.'
+      'Оролцоно',
+      'Оролцох бүрт 1 эрх зарцуулж, үнийг нэмнэ.'
     ),
     (
       CupertinoIcons.gift_fill,
       'Бараагаа авна',
-      'Хамгийн сүүлд санал өгсөн хүн яллаа.'
+      'Хамгийн сүүлд оролцсон хүн яллаа.'
     ),
   ];
 

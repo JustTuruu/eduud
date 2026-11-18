@@ -70,7 +70,7 @@ bool _requiresAuth(String location) {
 }
 
 /// Нэвтрэх дэлгэц рүү `next` параметртэй илгээнэ — нэвтэрсний дараа тэр
-/// газраа буцааж аваачна (жиш. санал өгөх гэж байсан auction).
+/// газраа буцааж аваачна (жиш. оролцох гэж байсан auction).
 String loginLocation({String? next}) {
   if (next == null || next == '/' || !next.startsWith('/')) {
     return '/auth/login';
@@ -222,7 +222,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 const _destinations = [
   NavDestination(icon: CupertinoIcons.house_fill, label: 'Нүүр'),
   NavDestination(icon: CupertinoIcons.doc_text_fill, label: 'Хүсэлт'),
-  NavDestination(icon: CupertinoIcons.person_crop_circle_fill, label: 'Профайл'),
+  NavDestination(
+      icon: CupertinoIcons.person_crop_circle_fill, label: 'Профайл'),
 ];
 
 class _Splash extends StatelessWidget {
@@ -235,13 +236,66 @@ class _Splash extends StatelessWidget {
 
 /// Нэвтэрсэн хэрэглэгчийн бүрхүүл. Утас: доод нав. Өргөн дэлгэц (web):
 /// дээд нав + агуулга — ижил 3 таб, ижил төлөв.
-class _AppShell extends ConsumerWidget {
+class _AppShell extends ConsumerStatefulWidget {
   const _AppShell({required this.shell});
 
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<_AppShell> {
+  /// Доод нав хураагдсан эсэх (агуулгыг доош гүйлгэхэд).
+  bool _collapsed = false;
+
+  /// Нэг чиглэлд гүйлгэсэн хуримтлагдсан зай — босго (12px) давахад нав хувирна.
+  double _acc = 0;
+
+  static const _threshold = 12.0;
+
+  void _setCollapsed(bool v) {
+    if (_collapsed == v) return;
+    setState(() => _collapsed = v);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AppShell old) {
+    super.didUpdateWidget(old);
+    // Таб солигдоход нав дахин бүтэн хэлбэртэй болно.
+    if (old.shell.currentIndex != widget.shell.currentIndex) {
+      _acc = 0;
+      _collapsed = false;
+    }
+  }
+
+  /// Зөвхөн босоо гүйлгэлтийг сонсоно (хэвтээ carousel-ыг үл тоомсорлоно).
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    if (n is! ScrollUpdateNotification) return false;
+    final m = n.metrics;
+    if (m.pixels <= m.minScrollExtent + 1) {
+      // Хамгийн дээр — үргэлж бүтэн.
+      _acc = 0;
+      _setCollapsed(false);
+      return false;
+    }
+    final d = n.scrollDelta ?? 0;
+    // Доод захын bounce-ийг үл тоомсорлоно.
+    if (d == 0 || m.outOfRange) return false;
+    if ((d > 0) != (_acc > 0)) _acc = 0;
+    _acc += d;
+    if (_acc > _threshold) {
+      _setCollapsed(true);
+    } else if (_acc < -_threshold) {
+      _setCollapsed(false);
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shell = widget.shell;
     final wide = Breakpoints.isWide(context);
     void select(int i) =>
         shell.goBranch(i, initialLocation: i == shell.currentIndex);
@@ -286,11 +340,16 @@ class _AppShell extends ConsumerWidget {
 
     return Scaffold(
       extendBody: true,
-      body: AnimatedShellBody(index: shell.currentIndex, child: shell),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: AnimatedShellBody(index: shell.currentIndex, child: shell),
+      ),
       bottomNavigationBar: AppNavBar(
         destinations: _destinations,
         currentIndex: shell.currentIndex,
         onSelected: select,
+        collapsed: _collapsed,
+        onExpand: () => _setCollapsed(false),
       ),
     );
   }
