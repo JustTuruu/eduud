@@ -215,7 +215,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
     if (a != null) {
       final bid = a.status == 'live'
           ? _BidControl(
-              auction: a,
               meId: me?.id,
               balance: me?.balance ?? 0,
               error: _bidError,
@@ -786,11 +785,9 @@ class _TimingCardState extends State<_TimingCard> {
   }
 }
 
-/// "Үнэ илгээх" хэсэг — энд л хэрэглэгч бодитоор үнэ илгээж эрх зарцуулна.
-/// Юу болохыг (таны санал, зарцуулах эрх, үлдэгдэл) товчноос өмнө тодорхой хэлнэ.
+/// "Үнэ илгээх" хэсэг — зөвхөн товч (нэвтрээгүй / эрхгүй үед тохирох үйлдэл) + алдааны мөр.
 class _BidControl extends StatelessWidget {
   const _BidControl({
-    required this.auction,
     required this.meId,
     required this.balance,
     required this.error,
@@ -800,7 +797,6 @@ class _BidControl extends StatelessWidget {
     required this.onTopUp,
   });
 
-  final AuctionDetail auction;
   final String? meId;
   final int balance;
   final String? error;
@@ -812,9 +808,7 @@ class _BidControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final guest = meId == null;
-    final mine = !guest && auction.lastBidder?.id == meId;
     final noBalance = !guest && balance <= 0;
-    final next = auction.currentPrice + auction.increment;
 
     final String label;
     final VoidCallback? action;
@@ -829,68 +823,23 @@ class _BidControl extends StatelessWidget {
       action = onBid;
     }
 
-    final String note;
-    if (guest) {
-      note = 'Үнэ илгээхийн тулд нэвтэрнэ үү';
-    } else if (noBalance) {
-      note = 'Үнэ илгээхэд 1 эрх хэрэгтэй · Үлдэгдэл: 0 эрх';
-    } else {
-      note = '1 эрх зарцуулна · Үлдэгдэл: $balance эрх';
-    }
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (mine) ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Icon(LucideIcons.circleCheck,
-                    size: 16, color: AppColors.success),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Та тэргүүлж байна. Дахин илгээвэл үнэ ${formatMnt(next)} болж, 1 эрх зарцуулна.',
-                  style: TextStyle(fontSize: 13, color: AppColors.ink),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-        ],
-        Text('Үнэ илгээх',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.muted)),
-        const SizedBox(height: 2),
-        Text(
-          'Таны санал: ${formatMnt(next)}',
-          textAlign: TextAlign.center,
-          style: AppTheme.price(size: 24, color: AppColors.ink),
-        ),
-        const SizedBox(height: 10),
         PrimaryButton(
           label: label,
           loading: busy,
           onPressed: action,
         ),
-        const SizedBox(height: 8),
         if (error != null) ...[
+          const SizedBox(height: 8),
           Text(
             error!,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: AppColors.danger),
           ),
-          const SizedBox(height: 4),
         ],
-        Text(
-          note,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.muted),
-        ),
       ],
     );
   }
