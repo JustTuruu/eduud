@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import '../core/api/api_client.dart';
 import '../core/app_config_provider.dart';
 import '../core/models.dart';
 import '../core/theme/app_theme.dart';
+import 'top_toast.dart';
 import 'widgets.dart';
 
 /// wire.mn нэхэмжлэхийн QR төлбөрийн sheet — цэнэглэлт болон ялсан барааны
@@ -34,6 +37,18 @@ class PaymentInvoiceSheet extends ConsumerStatefulWidget {
 class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
   bool _checking = false;
   bool _simulating = false;
+  bool _cooldown = false;
+  Timer? _cooldownTimer;
+
+  /// "Шалгах" товчийн доор байрлах inline төлөв (мэдэгдэл биш).
+  String? _checkMessage;
+  bool _checkIsError = false;
+
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    super.dispose();
+  }
 
   /// Зөвхөн тест орчинд: банк руу орохгүйгээр төлбөрийг батлагдсан болгоно.
   Future<void> _simulatePayment() async {
@@ -46,14 +61,25 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _simulating = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+        setState(() {
+          _checkIsError = true;
+          _checkMessage = apiErrorMessage(e);
+        });
       }
     }
   }
 
   Future<void> _check() async {
-    setState(() => _checking = true);
+    if (_checking || _cooldown) return;
+    setState(() {
+      _checking = true;
+      _cooldown = true;
+    });
+    // Давтан дарж "спам" хийхээс сэргийлж ~3с хүлээлгэнэ.
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _cooldown = false);
+    });
     try {
       final res = await ref.read(dioProvider).post(widget.checkPath);
       final status = (res.data as Map<String, dynamic>)['status'];
@@ -62,12 +88,17 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
         Navigator.pop(context, true);
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Төлбөр хараахан орж ирээгүй байна.')));
+      setState(() {
+        _checkIsError = false;
+        _checkMessage =
+            'Төлбөр хараахан ороогүй байна. Банкны апп дээр төлсний дараа дахин шалгана уу.';
+      });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+        setState(() {
+          _checkIsError = true;
+          _checkMessage = apiErrorMessage(e);
+        });
       }
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -194,8 +225,7 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
               child: TextButton.icon(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: inv.qrText!));
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('Хууллаа')));
+                  showTopToast(context, 'Хууллаа', kind: TopToastKind.success);
                 },
                 icon:
                     Icon(LucideIcons.copy, size: 15, color: AppColors.inkSoft),
@@ -209,15 +239,26 @@ class _PaymentInvoiceSheetState extends ConsumerState<PaymentInvoiceSheet> {
           _step(2, 'QR кодыг уншуулж, төлбөрөө баталгаажуулна.'),
           const SizedBox(height: 22),
           PrimaryButton(
-            label: 'Төлсөн, шалгах',
+            label: _checking ? 'Шалгаж байна…' : 'Төлсөн, шалгах',
             loading: _checking,
-            onPressed: _checking ? null : _check,
+            onPressed: (_checking || _cooldown) ? null : _check,
           ),
           const SizedBox(height: 10),
-          Text(
-            'Төлбөр орж ирэхэд автоматаар баталгаажна.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.muted),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            alignment: Alignment.topCenter,
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                _checkMessage ?? 'Төлбөр орж ирэхэд автоматаар баталгаажна.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: _checkIsError ? AppColors.danger : AppColors.muted,
+                ),
+              ),
+            ),
           ),
           // Тест орчинд банк руу орох боломжгүй тул төлбөрийг симуляци хийнэ.
           if (testMode) ...[

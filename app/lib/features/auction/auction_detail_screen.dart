@@ -23,6 +23,7 @@ import 'consent_sheet.dart';
 import '../home/auction_timing.dart';
 import 'image_peek.dart';
 import '../wallet/sub_page.dart' show GroupSection;
+import '../../shared/top_toast.dart';
 
 /// Auction-ы дэлгэрэнгүй + realtime төлөв.
 /// REST-ээр эхний байдлыг татаад Socket.IO room-д нэгдэж event-ээр шинэчилнэ.
@@ -143,14 +144,6 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
   bool _bidding = false;
   int _step = 1; // энэ дуудлагад сүүлд сонгосон алхам (₮)
   String? _bidError; // "Үнэ илгээх" хэсэгт inline харагдах алдаа
-  String? _toast;
-  Timer? _toastTimer;
-
-  @override
-  void dispose() {
-    _toastTimer?.cancel();
-    super.dispose();
-  }
 
   /// Зочин "Нэвтэрч оролцох" дарвал нэвтрэх дэлгэц рүү — нэвтэрсний дараа яг энэ
   /// auction руугаа буцна.
@@ -186,11 +179,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
 
   void _showToast(String message) {
     if (!mounted) return;
-    _toastTimer?.cancel();
-    setState(() => _toast = message);
-    _toastTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _toast = null);
-    });
+    showTopToast(context, message, kind: TopToastKind.success);
   }
 
   /// Хугацаа сунгагдсан бол түр мэдэгдэл харуулна.
@@ -264,20 +253,7 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
         title: const Text('Дуудлага'),
       ),
       bottomNavigationBar: bottomBar,
-      body: Stack(
-        children: [
-          Positioned.fill(child: body),
-          // Хугацаа сунгагдсан мэдэгдэл
-          Positioned(
-            top: 8,
-            left: 24,
-            right: 24,
-            child: IgnorePointer(
-              child: Center(child: _ExtendedToast(message: _toast)),
-            ),
-          ),
-        ],
-      ),
+      body: body,
     );
   }
 
@@ -519,59 +495,6 @@ class _BidBar extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Хугацаа сунгагдсан мэдэгдэл — дээрээс зөөлөн орж ирнэ.
-class _ExtendedToast extends StatelessWidget {
-  const _ExtendedToast({required this.message});
-
-  final String? message;
-
-  @override
-  Widget build(BuildContext context) {
-    final reduce = reducedMotion(context);
-    return AnimatedSwitcher(
-      duration: reduce ? Duration.zero : AppMotion.base,
-      switchInCurve: AppMotion.enter,
-      transitionBuilder: (child, anim) => FadeTransition(
-        opacity: anim,
-        child: SlideTransition(
-          position: Tween(begin: const Offset(0, -0.6), end: Offset.zero)
-              .animate(anim),
-          child: child,
-        ),
-      ),
-      child: message == null
-          ? const SizedBox.shrink(key: ValueKey('none'))
-          : Semantics(
-              liveRegion: true,
-              child: Container(
-                key: ValueKey(message),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceHi,
-                  borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(color: AppColors.border, width: 0.5),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(LucideIcons.timer, size: 16, color: AppColors.accent),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      message!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-            ),
     );
   }
 }

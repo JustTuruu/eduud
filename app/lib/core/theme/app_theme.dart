@@ -291,16 +291,6 @@ abstract class AppTheme {
         // Алдааны текстийг AppField өөрөө зурдаг тул энд орон зай эзлүүлэхгүй.
         errorStyle: const TextStyle(fontSize: 0, height: 0),
       ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark ? p.surfaceHi : const Color(0xFF2C2C2E),
-        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
-        behavior: SnackBarBehavior.floating,
-        // Хөвөгч навын дээгүүр харагдана.
-        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.chip),
-        ),
-      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

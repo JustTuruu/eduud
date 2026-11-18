@@ -10,6 +10,7 @@ import '../../shared/app_nav_bar.dart';
 import '../../shared/avatars.dart';
 import '../../shared/form_widgets.dart';
 import '../../shared/invoice_sheet.dart' show showGlassSheet;
+import '../../shared/top_toast.dart';
 import '../../shared/validators.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
@@ -164,16 +165,15 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _editName(
       BuildContext context, WidgetRef ref, String current) async {
-    // Controller-ийг dialog өөрөө эзэмшинэ — эндээс дамжуулж өгөөд гаднаас
+    // Controller-ийг sheet өөрөө эзэмшинэ — эндээс дамжуулж өгөөд гаднаас
     // dispose хийвэл хаагдах animation дээр "used after dispose" алдаа гарна.
-    final saved = await showAppDialog<bool>(
+    final saved = await showGlassSheet<bool>(
       context,
-      builder: (ctx) => _EditNameDialog(initialName: current, ref: ref),
+      builder: (ctx) => _EditNameSheet(initialName: current, ref: ref),
     );
 
     if (saved == true && context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Нэр солигдлоо.')));
+      showTopToast(context, 'Нэр солигдлоо', kind: TopToastKind.success);
     }
   }
 
@@ -191,13 +191,11 @@ class ProfileScreen extends ConsumerWidget {
       await ref.read(dioProvider).patch('/me', data: {'avatarUrl': picked});
       await ref.read(authProvider.notifier).refreshProfile();
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Аватар солигдлоо.')));
+        showTopToast(context, 'Аватар солигдлоо.', kind: TopToastKind.success);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+        showTopToast(context, apiErrorMessage(e), kind: TopToastKind.error);
       }
     }
   }
@@ -210,8 +208,7 @@ class ProfileScreen extends ConsumerWidget {
       builder: (ctx) => _ChangePasswordDialog(ref: ref),
     );
     if (changed == true && context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Нууц үг солигдлоо.')));
+      showTopToast(context, 'Нууц үг солигдлоо.', kind: TopToastKind.success);
     }
   }
 
@@ -312,23 +309,22 @@ class _Badge extends StatelessWidget {
   }
 }
 
-class _EditNameDialog extends StatefulWidget {
-  const _EditNameDialog({required this.initialName, required this.ref});
+class _EditNameSheet extends StatefulWidget {
+  const _EditNameSheet({required this.initialName, required this.ref});
 
   final String initialName;
   final WidgetRef ref;
 
   @override
-  State<_EditNameDialog> createState() => _EditNameDialogState();
+  State<_EditNameSheet> createState() => _EditNameSheetState();
 }
 
-class _EditNameDialogState extends State<_EditNameDialog> {
+class _EditNameSheetState extends State<_EditNameSheet> {
   late final TextEditingController _controller =
       TextEditingController(text: widget.initialName);
 
   bool _loading = false;
   String? _error;
-  int _shake = 0;
 
   @override
   void dispose() {
@@ -336,19 +332,22 @@ class _EditNameDialogState extends State<_EditNameDialog> {
     super.dispose();
   }
 
-  Future<void> _save() async {
-    final error = Validators.name(_controller.text);
-    setState(() => _error = error);
-    if (error != null) {
-      setState(() => _shake++);
-      return;
-    }
+  String get _trimmed => _controller.text.trim();
 
-    setState(() => _loading = true);
+  /// Хадгалах боломжтой эсэх: дүрэмд нийцсэн, өөрчлөгдсөн нэр.
+  bool get _canSave =>
+      !_loading &&
+      Validators.name(_controller.text) == null &&
+      _trimmed != widget.initialName.trim();
+
+  Future<void> _save() async {
+    if (!_canSave) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      await widget.ref
-          .read(dioProvider)
-          .patch('/me', data: {'name': _controller.text.trim()});
+      await widget.ref.read(dioProvider).patch('/me', data: {'name': _trimmed});
       await widget.ref.read(authProvider.notifier).refreshProfile();
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -356,7 +355,6 @@ class _EditNameDialogState extends State<_EditNameDialog> {
         setState(() {
           _loading = false;
           _error = apiErrorMessage(e);
-          _shake++;
         });
       }
     }
@@ -364,46 +362,128 @@ class _EditNameDialogState extends State<_EditNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final inset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).viewPadding.bottom;
+    final validation =
+        _controller.text.isEmpty ? null : Validators.name(_controller.text);
+    final error = _error ?? validation;
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Нэр солих',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink)),
-          const SizedBox(height: 20),
-          AppField(
-            label: 'Нэр',
-            controller: _controller,
-            hint: 'Шинэ нэр',
-            icon: LucideIcons.user,
-            error: _error,
-            autofocus: true,
-            enabled: !_loading,
-            shakeToken: _shake,
-            maxLength: Validators.nameMax,
-            textCapitalization: TextCapitalization.words,
-            onChanged: (_) {
-              if (_error != null) setState(() => _error = null);
-            },
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 22),
-          PrimaryButton(
-            label: 'Хадгалах',
-            loading: _loading,
-            onPressed: _loading ? null : _save,
-          ),
-          const SizedBox(height: 6),
-          TextButton(
-            onPressed: _loading ? null : () => Navigator.pop(context),
-            child: Text('Болих', style: TextStyle(color: AppColors.inkSoft)),
-          ),
-        ],
+      padding: EdgeInsets.only(bottom: inset),
+      child: SingleChildScrollView(
+        padding:
+            EdgeInsets.fromLTRB(16, 8, 16, 20 + (inset > 0 ? 0 : safeBottom)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: _loading ? null : () => Navigator.pop(context),
+                      child: Text('Болих',
+                          style: TextStyle(
+                              fontSize: 17, color: AppColors.inkSoft)),
+                    ),
+                  ),
+                ),
+                Text('Нэр солих',
+                    style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink)),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _canSave ? _save : null,
+                      child: _loading
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.accent))
+                          : Text('Хадгалах',
+                              style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: _canSave
+                                      ? AppColors.accent
+                                      : AppColors.muted)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.fill,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.only(left: 14, right: 4),
+              child: TextField(
+                controller: _controller,
+                autofocus: true,
+                enabled: !_loading,
+                maxLength: Validators.nameMax,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() => _error = null),
+                onSubmitted: (_) => _save(),
+                style: TextStyle(fontSize: 17, color: AppColors.ink),
+                cursorColor: AppColors.accent,
+                buildCounter: (context,
+                        {required currentLength,
+                        required isFocused,
+                        required maxLength}) =>
+                    null,
+                decoration: InputDecoration(
+                  hintText: 'Шинэ нэр',
+                  hintStyle: TextStyle(color: AppColors.muted),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  filled: false,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  suffixIcon: _controller.text.isEmpty || _loading
+                      ? null
+                      : IconButton(
+                          tooltip: 'Арилгах',
+                          icon: Icon(LucideIcons.circleX,
+                              size: 18, color: AppColors.muted),
+                          onPressed: () => setState(_controller.clear),
+                        ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      error ?? 'Таны нэр бусад оролцогчдод харагдана.',
+                      style: TextStyle(
+                          fontSize: 13,
+                          height: 1.35,
+                          color: error != null
+                              ? AppColors.danger
+                              : AppColors.muted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('${_controller.text.length}/${Validators.nameMax}',
+                      style: TextStyle(fontSize: 13, color: AppColors.muted)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

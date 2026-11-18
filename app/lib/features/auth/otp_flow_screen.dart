@@ -13,6 +13,7 @@ import '../../shared/validators.dart';
 import '../../shared/widgets.dart';
 import 'auth_controller.dart';
 import 'auth_shell.dart';
+import '../../shared/top_toast.dart';
 
 /// Бүртгүүлэх (purpose=register) ба нууц үг сэргээх (purpose=reset) нэг урсгал:
 /// 1. дугаар → OTP илгээх, 2. код шалгах → ticket, 3. нэр/нууц үг.
@@ -214,9 +215,8 @@ class _OtpFlowScreenState extends ConsumerState<OtpFlowScreen> {
             .read(authProvider.notifier)
             .resetPassword(_ticket!, _password.text);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Нууц үг солигдлоо. Одоо нэвтэрнэ үү.')),
-        );
+        showTopToast(context, 'Нууц үг солигдлоо. Одоо нэвтэрнэ үү.',
+            kind: TopToastKind.success);
         context.go('/auth/login');
       }
     });

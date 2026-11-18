@@ -15,6 +15,7 @@ import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../wallet/sub_page.dart';
 import 'request_validators.dart';
+import '../../shared/top_toast.dart';
 
 final myRequestsProvider =
     FutureProvider.autoDispose<List<AuctionRequest>>((ref) async {
@@ -45,9 +46,7 @@ class RequestsScreen extends ConsumerWidget {
       ),
     );
     if (msg == null || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+    showTopToast(context, msg, kind: TopToastKind.success);
   }
 
   Future<void> _cancel(
@@ -61,12 +60,10 @@ class RequestsScreen extends ConsumerWidget {
       await ref.read(dioProvider).post('/auction-requests/${r.id}/cancel');
       ref.invalidate(myRequestsProvider);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Хүсэлт цуцлагдлаа.')));
+      showTopToast(context, 'Хүсэлт цуцлагдлаа.', kind: TopToastKind.success);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+      showTopToast(context, apiErrorMessage(e), kind: TopToastKind.error);
     }
   }
 

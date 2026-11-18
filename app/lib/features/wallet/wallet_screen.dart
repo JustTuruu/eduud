@@ -11,6 +11,7 @@ import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 import 'sub_page.dart';
+import '../../shared/top_toast.dart';
 
 final packagesProvider = FutureProvider<List<TokenPackage>>((ref) async {
   final res = await ref.watch(dioProvider).get('/wallet/packages');
@@ -58,14 +59,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         await ref.read(authProvider.notifier).refreshProfile();
         ref.invalidate(walletTxProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Цэнэглэлт амжилттай. Эрх нэмэгдлээ.')));
+          showTopToast(context, 'Цэнэглэлт амжилттай. Эрх нэмэгдлээ.',
+              kind: TopToastKind.success);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+        showTopToast(context, apiErrorMessage(e), kind: TopToastKind.error);
       }
     } finally {
       if (mounted) setState(() => _buying = null);

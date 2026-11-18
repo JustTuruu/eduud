@@ -9,6 +9,7 @@ import '../../shared/invoice_sheet.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../wallet/sub_page.dart';
+import '../../shared/top_toast.dart';
 
 final ordersProvider = FutureProvider<List<OrderItem>>((ref) async {
   final res = await ref.watch(dioProvider).get('/orders');
@@ -137,14 +138,13 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
       if (paid == true) {
         ref.invalidate(ordersProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Төлбөр амжилттай. Баярлалаа!')));
+          showTopToast(context, 'Төлбөр амжилттай. Баярлалаа!',
+              kind: TopToastKind.success);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(apiErrorMessage(e))));
+        showTopToast(context, apiErrorMessage(e), kind: TopToastKind.error);
       }
     } finally {
       if (mounted) setState(() => _paying = false);
