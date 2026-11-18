@@ -81,3 +81,12 @@ String formatTimeRange(DateTime a, DateTime b) {
   final f = DateFormat('HH:mm');
   return '${f.format(a.toLocal())}–${f.format(b.toLocal())}';
 }
+
+/// Үлдсэн хугацааг миллисекундтэй: `mm:ss.SSS`, нэг цагаас дээш бол
+/// `h:mm:ss.SSS`. Сөрөг утгыг 00:00.000 гэж үзнэ.
+String formatRemainingMs(Duration d) {
+  final total = d.isNegative ? 0 : d.inMilliseconds;
+  final ms = total % 1000;
+  final base = formatRemaining(Duration(seconds: total ~/ 1000));
+  return '$base.${ms.toString().padLeft(3, '0')}';
+}

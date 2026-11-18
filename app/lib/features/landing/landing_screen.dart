@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/live_countdown_text.dart';
 import '../../shared/responsive.dart';
 import '../../shared/widgets.dart';
 import '../home/auction_tiles.dart';
@@ -220,7 +221,7 @@ class _LiveCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: AppColors.ink))
           else
-            CountdownText(
+            LiveCountdownText(
               endsAt: a.endsAt,
               style: TextStyle(
                   fontSize: 15,

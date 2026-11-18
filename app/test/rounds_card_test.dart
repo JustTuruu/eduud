@@ -65,7 +65,7 @@ void main() {
     expect(tester.takeException(), isNull);
     final list = find.byType(RoundsList);
     await tester.tap(find.byKey(const ValueKey('rounds-toggle')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
     for (var i = 1; i <= 11; i++) {
       expect(find.descendant(of: list, matching: find.text('Round $i')),
           findsOneWidget);
@@ -95,13 +95,13 @@ void main() {
     expect(find.text('Бүгд (11)'), findsOneWidget);
 
     await tester.tap(find.text('Бүгд (11)'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
     for (var i = 1; i <= 11; i++) {
       expect(find.descendant(of: list, matching: find.text('Round $i')),
           findsOneWidget);
     }
     await tester.tap(find.text('Бүгд (11)'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.descendant(of: list, matching: find.text('Round 4')),
         findsNothing);
   });

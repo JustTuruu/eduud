@@ -11,6 +11,15 @@ void main() {
     expect(formatRemaining(const Duration(seconds: -5)), '00:00');
   });
 
+  test('formatRemainingMs', () {
+    expect(formatRemainingMs(const Duration(milliseconds: 754)), '00:00.754');
+    expect(
+        formatRemainingMs(
+            const Duration(hours: 1, minutes: 2, seconds: 3, milliseconds: 45)),
+        '1:02:03.045');
+    expect(formatRemainingMs(const Duration(seconds: -5)), '00:00.000');
+  });
+
   test('formatStartLabel', () {
     final now = DateTime(2026, 11, 17, 9);
     expect(formatStartLabel(DateTime(2026, 11, 17, 20), now), 'Өнөөдөр 20:00');

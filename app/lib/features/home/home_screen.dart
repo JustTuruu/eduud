@@ -14,6 +14,7 @@ import '../../core/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/app_nav_bar.dart';
 import '../../shared/responsive.dart';
+import '../../shared/live_countdown_text.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 import 'auction_tiles.dart';
@@ -725,17 +726,30 @@ class _TimerRowState extends State<_TimerRow> {
                 Icon(LucideIcons.clock, size: 15, color: fg),
                 const SizedBox(width: 6),
               ],
-              Text(
-                waiting ? 'Хүлээж байна' : formatRemaining(remaining),
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 17,
-                  height: 1.2,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: tab,
-                  color: waiting ? AppColors.muted : fg,
+              if (waiting)
+                Text(
+                  'Хүлээж байна',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 17,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: tab,
+                    color: AppColors.muted,
+                  ),
+                )
+              else
+                LiveCountdownText(
+                  endsAt: a.endsAt,
+                  serverOffsetMs: widget.offsetMs,
+                  urgentColor: AppColors.danger,
+                  style: TextStyle(
+                    fontSize: 17,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -940,10 +954,12 @@ class _LiveGridTileState extends State<_LiveGridTile> {
             children: [
               Icon(LucideIcons.clock, size: 13, color: timeColor),
               const SizedBox(width: 4),
-              Text(
-                formatRemaining(remaining),
-                style: TextStyle(
-                    fontSize: 13, fontFeatures: tab, color: timeColor),
+              LiveCountdownText(
+                endsAt: a.endsAt,
+                serverOffsetMs: widget.offsetMs,
+                urgentColor: AppColors.danger,
+                urgentBelow: const Duration(seconds: 60),
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
               ),
             ],
           ),

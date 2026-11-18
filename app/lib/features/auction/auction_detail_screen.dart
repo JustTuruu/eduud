@@ -15,6 +15,7 @@ import '../../core/router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/avatars.dart';
 import '../../shared/responsive.dart';
+import '../../shared/live_countdown_text.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
 import '../home/auction_tiles.dart' show ArtPlaceholder;
@@ -894,12 +895,7 @@ class TimingCardState extends State<TimingCard> {
     final scheduled = a.status == 'scheduled';
     final target = scheduled ? a.startsAt : a.endsAt;
     final remaining = target.difference(_now);
-    final urgent = live &&
-        !waitingFirst &&
-        remaining.inMilliseconds > 0 &&
-        remaining.inSeconds < 10;
     final soft = live && inSoftClose(remaining, a.softCloseSec);
-    final countdown = formatRemaining(remaining);
 
     // Зүүн хагас
     final leftLabel = scheduled ? 'Эхлэх хүртэл' : 'Үлдсэн хугацаа';
@@ -913,15 +909,18 @@ class TimingCardState extends State<TimingCard> {
         : FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(countdown,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 32,
-                  height: 1.15,
-                  fontWeight: FontWeight.w700,
-                  fontFeatures: tab,
-                  color: urgent ? AppColors.danger : AppColors.ink,
-                )),
+            child: LiveCountdownText(
+              endsAt: target,
+              serverOffsetMs: widget.offsetMs,
+              urgentColor: live ? AppColors.danger : null,
+              style: TextStyle(
+                fontSize: 32,
+                height: 1.15,
+                fontWeight: FontWeight.w700,
+                fontFeatures: tab,
+                color: AppColors.ink,
+              ),
+            ),
           );
 
     // Баруун хагас
@@ -961,7 +960,7 @@ class TimingCardState extends State<TimingCard> {
 
     final label = waitingFirst
         ? '$leftLabel: анхны үнэ хүлээж байна, $semRight'
-        : '$leftLabel $countdown, $semRight';
+        : '$leftLabel ${formatRemaining(remaining)}, $semRight';
 
     return Semantics(
       label: label,
