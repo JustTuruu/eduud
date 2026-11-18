@@ -15,10 +15,10 @@ Spring:  POST /bid ──► урьдчилсан шалгалт ──► Kafka
 
 ## Санал боловсруулах 2 горим (`BID_MODE`)
 
-| Горим | Юу хийдэг | Хэрэглээ |
-|---|---|---|
-| `kafka` (анхдагч) | API нь саналыг Kafka руу илгээгээд 202 буцаана. Consumer дарааллаар боловсруулна. | Үндсэн шийдэл |
-| `direct` | Хүсэлтийн дотор шууд DB транзакц хийгээд 200 буцаана (queue-гүй). Kafka шаардлагагүй. | k6-аар харьцуулах суурь хувилбар |
+| Горим             | Юу хийдэг                                                                             | Хэрэглээ                         |
+| ----------------- | ------------------------------------------------------------------------------------- | -------------------------------- |
+| `kafka` (анхдагч) | API нь саналыг Kafka руу илгээгээд 202 буцаана. Consumer дарааллаар боловсруулна.     | Үндсэн шийдэл                    |
+| `direct`          | Хүсэлтийн дотор шууд DB транзакц хийгээд 200 буцаана (queue-гүй). Kafka шаардлагагүй. | k6-аар харьцуулах суурь хувилбар |
 
 Хоёр горим **ижил** `BidProcessor`-ийг ашигладаг тул k6-ийн үр дүнгийн ялгаа нь зөвхөн
 queue-ийн нөлөө болно.
@@ -100,17 +100,17 @@ NestJS-ийн `.env`-тэй ижил нэртэй: `JWT_ACCESS_SECRET`, `JWT_REF
 
 Шинэ хувьсагчид:
 
-| Хувьсагч | Анхдагч | Тайлбар |
-|---|---|---|
-| `DB_URL` / `DB_USER` / `DB_PASSWORD` | `jdbc:postgresql://localhost:55432/eduud` | JDBC холболт |
-| `DB_POOL_SIZE` | 20 | Hikari pool |
-| `KAFKA_BOOTSTRAP` | `localhost:9092` | |
-| `BID_MODE` | `kafka` | `kafka` \| `direct` |
-| `BID_TOPIC_PARTITIONS` | 12 | Туршилтад 1, 3, 6, 12 |
-| `BID_CONSUMER_CONCURRENCY` | 12 | Partition тоотой тэнцүү байлгана |
-| `BID_MAX_POLL_RECORDS` | 500 | Нэг багцын дээд хэмжээ |
-| `SOCKET_PORT` | 3001 | Socket.IO |
-| `FLYWAY_BASELINE_VERSION` | 0 | Prisma-гаар migrate хийсэн DB дээр `2` |
+| Хувьсагч                             | Анхдагч                                   | Тайлбар                                |
+| ------------------------------------ | ----------------------------------------- | -------------------------------------- |
+| `DB_URL` / `DB_USER` / `DB_PASSWORD` | `jdbc:postgresql://localhost:55432/eduud` | JDBC холболт                           |
+| `DB_POOL_SIZE`                       | 20                                        | Hikari pool                            |
+| `KAFKA_BOOTSTRAP`                    | `localhost:9092`                          |                                        |
+| `BID_MODE`                           | `kafka`                                   | `kafka` \| `direct`                    |
+| `BID_TOPIC_PARTITIONS`               | 12                                        | Туршилтад 1, 3, 6, 12                  |
+| `BID_CONSUMER_CONCURRENCY`           | 12                                        | Partition тоотой тэнцүү байлгана       |
+| `BID_MAX_POLL_RECORDS`               | 500                                       | Нэг багцын дээд хэмжээ                 |
+| `SOCKET_PORT`                        | 3001                                      | Socket.IO                              |
+| `FLYWAY_BASELINE_VERSION`            | 0                                         | Prisma-гаар migrate хийсэн DB дээр `2` |
 
 ## Хэмжилт
 
@@ -123,13 +123,13 @@ NestJS-ийн `.env`-тэй ижил нэртэй: `JWT_ACCESS_SECRET`, `JWT_REF
 
 ## NestJS-ээс ялгаатай зүйлс
 
-| | NestJS | Spring Boot |
-|---|---|---|
-| `POST /auctions/:id/bid` | 200 `{ok, price, endsAt, balance}` | kafka: 202 `{ok, status: "PENDING", bidId}`; direct: 200 (ижил) |
-| Татгалзсан санал (kafka) | 400 | Урьдчилсан шалгалтад баригдвал 400, consumer татгалзвал `bid_rejected` socket event |
-| Хугацаат ажил | pg-boss (санал бүрт job) | `AuctionScheduler` — DB-г 250 мс тутам шалгана |
-| Socket.IO порт | API-тай ижил | `SOCKET_PORT` (3001) |
-| DB | Prisma migrations | Flyway (V1, V2 = Prisma-тай ижил; V3 = `bid_requests` + `bids`-ийн нэмэлт баганууд) |
+|                          | NestJS                             | Spring Boot                                                                         |
+| ------------------------ | ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `POST /auctions/:id/bid` | 200 `{ok, price, endsAt, balance}` | kafka: 202 `{ok, status: "PENDING", bidId}`; direct: 200 (ижил)                     |
+| Татгалзсан санал (kafka) | 400                                | Урьдчилсан шалгалтад баригдвал 400, consumer татгалзвал `bid_rejected` socket event |
+| Хугацаат ажил            | pg-boss (санал бүрт job)           | `AuctionScheduler` — DB-г 250 мс тутам шалгана                                      |
+| Socket.IO порт           | API-тай ижил                       | `SOCKET_PORT` (3001)                                                                |
+| DB                       | Prisma migrations                  | Flyway (V1, V2 = Prisma-тай ижил; V3 = `bid_requests` + `bids`-ийн нэмэлт баганууд) |
 
 Flutter апп `bid_placed`/`wallet_updated` event-ээр шинэчлэгддэг, bid-ийн хариуны
 body-г ашигладаггүй тул 202 хариу аппыг эвдэхгүй.
