@@ -74,6 +74,103 @@ List<AuctionRound>? parseRounds(dynamic raw) {
   }
 }
 
+/// Нэмэлт шагнал (2-р, 3-р байр): `tokens` = эрх, `item` = бараа.
+class AuctionPrize {
+  final int place;
+  final String kind;
+  final int tokens;
+  final String title;
+
+  const AuctionPrize({
+    required this.place,
+    required this.kind,
+    this.tokens = 0,
+    this.title = '',
+  });
+
+  bool get isTokens => kind == 'tokens';
+
+  /// Дэлгэцэнд харагдах шошго: "200 эрх" эсвэл барааны нэр.
+  String get label => isTokens ? '$tokens эрх' : title;
+
+  factory AuctionPrize.fromJson(Map<String, dynamic> j) => AuctionPrize(
+        place: ((j['place'] ?? 0) as num).toInt(),
+        kind: (j['kind'] ?? 'item') as String,
+        tokens: ((j['tokens'] ?? 0) as num).toInt(),
+        title: (j['title'] ?? '') as String,
+      );
+}
+
+/// `prizes` талбарыг аюулгүй задлана: null/буруу бол хоосон жагсаалт.
+List<AuctionPrize> parsePrizes(dynamic raw) {
+  if (raw is! List) return const [];
+  final out = <AuctionPrize>[];
+  for (final e in raw) {
+    try {
+      out.add(AuctionPrize.fromJson(Map<String, dynamic>.from(e as Map)));
+    } catch (_) {}
+  }
+  out.sort((a, b) => a.place.compareTo(b.place));
+  return out;
+}
+
+/// Дууссан дуудлагын байр: 1/2/3-р байрны хэрэглэгч ба авсан шагнал.
+class AuctionPlacement {
+  final int place;
+  final Bidder user;
+  final AuctionPrize? prize;
+
+  const AuctionPlacement({required this.place, required this.user, this.prize});
+
+  factory AuctionPlacement.fromJson(Map<String, dynamic> j) {
+    final p = j['prize'];
+    return AuctionPlacement(
+      place: ((j['place'] ?? 0) as num).toInt(),
+      user: Bidder.fromJson(Map<String, dynamic>.from(j['user'] as Map)),
+      prize: p is Map
+          ? AuctionPrize.fromJson({
+              ...Map<String, dynamic>.from(p),
+              'place': j['place'],
+            })
+          : null,
+    );
+  }
+}
+
+List<AuctionPlacement> parsePlacements(dynamic raw) {
+  if (raw is! List) return const [];
+  final out = <AuctionPlacement>[];
+  for (final e in raw) {
+    try {
+      out.add(AuctionPlacement.fromJson(Map<String, dynamic>.from(e as Map)));
+    } catch (_) {}
+  }
+  out.sort((a, b) => a.place.compareTo(b.place));
+  return out;
+}
+
+/// Одоогийн байрууд: саналын жагсаалтаас (шинэ нь эхэнд) сүүлийн 3 ӨӨР
+/// оролцогч — 1-р = хамгийн сүүлд санал өгсөн.
+List<AuctionPlacement> currentPlacements(List<BidItem> bids) {
+  final seen = <String>{};
+  final out = <AuctionPlacement>[];
+  for (final b in bids) {
+    if (!seen.add(b.user.id)) continue;
+    out.add(AuctionPlacement(place: out.length + 1, user: b.user));
+    if (out.length == 3) break;
+  }
+  return out;
+}
+
+/// `prize_awarded` socket event-ийн toast текст.
+String prizeAwardedMessage(Map<String, dynamic> j) {
+  final place = ((j['place'] ?? 0) as num).toInt();
+  final prize = AuctionPrize.fromJson(j);
+  return prize.isTokens
+      ? 'Та $place-р байр эзэлж ${prize.tokens} эрх авлаа'
+      : 'Та $place-р байр эзэлж "${prize.title}" шагнал авлаа';
+}
+
 class AuctionSummary {
   final String id;
   final String title;
@@ -91,6 +188,9 @@ class AuctionSummary {
   /// Шатуудын хуваарь (байхгүй бол null — хуучин soft-close дүрэм).
   final List<AuctionRound>? rounds;
 
+  /// Нэмэлт шагналууд (2-р, 3-р байр); байхгүй бол хоосон.
+  final List<AuctionPrize> prizes;
+
   AuctionSummary({
     required this.id,
     required this.title,
@@ -103,6 +203,7 @@ class AuctionSummary {
     this.lastBidder,
     this.increment,
     this.rounds,
+    this.prizes = const [],
   });
 
   factory AuctionSummary.fromJson(Map<String, dynamic> j) => AuctionSummary(
@@ -119,6 +220,7 @@ class AuctionSummary {
             : Bidder.fromJson(j['lastBidder'] as Map<String, dynamic>),
         increment: j['increment'] as int?,
         rounds: parseRounds(j['rounds']),
+        prizes: parsePrizes(j['prizes']),
       );
 
   /// Realtime event ирэхэд өөрчлөгдөх талбаруудыг л шинэчилнэ.
@@ -141,6 +243,7 @@ class AuctionSummary {
         lastBidder: lastBidder ?? this.lastBidder,
         increment: increment,
         rounds: rounds,
+        prizes: prizes,
       );
 }
 
@@ -187,6 +290,12 @@ class AuctionDetail {
   /// Шатуудын хуваарь (байхгүй бол null — хуучин soft-close дүрэм).
   final List<AuctionRound>? rounds;
 
+  /// Нэмэлт шагналууд (2-р, 3-р байр); байхгүй бол хоосон.
+  final List<AuctionPrize> prizes;
+
+  /// Дууссан дуудлагын байрууд (байхгүй бол хоосон).
+  final List<AuctionPlacement> placements;
+
   AuctionDetail({
     required this.id,
     required this.title,
@@ -205,6 +314,8 @@ class AuctionDetail {
     this.extendSec = 0,
     this.hardCloseAt,
     this.rounds,
+    this.prizes = const [],
+    this.placements = const [],
   });
 
   factory AuctionDetail.fromJson(Map<String, dynamic> j) => AuctionDetail(
@@ -232,6 +343,8 @@ class AuctionDetail {
             ? null
             : DateTime.parse(j['hardCloseAt'] as String),
         rounds: parseRounds(j['rounds']),
+        prizes: parsePrizes(j['prizes']),
+        placements: parsePlacements(j['placements']),
       );
 
   AuctionDetail copyWith({
@@ -260,6 +373,8 @@ class AuctionDetail {
         extendSec: extendSec,
         hardCloseAt: hardCloseAt,
         rounds: rounds,
+        prizes: prizes,
+        placements: placements,
       );
 }
 
@@ -419,6 +534,10 @@ class OrderItem {
   final String auctionTitle;
   final List<String> auctionImages;
 
+  /// Шагналын захиалга бол байр (2/3), эс бөгөөс null.
+  final int? prizePlace;
+  final String? prizeTitle;
+
   OrderItem({
     required this.id,
     required this.auctionId,
@@ -427,7 +546,14 @@ class OrderItem {
     required this.status,
     required this.auctionTitle,
     required this.auctionImages,
+    this.prizePlace,
+    this.prizeTitle,
   });
+
+  bool get isPrize => prizePlace != null;
+
+  /// 0₮ захиалга төлбөр шаардахгүй.
+  bool get needsPayment => status == 'pending' && finalPrice > 0;
 
   factory OrderItem.fromJson(Map<String, dynamic> j) {
     final auction = (j['auction'] ?? const {}) as Map<String, dynamic>;
@@ -439,6 +565,8 @@ class OrderItem {
       status: j['status'] as String,
       auctionTitle: (auction['title'] ?? '') as String,
       auctionImages: (auction['images'] as List? ?? const []).cast<String>(),
+      prizePlace: (j['prizePlace'] as num?)?.toInt(),
+      prizeTitle: j['prizeTitle'] as String?,
     );
   }
 }

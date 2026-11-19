@@ -30,7 +30,10 @@ import '../features/requests/requests_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../shared/app_nav_bar.dart';
 import '../shared/responsive.dart';
+import '../shared/top_toast.dart';
 import '../shared/widgets.dart';
+import 'api/socket_client.dart';
+import 'models.dart';
 import 'theme/app_theme.dart';
 
 /// Дэлгэц баруунаас гулсаж орж ирнэ — урагш ахих чиглэлийг илэрхийлнэ.
@@ -290,6 +293,29 @@ class _AppShellState extends ConsumerState<_AppShell> {
   double _acc = 0;
 
   static const _threshold = 12.0;
+
+  late final _socket = ref.read(socketProvider);
+
+  /// Шагнал (2/3-р байр) олгогдоход хэрэглэгчийн room-д ирнэ.
+  void _onPrize(dynamic data) {
+    if (!mounted || data is! Map) return;
+    showTopToast(context, prizeAwardedMessage(Map<String, dynamic>.from(data)),
+        kind: TopToastKind.success);
+    ref.invalidate(ordersProvider);
+    ref.read(authProvider.notifier).refreshProfile();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _socket.on('prize_awarded', _onPrize);
+  }
+
+  @override
+  void dispose() {
+    _socket.off('prize_awarded', _onPrize);
+    super.dispose();
+  }
 
   void _setCollapsed(bool v) {
     if (_collapsed == v) return;

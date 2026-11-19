@@ -107,8 +107,29 @@ class AdminAuctionsScreen extends ConsumerWidget {
             rows: rows,
             empty: 'Дуудлага олдсонгүй',
             columns: [
-              AdminColumn('Нэр', (a) => cellText(jStr(a, 'title'), bold: true),
-                  flex: 4),
+              AdminColumn('Нэр', (a) {
+                final n =
+                    (a['prizes'] is List) ? (a['prizes'] as List).length : 0;
+                final title = cellText(jStr(a, 'title'), bold: true);
+                if (n == 0) return title;
+                return Row(children: [
+                  Flexible(child: title),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AdminColors.accentSoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('+$n шагнал',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AdminColors.accentDark)),
+                  ),
+                ]);
+              }, flex: 4),
               AdminColumn(
                   'Ангилал',
                   (a) => cellText(jStr(a, 'categoryName').isEmpty

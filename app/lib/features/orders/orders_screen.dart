@@ -89,7 +89,7 @@ class OrdersScreen extends ConsumerWidget {
                       ),
                     ]);
                   }
-                  final due = list.where((o) => o.status == 'pending').length;
+                  final due = list.where((o) => o.needsPayment).length;
                   return scroll([
                     GroupSection(
                       dividerInset: 84,
@@ -154,7 +154,7 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
   @override
   Widget build(BuildContext context) {
     final o = widget.order;
-    final pending = o.status == 'pending';
+    final pending = o.needsPayment;
     final color = _statusColor(o.status);
     final img = o.auctionImages.isEmpty ? null : o.auctionImages.first;
 
@@ -177,7 +177,10 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(o.auctionTitle,
+                  Text(
+                      o.isPrize && (o.prizeTitle ?? '').isNotEmpty
+                          ? o.prizeTitle!
+                          : o.auctionTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -185,7 +188,10 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
                           fontWeight: FontWeight.w600,
                           color: AppColors.ink)),
                   const SizedBox(height: 2),
-                  Text(formatMnt(o.finalPrice),
+                  Text(
+                      o.isPrize
+                          ? 'Шагнал · ${o.prizePlace}-р байр'
+                          : formatMnt(o.finalPrice),
                       style: TextStyle(
                           fontSize: 15,
                           color: AppColors.inkSoft,
@@ -194,7 +200,10 @@ class _OrderRowState extends ConsumerState<_OrderRow> {
               ),
             ),
             const SizedBox(width: 8),
-            Text(_statusLabels[o.status] ?? o.status,
+            Text(
+                o.finalPrice == 0 && o.status == 'pending'
+                    ? 'Үнэгүй'
+                    : (_statusLabels[o.status] ?? o.status),
                 style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w600, color: color)),
           ]),

@@ -28,6 +28,49 @@ List<({DateTime start, DateTime end, int sec})> defaultRoundTemplate(
   return out;
 }
 
+/// Нэг байрны шагналын оролтыг шалгана (backend-тэй ижил дүрэм):
+/// эрх 1..100000 бүхэл тоо; бараа 1..120 тэмдэгт. Алдаа байвал мессеж, үгүй бол null.
+String? validatePrizeInput(int place, String kind, String value) {
+  final n = '$place-р байр: ';
+  final v = value.trim();
+  if (kind == 'tokens') {
+    final t = int.tryParse(v);
+    if (t == null || t < 1 || t > 100000) {
+      return '$nэрхийн тоо 1-ээс 100000 хооронд байна.';
+    }
+    return null;
+  }
+  if (v.isEmpty) return '$nбарааны нэрийг бичнэ үү.';
+  if (v.length > 120) return '$nбарааны нэр 120 тэмдэгтээс хэтэрч болохгүй.';
+  return null;
+}
+
+/// Байрны шагналын ноорог (форм дотор).
+class PrizeDraft {
+  PrizeDraft(this.place, {this.enabled = false, this.kind = 'tokens'});
+  final int place;
+  bool enabled;
+  String kind;
+  final TextEditingController value = TextEditingController();
+}
+
+/// Идэвхтэй ноорогуудыг шалгаж `prizes` body болгоно. Алдаа бол (null, мессеж).
+(List<Json>?, String?) buildPrizes(List<PrizeDraft> drafts) {
+  final out = <Json>[];
+  for (final d in drafts) {
+    if (!d.enabled) continue;
+    final err = validatePrizeInput(d.place, d.kind, d.value.text);
+    if (err != null) return (null, err);
+    final v = d.value.text.trim();
+    out.add({
+      'place': d.place,
+      'kind': d.kind,
+      if (d.kind == 'tokens') 'tokens': int.parse(v) else 'title': v,
+    });
+  }
+  return (out, null);
+}
+
 class _Round {
   _Round(this.start, this.end, int sec)
       : dur = TextEditingController(text: '$sec');
@@ -96,10 +139,18 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
   DateTime? _start, _end;
   String? _categoryId;
   bool _useRounds = false;
+  bool _usePrizes = false;
+  final List<PrizeDraft> _prizes = [PrizeDraft(2), PrizeDraft(3)];
   bool _busy = false;
   String? _error;
 
   bool get _editing => widget.initial != null;
+
+  /// Шагналыг зөвхөн ноорог/товлогдсон үед засна (backend 409 буцаадаг).
+  bool get _prizesLocked =>
+      _editing && !const ['draft', 'scheduled'].contains(_initialStatus);
+
+  String get _initialStatus => jStr(widget.initial ?? const {}, 'status');
 
   @override
   void initState() {
@@ -119,6 +170,21 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
     if (imgs is List) {
       for (final i in imgs) {
         _images.add(TextEditingController(text: '$i'));
+      }
+    }
+    final ps = a['prizes'];
+    if (ps is List && ps.isNotEmpty) {
+      for (final p in ps) {
+        if (p is! Map) continue;
+        final m = Map<String, dynamic>.from(p);
+        final place = jInt(m, 'place');
+        final d = _prizes.where((x) => x.place == place).firstOrNull;
+        if (d == null) continue;
+        _usePrizes = true;
+        d.enabled = true;
+        d.kind = jStr(m, 'kind') == 'item' ? 'item' : 'tokens';
+        d.value.text =
+            d.kind == 'tokens' ? '${jInt(m, 'tokens')}' : jStr(m, 'title');
       }
     }
     final rs = a['rounds'];
@@ -141,6 +207,9 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
     }
     for (final r in _rounds) {
       r.dur.dispose();
+    }
+    for (final d in _prizes) {
+      d.value.dispose();
     }
     super.dispose();
   }
@@ -241,6 +310,12 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
       if (!_end!.isAfter(_start!)) return 'Дуусах цаг эхлэхээс хойш байна.';
       body['startsAt'] = _iso(_start!);
       body['endsAt'] = _iso(_end!);
+    }
+    if (!_prizesLocked && (_usePrizes || _editing)) {
+      // Унтраасан үед [] илгээж өмнөх шагналыг арилгана.
+      final (list, perr) = _usePrizes ? buildPrizes(_prizes) : (<Json>[], null);
+      if (perr != null) return perr;
+      body['prizes'] = list;
     }
     return null;
   }
@@ -388,6 +463,9 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
         const SizedBox(height: 12),
         for (var i = 0; i < _rounds.length; i++) _roundRow(i),
       ],
+      const Divider(),
+      const SizedBox(height: 14),
+      _prizesSection(),
       if (_error != null)
         Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 6),
@@ -402,6 +480,83 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
         AdminButton('Болих', onPressed: () => Navigator.pop(context)),
       ]),
     ]);
+  }
+
+  Widget _prizesSection() {
+    final locked = _prizesLocked;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Expanded(
+          child: Text('Нэмэлт шагнал',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        ),
+        Switch(
+          value: _usePrizes,
+          onChanged: locked ? null : (v) => setState(() => _usePrizes = v),
+        ),
+      ]),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Text(
+          locked
+              ? 'Дуудлага эхэлсэн тул шагналыг өөрчлөх боломжгүй.'
+              : 'Сүүлд санал өгсөн 2-р, 3-р байрны өөр оролцогчид эрх эсвэл бараа авна.',
+          style: const TextStyle(fontSize: 12, color: AdminColors.faint),
+        ),
+      ),
+      if (_usePrizes)
+        for (final d in _prizes) _prizeRow(d, locked),
+    ]);
+  }
+
+  Widget _prizeRow(PrizeDraft d, bool locked) {
+    final tokens = d.kind == 'tokens';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AdminColors.panel,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AdminColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Checkbox(
+            value: d.enabled,
+            onChanged:
+                locked ? null : (v) => setState(() => d.enabled = v ?? false),
+          ),
+          Text('${d.place}-р байр',
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        ]),
+        if (d.enabled) ...[
+          const SizedBox(height: 6),
+          IgnorePointer(
+            ignoring: locked,
+            child: AdminSegments<String>(
+              options: const [('tokens', 'Эрх'), ('item', 'Бараа')],
+              value: d.kind,
+              onChanged: (v) => setState(() {
+                d.kind = v;
+                d.value.clear();
+              }),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: d.value,
+            enabled: !locked,
+            keyboardType: tokens ? TextInputType.number : TextInputType.text,
+            maxLength: tokens ? null : 120,
+            decoration: InputDecoration(
+              hintText: tokens ? 'Эрхийн тоо (1–100000)' : 'Барааны нэр',
+              counterText: '',
+            ),
+          ),
+        ],
+      ]),
+    );
   }
 
   Widget _roundRow(int i) {

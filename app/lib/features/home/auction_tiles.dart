@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -71,6 +73,35 @@ class AuctionArt extends StatelessWidget {
   }
 }
 
+/// Зураг дээрх жижиг шилэн "Шагналтай" шошго (нэмэлт шагналтай дуудлагад).
+class PrizeChip extends StatelessWidget {
+  const PrizeChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(8, 5, 10, 5),
+          color: Colors.black.withValues(alpha: 0.42),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(LucideIcons.trophy, size: 13, color: Colors.white),
+            SizedBox(width: 5),
+            Text('Шагналтай',
+                style: TextStyle(
+                    fontSize: 12,
+                    height: 1.1,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 /// Хэвтээ мөр болон бүх жагсаалтын карт: дөрвөлжин зураг + нэр + дэд мэдээлэл.
 /// Удахгүй эхлэх → эхлэх цаг; дууссан → ялагч + эцсийн үнэ.
 /// Зураг гадна талын өргөнийг дүүргэнэ; текст нь ~64px (зураг доор) шаардана.
@@ -111,11 +142,15 @@ class AuctionTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AuctionArt(
-            auctionId: a.id,
-            url: a.images.isEmpty ? null : a.images.first,
-            radius: 16,
-          ),
+          Stack(children: [
+            AuctionArt(
+              auctionId: a.id,
+              url: a.images.isEmpty ? null : a.images.first,
+              radius: 16,
+            ),
+            if (a.prizes.isNotEmpty)
+              const Positioned(top: 8, left: 8, child: PrizeChip()),
+          ]),
           const SizedBox(height: 8),
           Text(
             a.title,

@@ -400,6 +400,8 @@ class _LiveCardState extends State<_LiveCard>
           aspect: widget.wide ? 1 : 1.2,
         ),
         Positioned(top: 12, left: 12, child: _HeroBadge(kind: widget.kind)),
+        if (a.prizes.isNotEmpty)
+          const Positioned(top: 12, right: 12, child: PrizeChip()),
       ],
     );
     final info = _LiveInfo(
@@ -1165,11 +1167,15 @@ class _LiveGridTileState extends State<_LiveGridTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AuctionArt(
-            auctionId: a.id,
-            url: a.images.isEmpty ? null : a.images.first,
-            radius: 16,
-          ),
+          Stack(children: [
+            AuctionArt(
+              auctionId: a.id,
+              url: a.images.isEmpty ? null : a.images.first,
+              radius: 16,
+            ),
+            if (a.prizes.isNotEmpty)
+              const Positioned(top: 8, left: 8, child: PrizeChip()),
+          ]),
           const SizedBox(height: 8),
           Text(
             a.title,

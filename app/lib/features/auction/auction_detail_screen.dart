@@ -290,6 +290,18 @@ class _AuctionDetailScreenState extends ConsumerState<AuctionDetailScreen> {
           if (mounted) unawaited(controller.reload());
         }),
       ),
+      if (a.prizes.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        PrizesCard(
+          mainTitle: a.title,
+          prizes: a.prizes,
+          placements: ended && a.placements.isNotEmpty
+              ? a.placements
+              : currentPlacements(a.bids),
+          meId: meId,
+          isFinal: ended,
+        ),
+      ],
       if (ended && iWon) ...[
         const SizedBox(height: 20),
         PrimaryButton(
@@ -942,6 +954,140 @@ class TimingCardState extends State<TimingCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Шагнал" карт: 1-р байр = үндсэн бараа, 2/3-р байр = нэмэлт шагнал.
+/// [placements] байвал байр бүрийн эзнийг (дууссан бол эцсийн, эс бөгөөс
+/// одоогийн) харуулж, өөрийгөө "Та" гэж тодруулна.
+class PrizesCard extends StatelessWidget {
+  const PrizesCard({
+    super.key,
+    required this.mainTitle,
+    required this.prizes,
+    this.placements = const [],
+    this.meId,
+    this.isFinal = false,
+  });
+
+  final String mainTitle;
+  final List<AuctionPrize> prizes;
+  final List<AuctionPlacement> placements;
+  final String? meId;
+
+  /// true бол байрууд эцсийн (дууссан), false бол "одоогоор".
+  final bool isFinal;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <(int, String)>[
+      (1, mainTitle),
+      for (final p in prizes)
+        if (p.place == 2 || p.place == 3) (p.place, p.label),
+    ];
+    Bidder? holder(int place) {
+      for (final p in placements) {
+        if (p.place == place) return p.user;
+      }
+      return null;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(children: [
+            Icon(LucideIcons.trophy, size: 15, color: AppColors.accent),
+            const SizedBox(width: 6),
+            Text('Шагнал',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted)),
+          ]),
+        ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: ColoredBox(
+            color: AppColors.surface,
+            child: Column(children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Container(height: 0.5, color: AppColors.borderHi),
+                  ),
+                _PrizeRow(
+                  place: rows[i].$1,
+                  label: rows[i].$2,
+                  holder: holder(rows[i].$1),
+                  meId: meId,
+                ),
+              ],
+            ]),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Text('Сүүлд санал өгсөн 3 өөр оролцогч шагнал авна',
+              style: TextStyle(fontSize: 13, color: AppColors.muted)),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrizeRow extends StatelessWidget {
+  const _PrizeRow({
+    required this.place,
+    required this.label,
+    this.holder,
+    this.meId,
+  });
+
+  final int place;
+  final String label;
+  final Bidder? holder;
+  final String? meId;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = holder != null && holder!.id == meId;
+    return Container(
+      color: me ? AppColors.accent.withValues(alpha: 0.13) : null,
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(children: [
+        SizedBox(
+          width: 64,
+          child: Text('$place-р байр',
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted)),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 16, color: AppColors.ink)),
+              if (holder != null)
+                Text(me ? 'Та' : holder!.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: me ? FontWeight.w700 : FontWeight.w400,
+                        color: me ? AppColors.accent : AppColors.muted)),
+            ],
+          ),
+        ),
+      ]),
     );
   }
 }
