@@ -17,6 +17,7 @@ import '../../shared/responsive.dart';
 import '../../shared/live_countdown_text.dart';
 import '../../shared/widgets.dart';
 import '../auth/auth_controller.dart';
+import '../auction/consent_sheet.dart';
 import 'auction_tiles.dart';
 import 'auction_timing.dart';
 
@@ -172,6 +173,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mounted && _socket.connected) _joinAll();
   }
 
+  /// Явагдаж буй hero-ийн "Оролцох" товч: дүрмийн зөвшөөрлийг түрүүлж авч,
+  /// зөвшөөрсөн тохиолдолд л дэлгэрэнгүй рүү орно. Болих/хаавал нүүрэнд үлдэнэ.
+  Future<void> _enter(String id) async {
+    final ok = await ensureAuctionConsent(context, ref, auctionId: id);
+    if (!ok || !mounted) return;
+    await _open(id);
+  }
+
   Future<void> _refresh() async {
     ref
       ..invalidate(auctionListProvider('live'))
@@ -235,6 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : _Hero(
                             store: _store,
                             onOpen: _open,
+                            onEnter: _enter,
                           ),
                   ),
                 ),
@@ -276,10 +286,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 // ---------------------------------------------------------------------------
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.store, required this.onOpen});
+  const _Hero(
+      {required this.store, required this.onOpen, required this.onEnter});
 
   final _LiveStore store;
   final Future<void> Function(String id) onOpen;
+  final Future<void> Function(String id) onEnter;
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +315,7 @@ class _Hero extends StatelessWidget {
               offsetMs: offsetMs,
               wide: twoCol,
               onOpen: () => onOpen(a.id),
+              onEnter: () => onEnter(a.id),
             ),
           );
         });
@@ -321,6 +334,7 @@ class _LiveCard extends StatefulWidget {
     required this.offsetMs,
     required this.wide,
     required this.onOpen,
+    this.onEnter,
     this.kind = _HeroKind.live,
     this.onStarted,
   });
@@ -329,6 +343,9 @@ class _LiveCard extends StatefulWidget {
   final int offsetMs;
   final bool wide;
   final VoidCallback onOpen;
+
+  /// Live hero-ийн "Оролцох" товч (зөвшөөрөл авсны дараа нээх). Өгөөгүй бол onOpen.
+  final VoidCallback? onEnter;
 
   /// Hero-ийн төрөл: явагдаж буй / удахгүй эхлэх / дууссан.
   final _HeroKind kind;
@@ -389,6 +406,7 @@ class _LiveCardState extends State<_LiveCard>
       auction: a,
       offsetMs: widget.offsetMs,
       onOpen: widget.onOpen,
+      onEnter: widget.onEnter,
       big: widget.wide,
       kind: widget.kind,
       onStarted: widget.onStarted,
@@ -541,6 +559,7 @@ class _LiveInfo extends StatelessWidget {
     required this.auction,
     required this.offsetMs,
     required this.onOpen,
+    this.onEnter,
     required this.big,
     this.kind = _HeroKind.live,
     this.onStarted,
@@ -549,6 +568,7 @@ class _LiveInfo extends StatelessWidget {
   final AuctionSummary auction;
   final int offsetMs;
   final VoidCallback onOpen;
+  final VoidCallback? onEnter;
   final bool big;
   final _HeroKind kind;
   final VoidCallback? onStarted;
@@ -626,7 +646,7 @@ class _LiveInfo extends StatelessWidget {
         ),
         SizedBox(height: big ? 28 : 18),
         _EnterButton(
-          onPressed: onOpen,
+          onPressed: kind == _HeroKind.live ? (onEnter ?? onOpen) : onOpen,
           label: kind == _HeroKind.live
               ? 'Дуудлага худалдаанд оролцох'
               : 'Дэлгэрэнгүй үзэх',
