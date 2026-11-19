@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import mn.eduud.auctions.AuctionPrizes;
 import mn.eduud.auctions.AuctionRounds;
+import mn.eduud.auctions.PrizeRules;
 import mn.eduud.auctions.AuctionsService;
 import mn.eduud.categories.CategoriesService;
 import mn.eduud.common.ApiException;
@@ -52,7 +54,7 @@ public class AdminController {
           + "   'deliveryInfo', o.delivery_info,"
           + "   'createdAt', to_char(o.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"'),"
           + "   'updatedAt', to_char(o.updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) END AS \"order\""
-          + " FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id LEFT JOIN orders o ON o.auction_id = a.id"
+          + " FROM auctions a LEFT JOIN users lb ON lb.id = a.last_bidder_id LEFT JOIN orders o ON o.auction_id = a.id AND o.prize_place IS NULL"
           + " LEFT JOIN categories c ON c.id = a.category_id";
 
   private final JdbcClient db;
@@ -61,6 +63,7 @@ public class AdminController {
   private final AuctionsService auctions;
   private final RealtimeGateway realtime;
   private final CategoriesService categories;
+  private final AuctionPrizes prizes;
 
   public AdminController(
       JdbcClient db,
@@ -68,13 +71,15 @@ public class AdminController {
       TransactionTemplate tx,
       AuctionsService auctions,
       RealtimeGateway realtime,
-      CategoriesService categories) {
+      CategoriesService categories,
+      AuctionPrizes prizes) {
     this.db = db;
     this.rows = rows;
     this.tx = tx;
     this.auctions = auctions;
     this.realtime = realtime;
     this.categories = categories;
+    this.prizes = prizes;
   }
 
   // ---------- DTOs ----------
@@ -91,7 +96,8 @@ public class AdminController {
       @NotNull Instant startsAt,
       @NotNull Instant endsAt,
       List<AuctionRounds.Round> rounds,
-      String categoryId) {}
+      String categoryId,
+      List<PrizeRules.Prize> prizes) {}
 
   public record UpdateAuctionDto(
       @Size(min = 3, max = 120) String title,
@@ -105,7 +111,8 @@ public class AdminController {
       Instant startsAt,
       Instant endsAt,
       List<AuctionRounds.Round> rounds,
-      String categoryId) {}
+      String categoryId,
+      List<PrizeRules.Prize> prizes) {}
 
   public record UpsertPackageDto(@NotNull @Min(1) Integer tokens, @NotNull @Min(100) Integer priceMnt, Boolean active, Integer sortOrder) {}
 
@@ -118,12 +125,18 @@ public class AdminController {
   @GetMapping("/auctions")
   public List<Map<String, Object>> listAuctions(@RequestParam(required = false) String status) {
     if (status != null && AUCTION_STATUSES.contains(status)) {
-      return db.sql(ADMIN_AUCTION_SELECT + " WHERE a.status = CAST(? AS \"AuctionStatus\") ORDER BY a.created_at DESC LIMIT 200")
-          .param(status)
-          .query(rows.camel())
-          .list();
+      List<Map<String, Object>> list =
+          db.sql(ADMIN_AUCTION_SELECT + " WHERE a.status = CAST(? AS \"AuctionStatus\") ORDER BY a.created_at DESC LIMIT 200")
+              .param(status)
+              .query(rows.camel())
+              .list();
+      prizes.attach(list);
+      return list;
     }
-    return db.sql(ADMIN_AUCTION_SELECT + " ORDER BY a.created_at DESC LIMIT 200").query(rows.camel()).list();
+    List<Map<String, Object>> list =
+        db.sql(ADMIN_AUCTION_SELECT + " ORDER BY a.created_at DESC LIMIT 200").query(rows.camel()).list();
+    prizes.attach(list);
+    return list;
   }
 
   @PostMapping("/auctions")
@@ -144,7 +157,13 @@ public class AdminController {
     }
     String categoryId = blankToNull(dto.categoryId());
     categories.requireExists(categoryId);
+    List<PrizeRules.Prize> prizeList = PrizeRules.validate(dto.prizes());
     String id = Ids.uuid();
+    final Instant fStartsAt = startsAt;
+    final Instant fEndsAt = endsAt;
+    final String fRoundsJson = roundsJson;
+    tx.executeWithoutResult(
+        s -> {
     db.sql(
             "INSERT INTO auctions (id, title, description, images, start_price, increment, soft_close_sec, extend_sec,"
                 + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds, category_id)"
@@ -159,13 +178,15 @@ public class AdminController {
             dto.softCloseSec(),
             dto.extendSec(),
             Rows.ts(dto.hardCloseAt()),
-            Rows.ts(startsAt),
-            Rows.ts(endsAt),
+            Rows.ts(fStartsAt),
+            Rows.ts(fEndsAt),
             dto.startPrice(),
             user.id(),
-            roundsJson,
+            fRoundsJson,
             categoryId)
         .update();
+    if (!prizeList.isEmpty()) prizes.replace(id, prizeList);
+        });
     return auctionRow(id);
   }
 
@@ -177,7 +198,16 @@ public class AdminController {
             .query(String.class)
             .optional()
             .orElseThrow(() -> ApiException.notFound("Дуудлага худалдаа олдсонгүй"));
-    if (!"draft".equals(status)) throw ApiException.badRequest("Зөвхөн draft auction засах боломжтой.");
+    if (!"draft".equals(status)) {
+      // Шагналыг scheduled үед ч (бусад талбаргүйгээр) засна; эхэлсэн бол 409
+      if (dto.prizes() != null && !"scheduled".equals(status)) {
+        throw ApiException.conflict("Эхэлсэн дуудлагын шагналыг өөрчлөх боломжгүй");
+      }
+      if (dto.prizes() == null || !onlyPrizes(dto)) {
+        throw ApiException.badRequest("Зөвхөн draft auction засах боломжтой.");
+      }
+    }
+    List<PrizeRules.Prize> prizeList = dto.prizes() == null ? null : PrizeRules.validate(dto.prizes());
 
     List<String> sets = new ArrayList<>();
     List<Object> params = new ArrayList<>();
@@ -210,8 +240,29 @@ public class AdminController {
     }
     sets.add("updated_at = now()");
     params.add(id.toString());
-    db.sql("UPDATE auctions SET " + String.join(", ", sets) + " WHERE id = ?").params(params).update();
+    tx.executeWithoutResult(
+        s -> {
+          db.sql("UPDATE auctions SET " + String.join(", ", sets) + " WHERE id = ?").params(params).update();
+          // null = өөрчлөхгүй, [] = бүгдийг устгана
+          if (prizeList != null) prizes.replace(id.toString(), prizeList);
+        });
     return auctionRow(id.toString());
+  }
+
+  /** Шагналаас бусад талбар огт ирээгүй эсэх. */
+  private static boolean onlyPrizes(UpdateAuctionDto d) {
+    return d.title() == null
+        && d.description() == null
+        && d.images() == null
+        && d.startPrice() == null
+        && d.increment() == null
+        && d.softCloseSec() == null
+        && d.extendSec() == null
+        && d.hardCloseAt() == null
+        && d.startsAt() == null
+        && d.endsAt() == null
+        && d.rounds() == null
+        && d.categoryId() == null;
   }
 
   private static String blankToNull(String v) {
@@ -225,7 +276,8 @@ public class AdminController {
   }
 
   private Map<String, Object> auctionRow(String id) {
-    return db.sql(
+    Map<String, Object> row =
+        db.sql(
             "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
                 + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
                 + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds, a.category_id,"
@@ -234,6 +286,8 @@ public class AdminController {
         .param(id)
         .query(rows.camel())
         .single();
+    prizes.attach(row);
+    return row;
   }
 
   @PostMapping("/auctions/{id}/publish")
@@ -329,7 +383,7 @@ public class AdminController {
   public List<Map<String, Object>> orders() {
     return db.sql(
             "SELECT o.id, o.auction_id, o.winner_id, o.final_price, o.pay_deadline, o.status, o.delivery_info,"
-                + " o.created_at, o.updated_at,"
+                + " o.prize_place, o.prize_title, o.created_at, o.updated_at,"
                 + " json_build_object('id', u.id, 'phone', u.phone, 'name', u.name) AS winner,"
                 + " json_build_object('id', a.id, 'title', a.title) AS auction"
                 + " FROM orders o JOIN users u ON u.id = o.winner_id JOIN auctions a ON a.id = o.auction_id"

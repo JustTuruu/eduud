@@ -39,7 +39,7 @@ public class OrdersController {
   public List<Map<String, Object>> myOrders(@CurrentUser AuthUser user) {
     return db.sql(
             "SELECT o.id, o.auction_id, o.winner_id, o.final_price, o.pay_deadline, o.status, o.delivery_info,"
-                + " o.created_at, o.updated_at,"
+                + " o.prize_place, o.prize_title, o.created_at, o.updated_at,"
                 + " json_build_object('id', a.id, 'title', a.title, 'images', a.images) AS auction"
                 + " FROM orders o JOIN auctions a ON a.id = o.auction_id WHERE o.winner_id = ?"
                 + " ORDER BY o.created_at DESC")

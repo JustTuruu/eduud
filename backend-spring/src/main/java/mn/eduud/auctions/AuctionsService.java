@@ -34,14 +34,21 @@ public class AuctionsService {
   private final Rows rows;
   private final TransactionTemplate tx;
   private final RealtimeGateway realtime;
+  private final AuctionPrizes prizes;
   private final int payDeadlineHours;
 
   public AuctionsService(
-      JdbcClient db, Rows rows, TransactionTemplate tx, RealtimeGateway realtime, AppProperties props) {
+      JdbcClient db,
+      Rows rows,
+      TransactionTemplate tx,
+      RealtimeGateway realtime,
+      AuctionPrizes prizes,
+      AppProperties props) {
     this.db = db;
     this.rows = rows;
     this.tx = tx;
     this.realtime = realtime;
+    this.prizes = prizes;
     this.payDeadlineHours = props.orders().payDeadlineHours();
   }
 
@@ -71,7 +78,9 @@ public class AuctionsService {
                 + order
                 + " LIMIT 100");
     if (where.contains(":status")) q = q.param("status", status);
-    return q.query(rows.camel()).list();
+    List<Map<String, Object>> list = q.query(rows.camel()).list();
+    prizes.attach(list);
+    return list;
   }
 
   public Map<String, Object> detail(String id) {
@@ -98,6 +107,11 @@ public class AuctionsService {
             .list();
     Map<String, Object> res = new LinkedHashMap<>(auction);
     res.put("bids", bids);
+    prizes.attach(res);
+    if ("ended".equals(res.get("status")) || "settled".equals(res.get("status"))) {
+      String winnerId = (String) res.get("lastBidderId");
+      res.put("placements", prizes.placements(id, winnerId));
+    }
     res.put("serverTime", System.currentTimeMillis());
     return res;
   }
@@ -194,6 +208,8 @@ public class AuctionsService {
                     .update();
                 out.put("orderId", orderId);
                 out.put("payDeadline", deadline.toString());
+                // 2/3-р байрны шагнал (тохируулсан бол) — ижил транзакцид олгоно
+                out.put("awards", prizes.award(auctionId, winner));
               }
               return out;
             });
@@ -211,6 +227,14 @@ public class AuctionsService {
       won.put("finalPrice", outcome.get("finalPrice"));
       won.put("payDeadline", outcome.get("payDeadline"));
       realtime.emitToUser((String) outcome.get("winner"), "auction_won", won);
+    }
+    @SuppressWarnings("unchecked")
+    List<AuctionPrizes.Award> awards = (List<AuctionPrizes.Award>) outcome.get("awards");
+    if (awards != null) {
+      for (AuctionPrizes.Award a : awards) {
+        realtime.emitToUser(a.userId(), "prize_awarded", AuctionPrizes.awardPayload(auctionId, a));
+        if (a.newBalance() != null) realtime.emitToUser(a.userId(), "wallet_updated", Map.of("balance", a.newBalance()));
+      }
     }
     log.info("Auction {} ended, winner={}", auctionId, outcome.get("winner") == null ? "байхгүй" : outcome.get("winner"));
   }

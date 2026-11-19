@@ -81,6 +81,20 @@ public final class AuctionLogic {
     return extended;
   }
 
+  /**
+   * 2/3-р байрыг тодруулна: саналын дарааллаар (шинэ нь түрүүлж) ирсэн хэрэглэгчдээс
+   * ялагчийг хасч, давхардлыг нэг болгон эхний `max` хүнийг буцаана.
+   * Нэг хэрэглэгчийн олон санал нэг л тоологдоно.
+   */
+  public static List<String> pickRunnersUp(List<String> bidderIdsNewestFirst, String winnerId, int max) {
+    java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+    for (String u : bidderIdsNewestFirst) {
+      if (seen.size() >= max) break;
+      if (u != null && !u.equals(winnerId)) seen.add(u);
+    }
+    return List.copyOf(seen);
+  }
+
   static Snapshot fromRow(Map<String, Object> r) {
     Snapshot s = new Snapshot();
     s.status = (String) r.get("status");
