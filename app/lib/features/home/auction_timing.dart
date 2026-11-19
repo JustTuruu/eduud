@@ -90,3 +90,17 @@ String formatRemainingMs(Duration d) {
   final base = formatRemaining(Duration(seconds: total ~/ 1000));
   return '$base.${ms.toString().padLeft(3, '0')}';
 }
+
+/// Явагдаж буй дуудлага байхгүй үеийн hero сонголт: хамгийн ойрхон эхлэх
+/// (startsAt хамгийн бага), байхгүй бол хамгийн сүүлд дууссан (endsAt хамгийн
+/// их), аль нь ч байхгүй бол null. Оролтыг өөрчлөхгүй.
+AuctionSummary? pickFallbackHero(
+    List<AuctionSummary> scheduled, List<AuctionSummary> ended) {
+  if (scheduled.isNotEmpty) {
+    return scheduled.reduce((a, b) => b.startsAt.isBefore(a.startsAt) ? b : a);
+  }
+  if (ended.isNotEmpty) {
+    return ended.reduce((a, b) => b.endsAt.isAfter(a.endsAt) ? b : a);
+  }
+  return null;
+}

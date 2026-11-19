@@ -228,7 +228,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ref.invalidate(auctionListProvider('live')),
                     ),
                     data: (_) => _store.items.isEmpty
-                        ? const _EmptyHero()
+                        ? _FallbackHero(
+                            offsetMs: _store.serverOffsetMs,
+                            onOpen: _open,
+                          )
                         : _Hero(
                             store: _store,
                             onOpen: _open,
@@ -318,12 +321,20 @@ class _LiveCard extends StatefulWidget {
     required this.offsetMs,
     required this.wide,
     required this.onOpen,
+    this.kind = _HeroKind.live,
+    this.onStarted,
   });
 
   final AuctionSummary auction;
   final int offsetMs;
   final bool wide;
   final VoidCallback onOpen;
+
+  /// Hero-ийн төрөл: явагдаж буй / удахгүй эхлэх / дууссан.
+  final _HeroKind kind;
+
+  /// Эхлэх тоолуур 0 болоход дуудагдана (scheduled үед).
+  final VoidCallback? onStarted;
 
   @override
   State<_LiveCard> createState() => _LiveCardState();
@@ -371,7 +382,7 @@ class _LiveCardState extends State<_LiveCard>
           radius: 22,
           aspect: widget.wide ? 1 : 1.2,
         ),
-        const Positioned(top: 12, left: 12, child: _LiveBadge()),
+        Positioned(top: 12, left: 12, child: _HeroBadge(kind: widget.kind)),
       ],
     );
     final info = _LiveInfo(
@@ -379,6 +390,8 @@ class _LiveCardState extends State<_LiveCard>
       offsetMs: widget.offsetMs,
       onOpen: widget.onOpen,
       big: widget.wide,
+      kind: widget.kind,
+      onStarted: widget.onStarted,
     );
 
     return ScaleTransition(
@@ -404,9 +417,15 @@ class _LiveCardState extends State<_LiveCard>
   }
 }
 
-/// Зураг дээрх шилэн (glass) "Явагдаж буй" шошго: зөөлөн лугшдаг цэгтэй.
-class _LiveBadge extends StatelessWidget {
-  const _LiveBadge();
+/// Hero-ийн төрөл.
+enum _HeroKind { live, scheduled, ended }
+
+/// Зураг дээрх шилэн (glass) шошго: явагдаж буй бол лугшдаг цэгтэй,
+/// удахгүй эхлэх бол календарийн дүрстэй, дууссан бол бүдэг.
+class _HeroBadge extends StatelessWidget {
+  const _HeroBadge({required this.kind});
+
+  final _HeroKind kind;
 
   @override
   Widget build(BuildContext context) {
@@ -417,18 +436,30 @@ class _LiveBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
           color: Colors.black.withValues(alpha: 0.42),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _PulseDot(),
-              SizedBox(width: 7),
+              switch (kind) {
+                _HeroKind.live => const _PulseDot(),
+                _HeroKind.scheduled => const Icon(LucideIcons.calendarClock,
+                    size: 14, color: Colors.white),
+                _HeroKind.ended => Icon(LucideIcons.flag,
+                    size: 14, color: Colors.white.withValues(alpha: 0.7)),
+              },
+              const SizedBox(width: 7),
               Text(
-                'Явагдаж буй',
+                switch (kind) {
+                  _HeroKind.live => 'Явагдаж буй',
+                  _HeroKind.scheduled => 'Удахгүй эхэлнэ',
+                  _HeroKind.ended => 'Дууссан',
+                },
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.1,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: kind == _HeroKind.ended
+                      ? Colors.white.withValues(alpha: 0.75)
+                      : Colors.white,
                 ),
               ),
             ],
@@ -511,16 +542,35 @@ class _LiveInfo extends StatelessWidget {
     required this.offsetMs,
     required this.onOpen,
     required this.big,
+    this.kind = _HeroKind.live,
+    this.onStarted,
   });
 
   final AuctionSummary auction;
   final int offsetMs;
   final VoidCallback onOpen;
   final bool big;
+  final _HeroKind kind;
+  final VoidCallback? onStarted;
 
   @override
   Widget build(BuildContext context) {
     final a = auction;
+    final now = DateTime.now().add(Duration(milliseconds: offsetMs));
+    final subtitle = switch (kind) {
+      _HeroKind.live => a.lastBidder == null
+          ? 'Анхны оролцогч болоорой'
+          : 'Тэргүүлж байна: ${a.lastBidder!.name}',
+      _HeroKind.scheduled => 'Эхлэх: ${formatStartLabel(a.startsAt, now)}',
+      _HeroKind.ended =>
+        a.lastBidder == null ? 'Санал ирээгүй' : 'Ялагч: ${a.lastBidder!.name}',
+    };
+    final priceLabel = switch (kind) {
+      _HeroKind.live => null,
+      _HeroKind.scheduled => 'Эхлэх үнэ',
+      _HeroKind.ended => 'Эцсийн үнэ',
+    };
+    final price = _RollingPrice(amount: a.currentPrice, size: big ? 40 : 32);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,9 +589,7 @@ class _LiveInfo extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          a.lastBidder == null
-              ? 'Анхны оролцогч болоорой'
-              : 'Тэргүүлж байна: ${a.lastBidder!.name}',
+          subtitle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 15, height: 1.3, color: AppColors.muted),
@@ -551,14 +599,38 @@ class _LiveInfo extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: _RollingPrice(amount: a.currentPrice, size: big ? 40 : 32),
+              child: priceLabel == null
+                  ? price
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          priceLabel,
+                          maxLines: 1,
+                          style:
+                              TextStyle(fontSize: 13, color: AppColors.muted),
+                        ),
+                        const SizedBox(height: 4),
+                        price,
+                      ],
+                    ),
             ),
             const SizedBox(width: 12),
-            _TimerRow(auction: a, offsetMs: offsetMs),
+            switch (kind) {
+              _HeroKind.live => _TimerRow(auction: a, offsetMs: offsetMs),
+              _HeroKind.scheduled => _StartCountdown(
+                  auction: a, offsetMs: offsetMs, onStarted: onStarted),
+              _HeroKind.ended => _EndedAt(endsAt: a.endsAt, now: now),
+            },
           ],
         ),
         SizedBox(height: big ? 28 : 18),
-        _EnterButton(onPressed: onOpen),
+        _EnterButton(
+          onPressed: onOpen,
+          label: kind == _HeroKind.live
+              ? 'Дуудлага худалдаанд оролцох'
+              : 'Дэлгэрэнгүй үзэх',
+        ),
       ],
     );
   }
@@ -566,9 +638,13 @@ class _LiveInfo extends StatelessWidget {
 
 /// Хөнгөн (tinted) capsule товч — дэлгэрэнгүй рүү нээнэ.
 class _EnterButton extends StatelessWidget {
-  const _EnterButton({required this.onPressed});
+  const _EnterButton({
+    required this.onPressed,
+    this.label = 'Дуудлага худалдаанд оролцох',
+  });
 
   final VoidCallback onPressed;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -592,7 +668,7 @@ class _EnterButton extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                'Дуудлага худалдаанд оролцох',
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -755,6 +831,151 @@ class _TimerRowState extends State<_TimerRow> {
         ),
       ],
     );
+  }
+}
+
+/// Эхлэх хүртэлх тоолуур (scheduled hero). 0 болмогц `onStarted` дуудна.
+class _StartCountdown extends StatelessWidget {
+  const _StartCountdown({
+    required this.auction,
+    required this.offsetMs,
+    this.onStarted,
+  });
+
+  final AuctionSummary auction;
+  final int offsetMs;
+  final VoidCallback? onStarted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'Эхлэхэд',
+          maxLines: 1,
+          style: TextStyle(fontSize: 13, color: AppColors.muted),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.fill,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.clock, size: 15, color: AppColors.ink),
+              const SizedBox(width: 6),
+              LiveCountdownText(
+                endsAt: auction.startsAt,
+                serverOffsetMs: offsetMs,
+                onFinished: onStarted,
+                style: TextStyle(
+                  fontSize: 17,
+                  height: 1.2,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Дууссан hero-ийн дуусгавар болсон цаг.
+class _EndedAt extends StatelessWidget {
+  const _EndedAt({required this.endsAt, required this.now});
+
+  final DateTime endsAt;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'Дууссан',
+          maxLines: 1,
+          style: TextStyle(fontSize: 13, color: AppColors.muted),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.fill,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            formatDateTimeLabel(endsAt, now),
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.2,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Явагдаж буй дуудлага байхгүй үед: хамгийн ойрхон эхлэх, байхгүй бол
+/// хамгийн сүүлд дууссан дуудлагыг hero хэлбэрээр харуулна.
+class _FallbackHero extends ConsumerWidget {
+  const _FallbackHero({required this.offsetMs, required this.onOpen});
+
+  final int offsetMs;
+  final Future<void> Function(String id) onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sched = ref.watch(auctionListProvider('scheduled'));
+    final ended = ref.watch(auctionListProvider('ended'));
+    final scheduledList = sched.valueOrNull ?? const <AuctionSummary>[];
+    final endedList = ended.valueOrNull ?? const <AuctionSummary>[];
+    final picked = pickFallbackHero(scheduledList, endedList);
+
+    // Ачаалж дуусаагүй байхад хоосон төлөв анивчихаас сэргийлнэ.
+    final scheduledPending = sched.isLoading && !sched.hasValue;
+    final endedPending = ended.isLoading && !ended.hasValue;
+    if (picked == null && (scheduledPending || endedPending)) {
+      return const _HeroSkeleton();
+    }
+    if (picked == null) return const _EmptyHero();
+    // Эхлэх жагсаалт ачаалагдаагүй байхад дууссан нь түр гарахаас сэргийлнэ.
+    if (scheduledPending) return const _HeroSkeleton();
+
+    final isScheduled = scheduledList.any((a) => a.id == picked.id);
+    final kind = isScheduled ? _HeroKind.scheduled : _HeroKind.ended;
+
+    return LayoutBuilder(builder: (context, box) {
+      final twoCol = Breakpoints.isWide(context) && box.maxWidth >= 760;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _LiveCard(
+          key: ValueKey('${kind.name}:${picked.id}'),
+          auction: picked,
+          offsetMs: offsetMs,
+          wide: twoCol,
+          kind: kind,
+          onOpen: () => onOpen(picked.id),
+          onStarted: () {
+            ref.invalidate(auctionListProvider('live'));
+            ref.invalidate(auctionListProvider('scheduled'));
+          },
+        ),
+      );
+    });
   }
 }
 
@@ -997,18 +1218,12 @@ class _HeroSkeleton extends StatelessWidget {
   }
 }
 
-/// Явагдаж буй дуудлага байхгүй үед.
-class _EmptyHero extends ConsumerWidget {
+/// Явагдаж буй, удахгүй эхлэх, дууссан дуудлага огт байхгүй үед.
+class _EmptyHero extends StatelessWidget {
   const _EmptyHero();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final next = ref.watch(auctionListProvider('scheduled')).valueOrNull;
-    AuctionSummary? first;
-    if (next != null && next.isNotEmpty) {
-      first =
-          ([...next]..sort((a, b) => a.startsAt.compareTo(b.startsAt))).first;
-    }
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -1027,15 +1242,6 @@ class _EmptyHero extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (first != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Дараагийнх: ${first.title} · '
-                '${formatStartLabel(first.startsAt, DateTime.now())}',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppColors.muted),
-              ),
-            ],
           ],
         ),
       ),

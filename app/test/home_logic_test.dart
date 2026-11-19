@@ -153,4 +153,49 @@ void main() {
     expect(formatExactDateTime(DateTime(2026, 11, 18, 14)), '2026.11.18 14:00');
     expect(formatExactDateTime(DateTime(2026, 1, 5, 9, 7)), '2026.01.05 09:07');
   });
+
+  group('pickFallbackHero', () {
+    AuctionSummary mk(String id, DateTime start, DateTime end) =>
+        AuctionSummary(
+          id: id,
+          title: id,
+          images: const [],
+          currentPrice: 0,
+          bidCount: 0,
+          startsAt: start,
+          endsAt: end,
+          status: 'scheduled',
+        );
+    final t = DateTime(2026, 11, 18, 12);
+
+    test('хоёул хоосон бол null', () {
+      expect(pickFallbackHero(const [], const []), isNull);
+    });
+
+    test('эрэмбэгүй эхлэх жагсаалтаас хамгийн ойрхныг сонгоно', () {
+      final a = mk('a', t.add(const Duration(hours: 5)), t);
+      final b = mk('b', t.add(const Duration(hours: 1)), t);
+      final c = mk('c', t.add(const Duration(hours: 3)), t);
+      final ended = [mk('e', t, t)];
+      expect(pickFallbackHero([a, b, c], ended)!.id, 'b');
+    });
+
+    test('эхлэх байхгүй бол хамгийн сүүлд дууссаныг сонгоно', () {
+      final e1 = mk('e1', t, t.subtract(const Duration(hours: 5)));
+      final e2 = mk('e2', t, t.subtract(const Duration(hours: 1)));
+      final e3 = mk('e3', t, t.subtract(const Duration(hours: 3)));
+      expect(pickFallbackHero(const [], [e1, e2, e3])!.id, 'e2');
+    });
+
+    test(
+        'ижил цагтай бол эхнийх нь (тогтвортой) сонгогдож, оролт өөрчлөгдөхгүй',
+        () {
+      final a = mk('a', t, t);
+      final b = mk('b', t, t);
+      final list = [a, b];
+      expect(pickFallbackHero(list, const [])!.id, 'a');
+      expect(pickFallbackHero(const [], list)!.id, 'a');
+      expect(list.map((x) => x.id), ['a', 'b']);
+    });
+  });
 }
