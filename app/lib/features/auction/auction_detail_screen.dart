@@ -815,10 +815,12 @@ class TimingCardState extends State<TimingCard> {
                           color: AppColors.danger)),
                 ),
               ])
-            : Text(
-                'Сүүлийн ${(a.randomCloseSec / 60).ceil()} минутад санамсаргүй агшинд хаагдана',
-                style: TextStyle(
-                    fontSize: 12, height: 1.35, color: AppColors.muted)),
+            : a.hardCloseAt != null
+                ? Text(
+                    'Эцсийн хаалтаас өмнөх сүүлийн ${(a.randomCloseSec / 60).ceil()} минутад санамсаргүй агшинд хаагдана',
+                    style: TextStyle(
+                        fontSize: 12, height: 1.35, color: AppColors.muted))
+                : const SizedBox.shrink(),
       ));
     }
 

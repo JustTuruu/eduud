@@ -139,6 +139,8 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
   final List<TextEditingController> _images = [];
   final List<_Round> _rounds = [];
   DateTime? _start, _end;
+  // Эцсийн хаалт (hard close): заавал биш
+  DateTime? _hardClose;
   String? _categoryId;
   bool _useRounds = false;
   bool _usePrizes = false;
@@ -168,6 +170,7 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
     _random.text = '${jInt(a, 'randomCloseSec') ~/ 60}';
     _start = DateTime.tryParse(jStr(a, 'startsAt'))?.toLocal();
     _end = DateTime.tryParse(jStr(a, 'endsAt'))?.toLocal();
+    _hardClose = DateTime.tryParse(jStr(a, 'hardCloseAt'))?.toLocal();
     _categoryId = a['categoryId']?.toString();
     final imgs = a['images'];
     if (imgs is List) {
@@ -320,6 +323,12 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
       body['rounds'] = list;
       body['startsAt'] = list.first['startsAt'];
       body['endsAt'] = list.last['endsAt'];
+      if (_hardClose != null) {
+        if (!_hardClose!.isAfter(_rounds.first.start!)) {
+          return 'Эцсийн хаалт эхлэх цагаас хойш байна.';
+        }
+        body['hardCloseAt'] = _iso(_hardClose!);
+      }
     } else {
       if (_start == null || _end == null) {
         return 'Эхлэх, дуусах цагаа сонгоно уу.';
@@ -327,6 +336,12 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
       if (!_end!.isAfter(_start!)) return 'Дуусах цаг эхлэхээс хойш байна.';
       body['startsAt'] = _iso(_start!);
       body['endsAt'] = _iso(_end!);
+      if (_hardClose != null) {
+        if (!_hardClose!.isAfter(_end!)) {
+          return 'Эцсийн хаалт дуусах цагаас хойш байна.';
+        }
+        body['hardCloseAt'] = _iso(_hardClose!);
+      }
     }
     if (!_prizesLocked && (_usePrizes || _editing)) {
       // Унтраасан үед [] илгээж өмнөх шагналыг арилгана.
@@ -481,8 +496,22 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
         for (var i = 0; i < _rounds.length; i++) _roundRow(i),
       ],
       const SizedBox(height: 12),
+      FieldLabel('Эцсийн хаалт (hard close)',
+          hint: 'Заавал биш. Сунгалт ч энэ цагаас хэтрэхгүй',
+          child: Row(children: [
+            Expanded(
+                child: DateTimeField(
+                    value: _hardClose,
+                    onChanged: (d) => setState(() => _hardClose = d))),
+            if (_hardClose != null)
+              IconButton(
+                  tooltip: 'Арилгах',
+                  icon: const Icon(LucideIcons.x, size: 16),
+                  onPressed: () => setState(() => _hardClose = null)),
+          ])),
+      const SizedBox(height: 12),
       FieldLabel('Санамсаргүй хаалт (минут)',
-          hint: 'Дуусахаас өмнөх сүүлийн N минутад нууц санамсаргүй агшинд хаагдана. 0 = унтраах',
+          hint: 'Эцсийн хаалтын (hard close) цагаас өмнөх сүүлийн N минутад нууц санамсаргүй агшинд хаагдана. Эцсийн хаалт тохируулаагүй бол үйлчлэхгүй. 0 = унтраах',
           child: TextField(
               controller: _random, keyboardType: TextInputType.number)),
       const Divider(),

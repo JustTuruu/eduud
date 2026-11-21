@@ -156,13 +156,15 @@ public class AuctionsService {
     List<String> started =
         db.sql(
                 "UPDATE auctions SET status = 'live', updated_at = now(),"
-                    // Санамсаргүй хаалт: цонх эхлэх агшин ба нууц хаагдах агшинг эхлэх үед нэг удаа тогтооно
-                    + " random_close_from = CASE WHEN random_close_sec > 0 THEN GREATEST(starts_at,"
-                    + "   COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second') END,"
-                    + " secret_close_at = CASE WHEN random_close_sec > 0 THEN"
-                    + "   GREATEST(starts_at, COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second')"
-                    + "   + random() * (COALESCE(hard_close_at, ends_at)"
-                    + "     - GREATEST(starts_at, COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second')) END"
+                    // Санамсаргүй хаалт нь зөвхөн эцсийн хаалтад (hard_close_at) харьцангуй — soft-close ends_at-д хамаарахгүй.
+                    // hard_close_at байхгүй эсвэл random_close_sec = 0 бол NULL (санамсаргүй хаалтгүй).
+                    // Цонх эхлэх агшин ба нууц хаагдах агшинг эхлэх үед нэг удаа тогтооно
+                    + " random_close_from = CASE WHEN random_close_sec > 0 AND hard_close_at IS NOT NULL THEN"
+                    + "   GREATEST(starts_at, hard_close_at - random_close_sec * interval '1 second') END,"
+                    + " secret_close_at = CASE WHEN random_close_sec > 0 AND hard_close_at IS NOT NULL THEN"
+                    + "   GREATEST(starts_at, hard_close_at - random_close_sec * interval '1 second')"
+                    + "   + random() * (hard_close_at"
+                    + "     - GREATEST(starts_at, hard_close_at - random_close_sec * interval '1 second')) END"
                     + " WHERE status = 'scheduled' AND starts_at <= now() RETURNING id")
             .query(String.class)
             .list();
