@@ -45,7 +45,7 @@ public class AdminController {
   /** auctions-ийн бүх багана + lastBidder {id,name} + order (Prisma include). */
   private static final String ADMIN_AUCTION_SELECT =
       "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
-          + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
+          + " a.random_close_sec, a.random_close_from, a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
           + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds, a.category_id, c.name AS category_name,"
           + " CASE WHEN lb.id IS NULL THEN NULL ELSE json_build_object('id', lb.id, 'name', lb.name) END AS last_bidder,"
           + " CASE WHEN o.id IS NULL THEN NULL ELSE json_build_object('id', o.id, 'auctionId', o.auction_id,"
@@ -92,6 +92,8 @@ public class AdminController {
       @NotNull @Min(1) @Max(1000000) Integer increment,
       @NotNull @Min(0) @Max(3600) Integer softCloseSec,
       @NotNull @Min(0) @Max(3600) Integer extendSec,
+      /** Санамсаргүй хаалтын цонх (сек); null/0 = идэвхгүй */
+      @Min(0) @Max(3600) Integer randomCloseSec,
       Instant hardCloseAt,
       @NotNull Instant startsAt,
       @NotNull Instant endsAt,
@@ -107,6 +109,7 @@ public class AdminController {
       @Min(1) @Max(1000000) Integer increment,
       @Min(0) @Max(3600) Integer softCloseSec,
       @Min(0) @Max(3600) Integer extendSec,
+      @Min(0) @Max(3600) Integer randomCloseSec,
       Instant hardCloseAt,
       Instant startsAt,
       Instant endsAt,
@@ -166,8 +169,8 @@ public class AdminController {
         s -> {
     db.sql(
             "INSERT INTO auctions (id, title, description, images, start_price, increment, soft_close_sec, extend_sec,"
-                + " hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds, category_id)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now(), CAST(? AS jsonb), ?)")
+                + " random_close_sec, hard_close_at, starts_at, ends_at, current_price, status, created_by, updated_at, rounds, category_id)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, now(), CAST(? AS jsonb), ?)")
         .params(
             id,
             dto.title(),
@@ -177,6 +180,7 @@ public class AdminController {
             dto.increment(),
             dto.softCloseSec(),
             dto.extendSec(),
+            dto.randomCloseSec() == null ? 0 : dto.randomCloseSec(),
             Rows.ts(dto.hardCloseAt()),
             Rows.ts(fStartsAt),
             Rows.ts(fEndsAt),
@@ -219,6 +223,7 @@ public class AdminController {
     set(sets, params, "increment", dto.increment());
     set(sets, params, "soft_close_sec", dto.softCloseSec());
     set(sets, params, "extend_sec", dto.extendSec());
+    set(sets, params, "random_close_sec", dto.randomCloseSec());
     set(sets, params, "hard_close_at", Rows.ts(dto.hardCloseAt()));
     if (dto.rounds() != null) {
       // Зөвхөн draft үед (дээрх guard) — хуваарь эхлэх/дуусах хугацааг тодорхойлно
@@ -258,6 +263,7 @@ public class AdminController {
         && d.increment() == null
         && d.softCloseSec() == null
         && d.extendSec() == null
+        && d.randomCloseSec() == null
         && d.hardCloseAt() == null
         && d.startsAt() == null
         && d.endsAt() == null
@@ -279,7 +285,7 @@ public class AdminController {
     Map<String, Object> row =
         db.sql(
             "SELECT a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
-                + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
+                + " a.random_close_sec, a.random_close_from, a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
                 + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds, a.category_id,"
                 + " c.name AS category_name FROM auctions a LEFT JOIN categories c ON c.id = a.category_id"
                 + " WHERE a.id = ?")

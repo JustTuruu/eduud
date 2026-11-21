@@ -134,6 +134,8 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
   late final _inc = TextEditingController(text: '100');
   late final _soft = TextEditingController(text: '30');
   late final _extend = TextEditingController(text: '30');
+  // Санамсаргүй хаалт (минут): шинэ дуудлагад анхдагч 10, 0 = унтраах
+  late final _random = TextEditingController(text: '10');
   final List<TextEditingController> _images = [];
   final List<_Round> _rounds = [];
   DateTime? _start, _end;
@@ -163,6 +165,7 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
     _inc.text = '${jInt(a, 'increment')}';
     _soft.text = '${jInt(a, 'softCloseSec')}';
     _extend.text = '${jInt(a, 'extendSec')}';
+    _random.text = '${jInt(a, 'randomCloseSec') ~/ 60}';
     _start = DateTime.tryParse(jStr(a, 'startsAt'))?.toLocal();
     _end = DateTime.tryParse(jStr(a, 'endsAt'))?.toLocal();
     _categoryId = a['categoryId']?.toString();
@@ -202,7 +205,16 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
 
   @override
   void dispose() {
-    for (final c in [_title, _desc, _price, _inc, _soft, _extend, ..._images]) {
+    for (final c in [
+      _title,
+      _desc,
+      _price,
+      _inc,
+      _soft,
+      _extend,
+      _random,
+      ..._images
+    ]) {
       c.dispose();
     }
     for (final r in _rounds) {
@@ -256,6 +268,10 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
     if (soft == null || ext == null || soft < 0 || ext < 0) {
       return 'Сунгалтын секундийг зөв бичнэ үү.';
     }
+    final random = int.tryParse(_random.text.trim());
+    if (random == null || random < 0 || random > 60) {
+      return 'Санамсаргүй хаалтын минут 0-60 хооронд байна.';
+    }
     final images = [
       for (final c in _images)
         if (c.text.trim().isNotEmpty) c.text.trim()
@@ -273,6 +289,7 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
       'increment': inc,
       'softCloseSec': soft,
       'extendSec': ext,
+      'randomCloseSec': random * 60,
       'categoryId': _categoryId ?? '',
     });
     if (_useRounds) {
@@ -463,6 +480,11 @@ class _AuctionFormState extends ConsumerState<AuctionForm> {
         const SizedBox(height: 12),
         for (var i = 0; i < _rounds.length; i++) _roundRow(i),
       ],
+      const SizedBox(height: 12),
+      FieldLabel('Санамсаргүй хаалт (минут)',
+          hint: 'Дуусахаас өмнөх сүүлийн N минутад нууц санамсаргүй агшинд хаагдана. 0 = унтраах',
+          child: TextField(
+              controller: _random, keyboardType: TextInputType.number)),
       const Divider(),
       const SizedBox(height: 14),
       _prizesSection(),

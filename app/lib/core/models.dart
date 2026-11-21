@@ -287,6 +287,11 @@ class AuctionDetail {
   final int extendSec;
   final DateTime? hardCloseAt;
 
+  /// Санамсаргүй хаалтын цонхны урт (сек; 0 = идэвхгүй) ба цонх эхлэх агшин.
+  /// Бодит хаагдах агшин нууц тул клиентэд ирдэггүй.
+  final int randomCloseSec;
+  final DateTime? randomCloseFrom;
+
   /// Шатуудын хуваарь (байхгүй бол null — хуучин soft-close дүрэм).
   final List<AuctionRound>? rounds;
 
@@ -313,6 +318,8 @@ class AuctionDetail {
     this.softCloseSec = 0,
     this.extendSec = 0,
     this.hardCloseAt,
+    this.randomCloseSec = 0,
+    this.randomCloseFrom,
     this.rounds,
     this.prizes = const [],
     this.placements = const [],
@@ -342,6 +349,10 @@ class AuctionDetail {
         hardCloseAt: j['hardCloseAt'] == null
             ? null
             : DateTime.parse(j['hardCloseAt'] as String),
+        randomCloseSec: (j['randomCloseSec'] ?? 0) as int,
+        randomCloseFrom: j['randomCloseFrom'] == null
+            ? null
+            : DateTime.parse(j['randomCloseFrom'] as String),
         rounds: parseRounds(j['rounds']),
         prizes: parsePrizes(j['prizes']),
         placements: parsePlacements(j['placements']),
@@ -354,6 +365,8 @@ class AuctionDetail {
     String? status,
     Bidder? lastBidder,
     List<BidItem>? bids,
+    int? randomCloseSec,
+    DateTime? randomCloseFrom,
   }) =>
       AuctionDetail(
         id: id,
@@ -372,6 +385,8 @@ class AuctionDetail {
         softCloseSec: softCloseSec,
         extendSec: extendSec,
         hardCloseAt: hardCloseAt,
+        randomCloseSec: randomCloseSec ?? this.randomCloseSec,
+        randomCloseFrom: randomCloseFrom ?? this.randomCloseFrom,
         rounds: rounds,
         prizes: prizes,
         placements: placements,

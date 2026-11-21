@@ -49,6 +49,16 @@ void main() {
     expect(inSoftClose(const Duration(seconds: 5), 0), false);
   });
 
+  test('inRandomCloseWindow', () {
+    final from = DateTime.utc(2026, 1, 1, 10, 0);
+    expect(inRandomCloseWindow(null, from), false);
+    expect(inRandomCloseWindow(from, from.subtract(const Duration(seconds: 1))),
+        false);
+    expect(inRandomCloseWindow(from, from), true);
+    expect(
+        inRandomCloseWindow(from, from.add(const Duration(minutes: 3))), true);
+  });
+
   group('rounds', () {
     final base = DateTime.utc(2026, 11, 18, 10);
     AuctionRound r(int startMin, int endMin, int sec) => AuctionRound(

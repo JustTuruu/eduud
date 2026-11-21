@@ -26,7 +26,7 @@ public class AuctionsService {
   /** auctions хүснэгтийн бүх багана (Prisma-ийн field нэрээр). */
   static final String AUCTION_COLUMNS =
       "a.id, a.title, a.description, a.images, a.start_price, a.increment, a.soft_close_sec, a.extend_sec,"
-          + " a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
+          + " a.random_close_sec, a.random_close_from, a.hard_close_at, a.starts_at, a.ends_at, a.current_price, a.bid_count, a.last_bidder_id, a.status,"
           + " a.created_by AS created_by_id, a.created_at, a.updated_at, a.rounds,"
           + " a.category_id, c.name AS category_name";
 
@@ -155,7 +155,14 @@ public class AuctionsService {
   public void startDue() {
     List<String> started =
         db.sql(
-                "UPDATE auctions SET status = 'live', updated_at = now()"
+                "UPDATE auctions SET status = 'live', updated_at = now(),"
+                    // Санамсаргүй хаалт: цонх эхлэх агшин ба нууц хаагдах агшинг эхлэх үед нэг удаа тогтооно
+                    + " random_close_from = CASE WHEN random_close_sec > 0 THEN GREATEST(starts_at,"
+                    + "   COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second') END,"
+                    + " secret_close_at = CASE WHEN random_close_sec > 0 THEN"
+                    + "   GREATEST(starts_at, COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second')"
+                    + "   + random() * (COALESCE(hard_close_at, ends_at)"
+                    + "     - GREATEST(starts_at, COALESCE(hard_close_at, ends_at) - random_close_sec * interval '1 second')) END"
                     + " WHERE status = 'scheduled' AND starts_at <= now() RETURNING id")
             .query(String.class)
             .list();
@@ -167,7 +174,8 @@ public class AuctionsService {
 
   /** Хугацаа нь дууссан live auction-уудын id. */
   public List<String> dueForFinalize(int limit) {
-    return db.sql("SELECT id FROM auctions WHERE status = 'live' AND ends_at <= now() ORDER BY ends_at LIMIT ?")
+    return db.sql("SELECT id FROM auctions WHERE status = 'live' AND (ends_at <= now() OR secret_close_at <= now())"
+                + " ORDER BY LEAST(ends_at, COALESCE(secret_close_at, ends_at)) LIMIT ?")
         .param(limit)
         .query(String.class)
         .list();
@@ -183,7 +191,7 @@ public class AuctionsService {
             s -> {
               Map<String, Object> row =
                   db.sql(
-                          "SELECT id, status, ends_at, current_price, last_bidder_id FROM auctions"
+                          "SELECT id, status, ends_at, secret_close_at, current_price, last_bidder_id FROM auctions"
                               + " WHERE id = ? FOR UPDATE SKIP LOCKED")
                       .param(auctionId)
                       .query(rows.camel())
@@ -191,9 +199,17 @@ public class AuctionsService {
                       .orElse(null);
               if (row == null || !"live".equals(row.get("status"))) return null;
               // Soft close-оор сунгагдсан бол дараагийн tick хүртэл хүлээнэ
-              if (((Instant) row.get("endsAt")).isAfter(Instant.now())) return null;
+              // Санамсаргүй хаалтын агшин болсон бол ends_at-аас үл хамааран хаана
+              Instant secretCloseAt = (Instant) row.get("secretCloseAt");
+              boolean secretReached = secretCloseAt != null && !secretCloseAt.isAfter(Instant.now());
+              if (((Instant) row.get("endsAt")).isAfter(Instant.now()) && !secretReached) return null;
 
-              db.sql("UPDATE auctions SET status = 'ended', updated_at = now() WHERE id = ?").param(auctionId).update();
+              // ends_at-ыг бодит хаагдсан агшин болгож шинэчилнэ
+              db.sql(
+                      "UPDATE auctions SET status = 'ended', updated_at = now(),"
+                          + " ends_at = LEAST(ends_at, COALESCE(secret_close_at, ends_at)) WHERE id = ?")
+                  .param(auctionId)
+                  .update();
               Map<String, Object> out = new LinkedHashMap<>();
               String winner = (String) row.get("lastBidderId");
               out.put("winner", winner);

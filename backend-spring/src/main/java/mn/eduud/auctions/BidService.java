@@ -90,7 +90,7 @@ public class BidService {
   private void precheck(BidCommand cmd) {
     Map<String, Object> r =
         db.sql(
-                "SELECT a.status, a.starts_at, a.ends_at, a.last_bidder_id,"
+                "SELECT a.status, a.starts_at, a.ends_at, a.secret_close_at, a.last_bidder_id,"
                     + " (SELECT balance FROM wallets WHERE user_id = ?) AS balance"
                     + " FROM auctions a WHERE a.id = ?")
             .params(cmd.userId(), cmd.auctionId())
@@ -101,6 +101,7 @@ public class BidService {
     s.status = (String) r.get("status");
     s.startsAt = (Instant) r.get("startsAt");
     s.endsAt = (Instant) r.get("endsAt");
+    s.secretCloseAt = (Instant) r.get("secretCloseAt");
     s.lastBidderId = (String) r.get("lastBidderId");
     Rejection rej = AuctionLogic.validateBid(s, cmd.userId(), Instant.ofEpochMilli(cmd.receivedAtMs()));
     if (rej != null) throw ApiException.badRequest(rej.message);

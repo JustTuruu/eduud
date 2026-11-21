@@ -797,6 +797,31 @@ class TimingCardState extends State<TimingCard> {
       ));
     }
 
+    if (live && a.randomCloseSec > 0) {
+      final inWindow = inRandomCloseWindow(a.randomCloseFrom, _now);
+      rows.add(Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: inWindow
+            ? Row(children: [
+                Icon(LucideIcons.triangleAlert,
+                    size: 16, color: AppColors.danger),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Санамсаргүй хаалтын үе — хэзээ ч хаагдаж болно',
+                      style: TextStyle(
+                          fontSize: 13,
+                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.danger)),
+                ),
+              ])
+            : Text(
+                'Сүүлийн ${(a.randomCloseSec / 60).ceil()} минутад санамсаргүй агшинд хаагдана',
+                style: TextStyle(
+                    fontSize: 12, height: 1.35, color: AppColors.muted)),
+      ));
+    }
+
     final card = GroupSection(children: rows);
     if (!hasRounds || ended) return card;
     return Column(

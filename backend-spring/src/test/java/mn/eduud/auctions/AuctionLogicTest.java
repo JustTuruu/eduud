@@ -195,4 +195,26 @@ class AuctionLogicTest {
     assertThat(AuctionLogic.nextPrice(1000, 10, 3)).isEqualTo(1003);
     assertThat(AuctionLogic.nextPrice(1000, 10, 5)).isEqualTo(1005);
   }
+
+  @Test
+  void secretCloseAtInFutureDoesNotReject() {
+    Snapshot s = live(T0.plusSeconds(600), null);
+    s.secretCloseAt = T0.plusSeconds(1);
+    assertThat(AuctionLogic.validateBid(s, "u1", T0)).isNull();
+  }
+
+  @Test
+  void rejectsAtOrAfterSecretCloseAt() {
+    Snapshot s = live(T0.plusSeconds(600), null);
+    s.secretCloseAt = T0;
+    assertThat(AuctionLogic.validateBid(s, "u1", T0)).isEqualTo(Rejection.ALREADY_ENDED);
+    assertThat(AuctionLogic.validateBid(s, "u1", T0.plusSeconds(5))).isEqualTo(Rejection.ALREADY_ENDED);
+  }
+
+  @Test
+  void nullSecretCloseAtIsUnaffected() {
+    Snapshot s = live(T0.plusSeconds(600), null);
+    s.secretCloseAt = null;
+    assertThat(AuctionLogic.validateBid(s, "u1", T0)).isNull();
+  }
 }

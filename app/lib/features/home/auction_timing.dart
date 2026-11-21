@@ -54,6 +54,11 @@ bool inSoftClose(Duration remaining, int softCloseSec) =>
     remaining.inMilliseconds > 0 &&
     remaining.inMilliseconds < softCloseSec * 1000;
 
+/// Санамсаргүй хаалтын цонхонд орсон эсэх: `from` (цонх эхлэх агшин) тодорхой
+/// бөгөөд now >= from. from == null бол цонх байхгүй.
+bool inRandomCloseWindow(DateTime? from, DateTime now) =>
+    from != null && !now.isBefore(from);
+
 /// `t` цагт хамаарах шатны индекс: startsAt <= t < endsAt. Эхний шатнаас өмнө
 /// бол эхний шат; завсар/сүүлийн шатнаас хойш бол startsAt <= t байх сүүлийн шат.
 int? roundIndexAt(List<AuctionRound> rounds, DateTime t) {

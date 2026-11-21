@@ -21,6 +21,8 @@ public final class AuctionLogic {
     public int softCloseSec;
     public int extendSec;
     public Instant hardCloseAt;
+    /** НУУЦ санамсаргүй хаалтын агшин; null бол идэвхгүй. Хэзээ ч клиент рүү гаргахгүй. */
+    public Instant secretCloseAt;
     public String lastBidderId;
     public int bidCount;
     /** Раундын хуваарь; null бол soft-close дүрэм. */
@@ -46,6 +48,8 @@ public final class AuctionLogic {
     if (!"live".equals(a.status)) return Rejection.NOT_LIVE;
     if (now.isBefore(a.startsAt)) return Rejection.NOT_STARTED;
     if (!now.isBefore(a.endsAt)) return Rejection.ALREADY_ENDED;
+    // Санамсаргүй хаалтын агшин өнгөрсөн бол дууссан гэж үзнэ
+    if (a.secretCloseAt != null && !now.isBefore(a.secretCloseAt)) return Rejection.ALREADY_ENDED;
     // Тэргүүлж буй хэрэглэгч дахин санал илгээж болно (1 эрх зарцуулна).
     return null;
   }
@@ -105,6 +109,7 @@ public final class AuctionLogic {
     s.softCloseSec = intOf(r.get("softCloseSec"));
     s.extendSec = intOf(r.get("extendSec"));
     s.hardCloseAt = (Instant) r.get("hardCloseAt");
+    s.secretCloseAt = (Instant) r.get("secretCloseAt");
     s.lastBidderId = (String) r.get("lastBidderId");
     s.bidCount = intOf(r.get("bidCount"));
     s.rounds = AuctionRounds.parse((String) r.get("rounds"));
